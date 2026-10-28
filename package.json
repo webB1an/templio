@@ -23,6 +23,7 @@
     "prisma:deploy": "bash scripts/safe-migrate.sh deploy",
     "prisma:validate": "prisma validate --schema apps/api/prisma/schema.prisma",
     "db:backup": "bash scripts/backup-db.sh",
+    "admin:seed": "node scripts/seed-admin.mjs",
     "miniprogram:check": "tsc --noEmit -p apps/miniprogram",
     "tunnel:db": "ssh -N -L 3307:127.0.0.1:3306 -L 6380:127.0.0.1:6379 templio-server"
   },
