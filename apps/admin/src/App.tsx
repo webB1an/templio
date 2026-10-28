@@ -1,13 +1,5 @@
-import {
-  BrowserRouter,
-  Navigate,
-  Outlet,
-  Route,
-  Routes,
-  useLocation,
-  useNavigate,
-} from 'react-router-dom';
-import { Layout, Menu, Typography } from 'antd';
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Avatar, Dropdown, Layout, Menu, Typography } from 'antd';
 import {
   LayoutDashboard,
   FolderOpen,
@@ -15,9 +7,14 @@ import {
   CreditCard,
   Users,
   Settings,
+  LogOut,
 } from 'lucide-react';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
+import { Templates } from './pages/Templates';
+import { TemplateEdit } from './pages/TemplateEdit';
+import { Categories } from './pages/Categories';
+import { clearSession, getProfile } from './api';
 
 const { Sider, Content, Header } = Layout;
 
@@ -34,6 +31,22 @@ const menuItems = [
 function Shell() {
   const location = useLocation();
   const navigate = useNavigate();
+  const profile = getProfile();
+
+  const userMenu = {
+    items: [
+      {
+        key: 'logout',
+        icon: <LogOut size={14} />,
+        label: '退出登录',
+        onClick: () => {
+          clearSession();
+          navigate('/admin/login', { replace: true });
+        },
+      },
+    ],
+  };
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider theme="light" width={200}>
@@ -50,8 +63,27 @@ function Shell() {
         />
       </Sider>
       <Layout>
-        <Header style={{ background: '#fff', padding: '0 24px' }}>
-          <Typography.Text type="secondary">管理后台（M0 骨架，功能随里程碑落地）</Typography.Text>
+        <Header
+          style={{
+            background: '#fff',
+            padding: '0 24px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Typography.Text type="secondary">管理后台</Typography.Text>
+          <Dropdown menu={userMenu}>
+            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Avatar size={28} style={{ background: '#245BFF' }}>
+                {(profile?.username ?? '?').slice(0, 1).toUpperCase()}
+              </Avatar>
+              <Typography.Text>
+                {profile?.username}
+                {profile?.role === 'super' ? '（超管）' : ''}
+              </Typography.Text>
+            </span>
+          </Dropdown>
         </Header>
         <Content style={{ padding: 24 }}>
           <Outlet />
@@ -61,18 +93,31 @@ function Shell() {
   );
 }
 
+/** 路由守卫：未登录跳转登录页 */
+function RequireAuth() {
+  return getProfile() && localStorage.getItem('templio_admin_token') ? (
+    <Outlet />
+  ) : (
+    <Navigate to="/admin/login" replace />
+  );
+}
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/admin/login" element={<Login />} />
-        {/* 嵌套路由：子路径相对 /admin，避免双层 Routes 互相重定向 */}
-        <Route path="/admin" element={<Shell />}>
+    <Routes>
+      <Route path="/admin/login" element={<Login />} />
+      {/* 嵌套路由：子路径相对 /admin，避免双层 Routes 互相重定向 */}
+      <Route path="/admin" element={<RequireAuth />}>
+        <Route element={<Shell />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="templates" element={<Templates />} />
+          <Route path="templates/new" element={<TemplateEdit />} />
+          <Route path="templates/:id" element={<TemplateEdit />} />
+          <Route path="categories" element={<Categories />} />
         </Route>
-        <Route path="*" element={<Navigate to="/admin" replace />} />
-      </Routes>
-    </BrowserRouter>
+      </Route>
+      <Route path="*" element={<Navigate to="/admin" replace />} />
+    </Routes>
   );
 }
