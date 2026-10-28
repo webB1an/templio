@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { TaxonomyModule } from './taxonomy/taxonomy.module';
 import { TemplatesModule } from './templates/templates.module';
 import { NetdiskModule } from './netdisk/netdisk.module';
+import { HomeModule } from './home/home.module';
+import { AiModule } from './ai/ai.module';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
@@ -23,6 +25,8 @@ import { ThrottlerGuard } from '@nestjs/throttler';
     TaxonomyModule,
     TemplatesModule,
     NetdiskModule,
+    HomeModule,
+    AiModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

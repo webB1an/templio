@@ -35,6 +35,14 @@ interface FileRow {
 
 let fileKeySeq = 1;
 
+interface AiSuggestion {
+  title: string;
+  summary: string;
+  categoryIds: number[];
+  tagIds: number[];
+  suggestedPrice: number;
+}
+
 export function TemplateEdit() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -188,6 +196,42 @@ export function TemplateEdit() {
       message.error(e instanceof Error ? e.message : '保存失败');
     } finally {
       setSaving(false);
+    }
+  }
+
+  const [aiLoading, setAiLoading] = useState(false);
+
+  async function onAiEnrich() {
+    setAiLoading(true);
+    try {
+      const res = await api.post<{ applied: boolean; suggestion: AiSuggestion }>(
+        `/admin/templates/${id}/ai-enrich`,
+        { apply: false },
+      );
+      const s = res.suggestion;
+      form.setFieldsValue({
+        title: s.title,
+        summary: s.summary,
+        baseCreditPrice: s.suggestedPrice,
+        cat_format: s.categoryIds.filter((cid) =>
+          categories.some((c) => c.id === cid && c.dimension === 'format'),
+        ),
+        cat_scene: s.categoryIds.filter((cid) =>
+          categories.some((c) => c.id === cid && c.dimension === 'scene'),
+        ),
+        cat_audience: s.categoryIds.filter((cid) =>
+          categories.some((c) => c.id === cid && c.dimension === 'audience'),
+        ),
+        cat_theme: s.categoryIds.filter((cid) =>
+          categories.some((c) => c.id === cid && c.dimension === 'theme'),
+        ),
+        tagIds: s.tagIds,
+      });
+      message.success('AI 建议已填充到表单，请人工确认后保存');
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : 'AI 补全失败');
+    } finally {
+      setAiLoading(false);
     }
   }
 
@@ -369,6 +413,11 @@ export function TemplateEdit() {
         <Button type="primary" htmlType="submit" loading={saving}>
           {editing ? '保存' : '创建草稿'}
         </Button>
+        {editing && (
+          <Button onClick={onAiEnrich} loading={aiLoading}>
+            AI 补全
+          </Button>
+        )}
         <Button onClick={() => navigate('/admin/templates')}>取消</Button>
       </Space>
     </Form>
