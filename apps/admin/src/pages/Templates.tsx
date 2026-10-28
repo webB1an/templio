@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Input, Modal, Popconfirm, Select, Space, Table, Tag, message } from 'antd';
-import { Plus, RefreshCw, Link2, CheckCircle2, XCircle, ArrowDownToLine } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, RefreshCw, Link2, CheckCircle2, XCircle, ArrowDownToLine, Layers } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import {
   FORMAT_OPTIONS,
@@ -18,9 +18,16 @@ const PAGE_SIZE = 10;
 
 export function Templates() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [data, setData] = useState<TemplateListResult>({ items: [], total: 0, page: 1, pageSize: PAGE_SIZE });
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<TemplateStatus | undefined>();
+  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
+  const [status, setStatus] = useState<TemplateStatus | undefined>(() => {
+    const s = searchParams.get('status');
+    return s && ['draft', 'pending_review', 'published', 'rejected', 'offline', 'banned'].includes(s)
+      ? (s as TemplateStatus)
+      : undefined;
+  });
   const [format, setFormat] = useState<string | undefined>();
   const [keyword, setKeyword] = useState('');
   const [page, setPage] = useState(1);
@@ -98,6 +105,32 @@ export function Templates() {
         await act(id, 'review', { action: 'reject', note: note.trim() }, '已驳回');
       },
     });
+  }
+
+  async function batchAction(kind: 'submit' | 'approve') {
+    const ids = selectedKeys.map(Number);
+    if (ids.length === 0) return;
+    try {
+      const res =
+        kind === 'submit'
+          ? await api.post<{ succeeded: number[]; failed: { id: number; message: string }[] }>(
+              '/admin/templates/batch-submit',
+              { ids },
+            )
+          : await api.post<{ succeeded: number[]; failed: { id: number; message: string }[] }>(
+              '/admin/templates/batch-review',
+              { ids, action: 'approve' },
+            );
+      if (res.failed.length) {
+        message.warning(`成功 ${res.succeeded.length} 个，失败 ${res.failed.length} 个（状态不符）`);
+      } else {
+        message.success(`已批量处理 ${res.succeeded.length} 个模板`);
+      }
+      setSelectedKeys([]);
+      void load();
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : '批量操作失败');
+    }
   }
 
   const columns = [
@@ -247,6 +280,25 @@ export function Templates() {
         >
           新建模板
         </Button>
+        <Button
+          icon={<Layers size={14} />}
+          onClick={() => navigate('/admin/templates/batch')}
+        >
+          批量导入
+        </Button>
+        {selectedKeys.length > 0 && (
+          <Space>
+            <span style={{ fontSize: 13 }}>已选 {selectedKeys.length} 项</span>
+            <Button size="small" onClick={() => void batchAction('submit')}>
+              批量提审
+            </Button>
+            <Popconfirm title={`确认批量通过并发布选中的 ${selectedKeys.length} 个模板？`} onConfirm={() => void batchAction('approve')}>
+              <Button size="small" type="primary">
+                批量通过
+              </Button>
+            </Popconfirm>
+          </Space>
+        )}
       </Space>
       <Table
         rowKey="id"
@@ -254,6 +306,10 @@ export function Templates() {
         loading={loading}
         columns={columns as never}
         dataSource={data.items}
+        rowSelection={{
+          selectedRowKeys: selectedKeys,
+          onChange: (keys) => setSelectedKeys(keys),
+        }}
         pagination={{
           current: data.page,
           pageSize: data.pageSize,

@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
-import { CreateTemplateDto, ListTemplateQueryDto, ReviewDto, UpdateTemplateDto } from './dto';
+import { CreateTemplateDto, BatchReviewDto, ListTemplateQueryDto, QuickImportDto, ReviewDto, UpdateTemplateDto } from './dto';
 import { TemplatesService } from './templates.service';
 
 interface AdminReq {
@@ -29,6 +29,24 @@ export class AdminTemplatesController {
   @Post()
   create(@Body() dto: CreateTemplateDto, @Req() req: AdminReq) {
     return this.templates.create(dto, req.admin.sub);
+  }
+
+  /** 快速建档：批量导入单条流水线（创建→AI 补全→链检→自动提审） */
+  @Post('quick-import')
+  quickImport(@Body() dto: QuickImportDto, @Req() req: AdminReq) {
+    return this.templates.quickImport(dto, req.admin.sub);
+  }
+
+  /** 批量审核（仅 pending_review 会被处理，其余逐条报失败原因） */
+  @Post('batch-review')
+  batchReview(@Body() dto: BatchReviewDto, @Req() req: AdminReq) {
+    return this.templates.batchReview(dto.ids, req.admin.sub, dto.action, dto.note);
+  }
+
+  /** 批量提审（draft/rejected/offline → pending_review） */
+  @Post('batch-submit')
+  batchSubmit(@Body() body: { ids: number[] }, @Req() req: AdminReq) {
+    return this.templates.batchSubmit(body.ids ?? [], req.admin.sub);
   }
 
   @Get()

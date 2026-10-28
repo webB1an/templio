@@ -14,6 +14,7 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Templates } from './pages/Templates';
 import { TemplateEdit } from './pages/TemplateEdit';
+import { BatchImport } from './pages/BatchImport';
 import { Categories } from './pages/Categories';
 import { Payments } from './pages/Payments';
 import { Settings as SettingsPage } from './pages/Settings';
@@ -119,6 +120,7 @@ export default function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="templates" element={<Templates />} />
           <Route path="templates/new" element={<TemplateEdit />} />
+          <Route path="templates/batch" element={<BatchImport />} />
           <Route path="templates/:id" element={<TemplateEdit />} />
           <Route path="categories" element={<Categories />} />
           <Route path="netdisk" element={<Netdisk />} />

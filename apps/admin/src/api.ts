@@ -76,5 +76,5 @@ export const api = {
       body: body === undefined ? undefined : JSON.stringify(body),
     }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
-  upload: (path: string, form: FormData) => request<never>(path, { method: 'POST', body: form }),
+  upload: <T = unknown>(path: string, form: FormData) => request<T>(path, { method: 'POST', body: form }),
 };
