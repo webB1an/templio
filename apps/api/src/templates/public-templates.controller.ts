@@ -6,7 +6,10 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import { OptionalUserJwtGuard, UserJwtPayload } from '../users/user-jwt.guard';
 import { PublicTemplatesService } from './public-templates.service';
 
 /**
@@ -48,8 +51,9 @@ export class PublicTemplatesController {
   }
 
   @Get(':id/share-links')
-  shareLinks(@Param('id', ParseIntPipe) id: number) {
-    return this.templates.getShareLinks(id);
+  @UseGuards(OptionalUserJwtGuard)
+  shareLinks(@Req() req: { user?: UserJwtPayload }, @Param('id', ParseIntPipe) id: number) {
+    return this.templates.getShareLinks(id, req.user?.sub);
   }
 
   @Get(':id/related')
@@ -61,7 +65,8 @@ export class PublicTemplatesController {
   }
 
   @Get(':id')
-  detail(@Param('id', ParseIntPipe) id: number) {
-    return this.templates.detail(id);
+  @UseGuards(OptionalUserJwtGuard)
+  detail(@Req() req: { user?: UserJwtPayload }, @Param('id', ParseIntPipe) id: number) {
+    return this.templates.detail(id, req.user?.sub);
   }
 }

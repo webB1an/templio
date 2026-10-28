@@ -10,6 +10,9 @@ import { TemplatesModule } from './templates/templates.module';
 import { NetdiskModule } from './netdisk/netdisk.module';
 import { HomeModule } from './home/home.module';
 import { AiModule } from './ai/ai.module';
+import { UsersModule } from './users/users.module';
+import { CreditsModule } from './credits/credits.module';
+import { PayModule } from './pay/pay.module';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
@@ -27,6 +30,9 @@ import { ThrottlerGuard } from '@nestjs/throttler';
     NetdiskModule,
     HomeModule,
     AiModule,
+    UsersModule,
+    CreditsModule,
+    PayModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

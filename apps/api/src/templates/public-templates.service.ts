@@ -81,7 +81,7 @@ export class PublicTemplatesService {
     return { items: items.map(toListItem), total, page, pageSize };
   }
 
-  async detail(id: number) {
+  async detail(id: number, userId?: number) {
     const t = await this.prisma.template.findFirst({
       where: { id, status: 'published' },
       include: {
@@ -117,6 +117,9 @@ export class PublicTemplatesService {
     }));
 
     const meta = (t.meta ?? {}) as { previews?: string[] };
+    const unlocked = userId
+      ? !!(await this.prisma.templateUnlock.findUnique({ where: { userId_templateId: { userId, templateId: id } } }))
+      : false;
     return {
       id: t.id,
       title: t.title,
@@ -131,23 +134,28 @@ export class PublicTemplatesService {
       categories: t.categories.map((c) => c.category),
       tags: t.tags.map((x) => x.tag),
       free,
-      locked: !free,
+      locked: !free && !unlocked,
+      unlocked,
       files,
     };
   }
 
   /**
-   * 免费模板分享链接换取：后续 M3 会加登录/频控，当前阶段对免费模板直接放行。
-   * 付费模板一律 404，等 M3 解锁逻辑落地。
+   * 模板分享链接换取：
+   * 免费模板 → 直接返回；付费模板 → 需已登录且已积分解锁。
    */
-  async getShareLinks(id: number) {
+  async getShareLinks(id: number, userId?: number) {
     const t = await this.prisma.template.findFirst({
       where: { id, status: 'published' },
       select: { id: true, baseCreditPrice: true, files: { select: { id: true, filename: true, netdiskType: true, shareUrl: true } } },
     });
     if (!t) throw new NotFoundException('模板不存在或未发布');
     if (t.baseCreditPrice !== 0) {
-      throw new NotFoundException('该模板需要解锁后获取分享链接');
+      if (!userId) throw new NotFoundException('请先登录并解锁后获取分享链接');
+      const unlocked = await this.prisma.templateUnlock.findUnique({
+        where: { userId_templateId: { userId, templateId: id } },
+      });
+      if (!unlocked) throw new NotFoundException('请先解锁该模板');
     }
     return {
       templateId: t.id,
