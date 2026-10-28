@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: 安装依赖
+        run: npm ci
+      - name: Prisma schema 校验
+        run: npx prisma validate --schema apps/api/prisma/schema.prisma
+      - name: 生成 Prisma Client
+        run: npx prisma generate --schema apps/api/prisma/schema.prisma
+      - name: 类型检查
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: 测试
+        run: npm run test

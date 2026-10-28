@@ -1,0 +1,87 @@
+name: CD
+
+# 构建 → 上传产物 → 服务器轻量部署
+# 服务器只有 1.6G 内存，不在服务器上编译；构建产物由 CI 打包上传。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci --no-audit --no-fund
+
+      - name: 生成 Prisma Client
+        run: npx prisma generate --schema apps/api/prisma/schema.prisma
+
+      - name: 构建
+        run: npm run build
+
+      - name: 打部署包（排除 node_modules 与 .env）
+        run: |
+          mkdir -p dist-bundle
+          tar czf dist-bundle/bundle.tgz \
+            package.json package-lock.json .npmrc \
+            ecosystem.config.js \
+            scripts/ \
+            packages/shared/package.json packages/shared/dist \
+            apps/api/package.json apps/api/dist apps/api/prisma \
+            apps/admin/dist
+
+      - name: 上传部署包
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          target: /www/templio/releases/
+          source: dist-bundle/bundle.tgz
+          strip_components: 1
+
+      - name: 服务器端部署
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd /www/templio
+
+            # 解包（.env / logs / node_modules 不受影响）
+            mkdir -p logs
+            tar xzf releases/bundle.tgz -C /www/templio
+            rm -f releases/bundle.tgz
+
+            # 仅安装生产依赖
+            npm ci --omit=dev --no-audit --no-fund
+
+            # 数据库迁移（.env 内含 DATABASE_URL）
+            set -a; . /www/templio/.env; set +a
+            npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+
+            # 管理端静态文件
+            rsync -a --delete apps/admin/dist/ /www/wwwroot/templio/admin/
+
+            # 重启并健康检查
+            pm2 reload ecosystem.config.js --update-env
+            pm2 save
+            sleep 3
+            curl -fsS http://127.0.0.1:3000/api/health
+            echo "DEPLOY_OK"
