@@ -40,7 +40,7 @@ function genOrderNo(): string {
   return `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
-@Injectable()
+@Controller('pay')
 @UseGuards(UserJwtAuthGuard)
 export class PayController {
   constructor(
@@ -242,7 +242,7 @@ class SkuDto {
   sort?: number;
 }
 
-@Injectable()
+@Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminPayController {
   constructor(
