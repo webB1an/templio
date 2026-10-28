@@ -1,4 +1,12 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { Layout, Menu, Typography } from 'antd';
 import {
   LayoutDashboard,
@@ -13,16 +21,19 @@ import { Dashboard } from './pages/Dashboard';
 
 const { Sider, Content, Header } = Layout;
 
+// 菜单 key 统一带 /admin 前缀，与路由路径一致
 const menuItems = [
-  { key: '/dashboard', icon: <LayoutDashboard size={16} />, label: '工作台' },
-  { key: '/templates', icon: <FolderOpen size={16} />, label: '资源管理' },
-  { key: '/categories', icon: <Tags size={16} />, label: '分类标签' },
-  { key: '/payments', icon: <CreditCard size={16} />, label: '订单积分' },
-  { key: '/users', icon: <Users size={16} />, label: '用户投诉' },
-  { key: '/settings', icon: <Settings size={16} />, label: '系统配置' },
+  { key: '/admin/dashboard', icon: <LayoutDashboard size={16} />, label: '工作台' },
+  { key: '/admin/templates', icon: <FolderOpen size={16} />, label: '资源管理' },
+  { key: '/admin/categories', icon: <Tags size={16} />, label: '分类标签' },
+  { key: '/admin/payments', icon: <CreditCard size={16} />, label: '订单积分' },
+  { key: '/admin/users', icon: <Users size={16} />, label: '用户投诉' },
+  { key: '/admin/settings', icon: <Settings size={16} />, label: '系统配置' },
 ];
 
 function Shell() {
+  const location = useLocation();
+  const navigate = useNavigate();
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider theme="light" width={200}>
@@ -31,17 +42,19 @@ function Shell() {
             万用模板
           </Typography.Text>
         </div>
-        <Menu mode="inline" defaultSelectedKeys={['/dashboard']} items={menuItems} />
+        <Menu
+          mode="inline"
+          selectedKeys={[location.pathname]}
+          items={menuItems}
+          onClick={({ key }) => navigate(key)}
+        />
       </Sider>
       <Layout>
         <Header style={{ background: '#fff', padding: '0 24px' }}>
           <Typography.Text type="secondary">管理后台（M0 骨架，功能随里程碑落地）</Typography.Text>
         </Header>
         <Content style={{ padding: 24 }}>
-          <Routes>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+          <Outlet />
         </Content>
       </Layout>
     </Layout>
@@ -53,8 +66,11 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/admin/login" element={<Login />} />
-        {/* M1 起接入真实管理员鉴权，当前骨架直接进入 */}
-        <Route path="/admin" element={<Shell />} />
+        {/* 嵌套路由：子路径相对 /admin，避免双层 Routes 互相重定向 */}
+        <Route path="/admin" element={<Shell />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+        </Route>
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </BrowserRouter>
