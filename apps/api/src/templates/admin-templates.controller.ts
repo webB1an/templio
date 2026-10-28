@@ -75,9 +75,9 @@ export class AdminTemplatesController {
       } catch (error) {
         notes.push(`预览图生成失败：${error instanceof Error ? error.message : '未知错误'}`);
       }
-      const share = await this.storage.uploadAndShare(file.path, provider, {
-        title: originalName,
-        remoteDir: 'templio',
+      const share = await this.storage.uploadTemplateFile(file.path, provider, {
+        format: inferFormat(originalName),
+        originalName,
       });
       return {
         filename: originalName,
@@ -88,6 +88,8 @@ export class AdminTemplatesController {
           ? `${share.url}${share.url.includes('?') ? '&' : '?'}pwd=${encodeURIComponent(share.passcode)}`
           : share.url,
         passcode: share.passcode ?? null,
+        remotePath: share.remotePath ?? null,
+        remoteName: share.remoteName,
         cover: rendered?.cover ?? null,
         coverThumb: rendered?.coverThumb ?? null,
         previews: rendered?.previews ?? [],

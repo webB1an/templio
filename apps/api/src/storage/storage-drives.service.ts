@@ -1,8 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { statSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { copyFile, link, unlink } from 'node:fs/promises';
+import { basename, dirname, join } from 'node:path';
 import { lastResult, runCli } from './cli';
+import {
+  buildTemplateRemoteDir,
+  sanitizeRemoteName,
+  uniqueRemoteName,
+} from './netdisk-path';
 import {
   ManagedStorageAccount,
   StorageAccountService,
@@ -154,15 +160,15 @@ export class BaiduStorageService {
     return { url: link, passcode, remotePath };
   }
 
+  /**
+   * 百度落盘路径 = BAIDU_REMOTE_BASE（已含根目录 templio）+ 相对目录 + 文件名。
+   * remoteDir 只能传相对目录（如 "PPT模板/2026-10"），不要再带根目录名，否则会出现 templio/templio。
+   */
   uploadPath(filePath: string, remoteDir?: string) {
     const remoteBase = this.config.get<string>('BAIDU_REMOTE_BASE') || '/apps/bdpan/templio';
-    const base = remoteBase.replace(/\/$/, '');
+    const base = remoteBase.replace(/\/+$/, '');
     return [base, remoteDir, sanitizeRemoteName(basename(filePath))].filter(Boolean).join('/');
   }
-}
-
-function sanitizeRemoteName(name: string): string {
-  return name.replace(/[<>:"/\\|?*]/g, '_').trim();
 }
 
 /**
@@ -223,5 +229,69 @@ export class StorageCoordinatorService {
       remoteFileId: uploaded.fids[0] ?? null,
       remotePath: uploaded.fullPath ?? null,
     };
+  }
+
+  /**
+   * 模板文件专用上传：按「格式/年-月」分层 + 唯一文件名，返回可直接落库的 remotePath。
+   *
+   * 与 uploadAndShare 的区别：
+   * - 目录由 buildTemplateRemoteDir 统一构建，调用方不再手写 'templio'，避免根目录重复；
+   * - 本地临时文件名是 imp-xxx 随机串，这里先改成可读且唯一的远端名再上传，
+   *   既让网盘里文件看得懂，也避免不同模板同名互相覆盖。
+   */
+  async uploadTemplateFile(
+    filePath: string,
+    provider: 'quark' | 'baidu',
+    input: { format: string; originalName: string; accountId?: string; date?: Date },
+  ) {
+    const date = input.date ?? new Date();
+    const dir = buildTemplateRemoteDir(input.format, date);
+    const remoteName = uniqueRemoteName(input.originalName, date);
+
+    const result = await this.withRemoteName(filePath, remoteName, (staged) =>
+      this.uploadAndShare(staged, provider, {
+        accountId: input.accountId,
+        // 分享标题用原始文件名，用户在分享页看到的是干净名字
+        title: input.originalName,
+        remoteDir: dir.baiduRelativeDir,
+      }),
+    );
+
+    const fallbackPath =
+      provider === 'baidu'
+        ? this.baidu.uploadPath(filePath, dir.baiduRelativeDir).replace(
+            /[^/]+$/,
+            remoteName,
+          )
+        : `/${dir.quarkSegments.join('/')}/${remoteName}`;
+
+    return {
+      ...result,
+      remoteName,
+      remotePath: result.remotePath ?? fallbackPath,
+    };
+  }
+
+  /**
+   * 上传前把文件改成目标远端名。同分区用硬链接（零拷贝），跨分区回退复制。
+   * 上传结束后删除这份临时命名，真正的清理仍由调用方负责。
+   */
+  private async withRemoteName<T>(
+    filePath: string,
+    remoteName: string,
+    fn: (stagedPath: string) => Promise<T>,
+  ): Promise<T> {
+    if (basename(filePath) === remoteName) return fn(filePath);
+    const target = join(dirname(filePath), remoteName);
+    try {
+      await link(filePath, target);
+    } catch {
+      await copyFile(filePath, target);
+    }
+    try {
+      return await fn(target);
+    } finally {
+      await unlink(target).catch(() => undefined);
+    }
   }
 }

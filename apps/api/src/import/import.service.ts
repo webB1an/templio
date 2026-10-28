@@ -41,6 +41,7 @@ interface ImportPayload {
     passcode?: string;
     remoteFileId?: string | null;
     remotePath?: string | null;
+    remoteName?: string;
   };
   aiApplied?: boolean;
   submitted?: boolean;
@@ -380,9 +381,9 @@ export class ImportService implements OnModuleInit {
           progress: 55,
           message: `正在上传到${provider === 'baidu' ? '百度' : '夸克'}网盘并生成分享链接`,
         });
-        const share = await this.storage.uploadAndShare(payload.tempPath, provider, {
-          title: payload.originalName,
-          remoteDir: 'templio',
+        const share = await this.storage.uploadTemplateFile(payload.tempPath, provider, {
+          format: inferFormat(payload.originalName),
+          originalName: payload.originalName,
         });
         payload.share = {
           provider: share.provider,
@@ -390,6 +391,7 @@ export class ImportService implements OnModuleInit {
           passcode: share.passcode,
           remoteFileId: share.remoteFileId,
           remotePath: share.remotePath,
+          remoteName: share.remoteName,
         };
         await this.upsertTemplateFile(payload);
       }
@@ -510,6 +512,8 @@ export class ImportService implements OnModuleInit {
         size: BigInt(payload.size ?? 0),
         netdiskType: share.provider === 'baidu' ? 'baidu' : 'quark',
         netdiskFileId: share.remoteFileId ?? null,
+        // 网盘内真实路径（含格式/年月目录与唯一文件名），供回源与清理使用
+        remotePath: share.remotePath ?? null,
         previewUrl: payload.render?.cover ?? null,
         shareUrl,
         checkStatus: 'ok',

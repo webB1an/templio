@@ -117,6 +117,8 @@ model TemplateFile {
   size         BigInt?
   netdiskType  NetdiskType
   netdiskFileId String?      @db.VarChar(128)
+  // 网盘内的完整路径（如 PPT模板/2026-10/年终汇报_k3f9ab.pptx），用于回源下载与孤儿文件清理
+  remotePath   String?      @db.VarChar(512)
   previewUrl   String?       @db.VarChar(512)
   // 敏感字段：分享链接（自带提取码）。仅详情权限接口返回，绝不进列表/搜索/日志明文
   shareUrl     String        @db.VarChar(1024)
