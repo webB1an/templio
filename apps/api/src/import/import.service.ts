@@ -89,6 +89,8 @@ export class ImportService implements OnModuleInit {
   /** 建批次：每个文件一条流水线任务 */
   async createBatch(files: Express.Multer.File[], options: ImportOptions, adminId: number) {
     if (!files?.length) throw new BadRequestException('请至少上传 1 个模板文件');
+    // 先确认网盘可用：没有默认账号时立即失败，避免用户传完几十个文件后才在流水线里全军覆没
+    await this.storage.resolveProvider(options.provider);
     const batch = await this.prisma.uploadBatch.create({
       data: {
         operatorId: adminId,
@@ -360,10 +362,15 @@ export class ImportService implements OnModuleInit {
 
       // ③ 上传网盘 + 生成永久分享链接（失败即整条失败：没有链接的模板无法交付）
       if (!payload.share) {
-        const provider = await this.storage.resolveProvider(options.provider);
         await this.stage(taskId, payload, {
           stage: 'upload',
           progress: 45,
+          message: '正在上传原文件到网盘并生成分享链接',
+        });
+        const provider = await this.storage.resolveProvider(options.provider);
+        await this.stage(taskId, payload, {
+          stage: 'upload',
+          progress: 55,
           message: `正在上传到${provider === 'baidu' ? '百度' : '夸克'}网盘并生成分享链接`,
         });
         const share = await this.storage.uploadAndShare(payload.tempPath, provider, {
