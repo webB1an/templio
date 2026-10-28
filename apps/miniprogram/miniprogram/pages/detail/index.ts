@@ -1,4 +1,4 @@
-import { api, FORMAT_LABELS, resolveUrl, TemplateDetail, TemplateCard } from '../../utils/api';
+import { api, ensureLogin, FORMAT_LABELS, resolveUrl, TemplateDetail, TemplateCard } from '../../utils/api';
 
 interface FileRow {
   id: number;
@@ -40,6 +40,15 @@ Page({
     }
     this.setData({ id });
     void this.load(id);
+    // 分享链路：带 sharerId 进入时上报，给分享者计奖（PRD §3.5）
+    const sharerId = Number(query.sharerId);
+    if (Number.isInteger(sharerId) && sharerId > 0) {
+      void (async () => {
+        if (await ensureLogin()) {
+          await api.shareEvent(id, sharerId).catch(() => undefined);
+        }
+      })();
+    }
   },
 
   async load(id: number) {
@@ -89,12 +98,39 @@ Page({
     const detail = this.data.detail;
     if (!detail) return;
     if (!detail.free) {
-      wx.showModal({
-        title: '需要解锁',
-        content: `该模板需 ${detail.baseCreditPrice} 积分解锁，积分功能即将上线`,
-        showCancel: false,
-      });
-      return;
+      // 付费模板：登录 → 积分解锁 → 重新加载详情
+      const ok = await ensureLogin();
+      if (!ok) {
+        wx.showToast({ title: '请先登录', icon: 'none' });
+        return;
+      }
+      try {
+        const me = await api.me();
+        wx.setStorageSync('templio_user_id', me.id);
+        const res = await api.unlock(this.data.id);
+        if (res.unlocked) {
+          wx.showToast({ title: res.alreadyUnlocked ? '已解锁' : '解锁成功', icon: 'success' });
+          this.setData({ claimed: false, claimedLinks: [] });
+          await this.load(this.data.id);
+          await this.onClaim(); // 解锁后直接取链接
+        }
+        return;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : '解锁失败';
+        if (msg.includes('余额不足')) {
+          wx.showModal({
+            title: '积分不足',
+            content: '去「积分」页充值或签到攒积分',
+            confirmText: '去充值',
+            success: (r) => {
+              if (r.confirm) wx.switchTab({ url: '/pages/credits/index' });
+            },
+          });
+        } else {
+          wx.showToast({ title: msg, icon: 'none' });
+        }
+        return;
+      }
     }
     this.setData({ claimLoading: true });
     try {
@@ -117,9 +153,11 @@ Page({
 
   onShareAppMessage() {
     const d = this.data.detail;
+    const uid = wx.getStorageSync('templio_user_id') as number;
+    const sharer = uid ? `&sharerId=${uid}` : '';
     return {
       title: d ? d.title : '万用模板',
-      path: `/pages/detail/index?id=${this.data.id}`,
+      path: `/pages/detail/index?id=${this.data.id}${sharer}`,
     };
   },
 });

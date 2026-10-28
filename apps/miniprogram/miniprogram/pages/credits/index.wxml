@@ -1,13 +1,50 @@
 <view class="page">
   <view class="hero card">
     <view class="balance-label">我的积分</view>
-    <view class="balance">{{balance}}</view>
-    <view class="hint">积分功能上线后可签到领积分、解锁付费模板</view>
+    <block wx:if="{{loggedIn}}">
+      <view class="balance">{{balance}}</view>
+      <button class="checkin-btn {{checkedInToday ? 'done' : ''}}" loading="{{checkinLoading}}" bindtap="onCheckin">
+        {{checkedInToday ? '今日已签到' : '每日签到领积分'}}
+      </button>
+    </block>
+    <block wx:else>
+      <view class="balance">--</view>
+      <button class="checkin-btn" bindtap="onLoginTap">一键登录</button>
+    </block>
   </view>
-  <view class="card placeholder">
-    <view class="p-title">即将上线</view>
-    <view class="p-item">· 每日签到送积分</view>
-    <view class="p-item">· 分享给好友赚积分</view>
-    <view class="p-item">· 积分解锁付费模板</view>
+
+  <view class="card" wx:if="{{skus.length}}">
+    <view class="card-title">积分充值</view>
+    <view class="sku-list">
+      <view
+        wx:for="{{skus}}"
+        wx:key="skuKey"
+        class="sku {{paying === item.skuKey ? 'paying' : ''}}"
+        data-sku="{{item.skuKey}}"
+        bindtap="onSkuTap"
+      >
+        <view wx:if="{{item.badgeText}}" class="sku-badge">{{item.badgeText}}</view>
+        <view class="sku-total">{{item.total}} 积分</view>
+        <view class="sku-price">{{item.priceText}}</view>
+        <view class="sku-note" wx:if="{{item.bonusCredits}}">含赠送 {{item.bonusCredits}}</view>
+      </view>
+    </view>
   </view>
+
+  <view class="card" wx:if="{{ledger.length}}">
+    <view class="card-title">积分明细</view>
+    <view class="ledger-row" wx:for="{{ledger}}" wx:key="id">
+      <view class="ledger-left">
+        <view class="ledger-type">{{item.typeText}}</view>
+        <view class="ledger-reason" wx:if="{{item.reason}}">{{item.reason}}</view>
+        <view class="ledger-time">{{item.timeText}}</view>
+      </view>
+      <view class="ledger-right">
+        <view class="ledger-amount {{item.amount >= 0 ? 'plus' : 'minus'}}">{{item.amountText}}</view>
+        <view class="ledger-balance">余额 {{item.balanceAfter}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{loggedIn && !ledger.length}}" class="empty">还没有积分记录，签到或充值开始吧</view>
 </view>
