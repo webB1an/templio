@@ -1,9 +1,9 @@
-import { api, resolveUrl, TemplateCard } from '../../utils/api';
+import { api, resolveUrl, TemplateCard, Banner } from '../../utils/api';
 
 Page({
   data: {
     loading: true,
-    banners: [] as { id: number; image: string }[],
+    banners: [] as Banner[],
     hot: [] as TemplateCard[],
     latest: [] as TemplateCard[],
     totalTemplates: 0,
@@ -32,7 +32,7 @@ Page({
         error: '',
         totalTemplates: overview?.totalTemplates ?? 0,
         hotKeywords: (overview?.hotKeywords ?? []).map((k) => k.keyword),
-        banners: bannersRes.items.map((b) => ({ id: b.id, image: resolveUrl(b.image) })),
+        banners: bannersRes.items.map((b) => ({ ...b, image: resolveUrl(b.image) })),
         hot: sections.hot,
         latest: sections.latest,
       });
@@ -57,5 +57,18 @@ Page({
   onHotKeywordTap(e: WechatMiniprogram.TouchEvent) {
     const kw = e.currentTarget.dataset.keyword as string;
     wx.navigateTo({ url: `/pages/search/index?q=${encodeURIComponent(kw)}` });
+  },
+
+  /** Banner 跳转：template → 详情页；page → 站内页面；none → 无操作 */
+  onBannerTap(e: WechatMiniprogram.TouchEvent) {
+    const b = e.currentTarget.dataset.item as Banner;
+    if (!b || b.linkType === 'none' || !b.linkTarget) return;
+    if (b.linkType === 'template') {
+      wx.navigateTo({ url: `/pages/detail/index?id=${b.linkTarget}` });
+    } else if (b.linkType === 'page') {
+      const tabs = ['/pages/home/index', '/pages/category/index', '/pages/credits/index', '/pages/mine/index'];
+      if (tabs.includes(b.linkTarget)) wx.switchTab({ url: b.linkTarget });
+      else wx.navigateTo({ url: b.linkTarget });
+    }
   },
 });

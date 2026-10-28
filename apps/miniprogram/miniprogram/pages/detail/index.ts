@@ -64,7 +64,11 @@ Page({
         previewUrls: slides,
         formatText: FORMAT_LABELS[detail.format] ?? detail.format,
         priceText: detail.baseCreditPrice === 0 ? '免费' : `${detail.baseCreditPrice} 积分`,
-        claimText: detail.free ? '免费获取 · 网盘链接' : `${detail.baseCreditPrice} 积分解锁`,
+        claimText: detail.free
+          ? '免费获取 · 网盘链接'
+          : detail.unlocked
+            ? '已解锁 · 获取网盘链接'
+            : `${detail.baseCreditPrice} 积分解锁`,
         files: detail.files.map((f) => ({
           id: f.id,
           filename: f.filename,
@@ -93,12 +97,12 @@ Page({
     wx.previewImage({ current, urls: this.data.previewUrls });
   },
 
-  /** 免费模板：直接换取网盘分享链接；付费模板：M3 接入积分解锁 */
+  /** 免费模板：直接换取网盘分享链接；付费模板：先积分解锁，再取链接 */
   async onClaim() {
     const detail = this.data.detail;
     if (!detail) return;
-    if (!detail.free) {
-      // 付费模板：登录 → 积分解锁 → 重新加载详情
+    // 付费且未解锁：登录 → 解锁 → 重新加载（load 后 detail.unlocked 为 true，不再递归）
+    if (!detail.free && !detail.unlocked) {
       const ok = await ensureLogin();
       if (!ok) {
         wx.showToast({ title: '请先登录', icon: 'none' });
@@ -112,7 +116,7 @@ Page({
           wx.showToast({ title: res.alreadyUnlocked ? '已解锁' : '解锁成功', icon: 'success' });
           this.setData({ claimed: false, claimedLinks: [] });
           await this.load(this.data.id);
-          await this.onClaim(); // 解锁后直接取链接
+          await this.onClaim(); // 此时已解锁，走下方取链接分支
         }
         return;
       } catch (e) {

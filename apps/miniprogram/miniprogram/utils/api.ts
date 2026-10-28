@@ -67,6 +67,7 @@ export interface TemplateCard {
 export interface TemplateDetail extends TemplateCard {
   free: boolean;
   locked: boolean;
+  unlocked: boolean;
   files: {
     id: number;
     filename: string;

@@ -1,15 +1,43 @@
 <view class="page">
+  <!-- 用户玻璃卡 -->
   <view class="card user">
-    <view class="avatar">访</view>
+    <view class="avatar">{{loggedIn ? (nickname[0] || '我') : '访'}}</view>
     <view class="user-info">
-      <view class="user-name">未登录</view>
-      <view class="user-sub">登录功能随积分支付一起上线</view>
+      <view class="user-name">{{loggedIn ? nickname : '未登录'}}</view>
+      <view class="user-sub">{{loggedIn ? '已累计获得 ' + totalEarned + ' 积分' : '登录后同步积分与解锁记录'}}</view>
+    </view>
+    <button wx:if="{{!loggedIn}}" class="login-btn" bindtap="onLoginTap">一键登录</button>
+  </view>
+
+  <!-- 积分余额入口 -->
+  <view class="card balance-entry" wx:if="{{loggedIn}}" bindtap="goCredits" hover-class="card-hover">
+    <view class="balance-left">
+      <view class="balance-label">积分余额</view>
+      <view class="balance-num">{{balance}}</view>
+    </view>
+    <view class="balance-arrow">去签到 / 充值 ›</view>
+  </view>
+
+  <!-- 菜单 -->
+  <view class="card menu">
+    <button class="menu-item share-entry" open-type="share">
+      <text class="menu-icon">🎁</text>
+      <text class="menu-text">分享给好友，赚取积分</text>
+      <text class="menu-arrow">›</text>
+    </button>
+    <view class="menu-item disabled">
+      <text class="menu-icon">⭐</text>
+      <text class="menu-text">我的收藏（即将上线）</text>
+    </view>
+    <view class="menu-item disabled">
+      <text class="menu-icon">🔓</text>
+      <text class="menu-text">我的解锁记录（即将上线）</text>
+    </view>
+    <view class="menu-item disabled">
+      <text class="menu-icon">💬</text>
+      <text class="menu-text">意见反馈（即将上线）</text>
     </view>
   </view>
-  <view class="card menu">
-    <view class="menu-item">我的收藏（即将上线）</view>
-    <view class="menu-item">我的解锁记录（即将上线）</view>
-    <view class="menu-item">意见反馈（即将上线）</view>
-  </view>
+
   <view class="about">万用模板 Templio · v0.1.0</view>
 </view>

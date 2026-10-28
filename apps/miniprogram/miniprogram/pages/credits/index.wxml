@@ -1,14 +1,17 @@
 <view class="page">
-  <view class="hero card">
+  <!-- 余额玻璃大卡：品牌渐层 + 星光金数字点缀 -->
+  <view class="hero">
     <view class="balance-label">我的积分</view>
     <block wx:if="{{loggedIn}}">
       <view class="balance">{{balance}}</view>
+      <view class="hero-tip">连续签到、分享好友都能赚积分</view>
       <button class="checkin-btn {{checkedInToday ? 'done' : ''}}" loading="{{checkinLoading}}" bindtap="onCheckin">
-        {{checkedInToday ? '今日已签到' : '每日签到领积分'}}
+        {{checkedInToday ? '✓ 今日已签到' : '每日签到领积分'}}
       </button>
     </block>
     <block wx:else>
       <view class="balance">--</view>
+      <view class="hero-tip">登录后可签到、充值与解锁模板</view>
       <button class="checkin-btn" bindtap="onLoginTap">一键登录</button>
     </block>
   </view>
@@ -20,11 +23,12 @@
         wx:for="{{skus}}"
         wx:key="skuKey"
         class="sku {{paying === item.skuKey ? 'paying' : ''}}"
+        hover-class="sku-hover"
         data-sku="{{item.skuKey}}"
         bindtap="onSkuTap"
       >
         <view wx:if="{{item.badgeText}}" class="sku-badge">{{item.badgeText}}</view>
-        <view class="sku-total">{{item.total}} 积分</view>
+        <view class="sku-total">{{item.total}} <text class="sku-unit">积分</text></view>
         <view class="sku-price">{{item.priceText}}</view>
         <view class="sku-note" wx:if="{{item.bonusCredits}}">含赠送 {{item.bonusCredits}}</view>
       </view>

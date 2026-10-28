@@ -1,20 +1,93 @@
+/* ============================================================
+   Templio 全局样式 —— PRD §11 品牌与苹果液态玻璃规范
+   品牌色：主蓝 #245BFF / 深蓝 #1747DE / 亮蓝 #4D8DFF
+          玻璃青 #55D8F2 / 薄荷绿 #35D6B6 / 星光金 #FFD86B
+   底色：#F4F7FF  卡片 rgba(255,255,255,0.72)
+   主文字 #17233F  次文字 #697995  边线 rgba(255,255,255,0.68)
+   ============================================================ */
+
 page {
   background: #f4f7ff;
   color: #17233f;
   font-size: 28rpx;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* ── 液态玻璃卡片（含不支持 blur 的半透明降级） ── */
+.glass-card,
 .card {
   background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(40rpx);
+  -webkit-backdrop-filter: blur(40rpx);
+  border: 1rpx solid rgba(255, 255, 255, 0.68);
   border-radius: 24rpx;
-  padding: 24rpx;
+  box-shadow:
+    0 8rpx 32rpx rgba(36, 91, 255, 0.08),
+    inset 0 2rpx 0 rgba(255, 255, 255, 0.8);
+  padding: 28rpx;
   margin: 24rpx;
 }
 
+/* ── 胶囊按钮：主 CTA 品牌渐变 ── */
+.btn-primary {
+  background: linear-gradient(135deg, #4d8dff 0%, #245bff 55%, #1747de 100%);
+  color: #fff;
+  border-radius: 999rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 24rpx rgba(36, 91, 255, 0.35);
+  border: none;
+}
+
+.btn-primary::after {
+  border: none;
+}
+
+.btn-primary:active {
+  background: linear-gradient(135deg, #245bff 0%, #1747de 100%);
+  box-shadow: 0 4rpx 12rpx rgba(36, 91, 255, 0.28);
+}
+
+/* ── 星光金按钮（积分/权益相关 CTA） ── */
+.btn-gold {
+  background: linear-gradient(135deg, #ffd86b 0%, #ffb93d 100%);
+  color: #6b4a00;
+  border-radius: 999rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 24rpx rgba(255, 185, 61, 0.4);
+  border: none;
+}
+
+.btn-gold::after {
+  border: none;
+}
+
+/* ── 薄荷绿（成功/免费状态） ── */
+.tag-mint {
+  color: #0a8a6d;
+  background: rgba(53, 214, 182, 0.16);
+  border: 1rpx solid rgba(53, 214, 182, 0.4);
+}
+
+/* ── 文字工具 ── */
 .primary {
   color: #245bff;
 }
 
 .secondary {
   color: #697995;
+}
+
+/* ── 通用状态区 ── */
+.loading,
+.empty,
+.error {
+  text-align: center;
+  color: #697995;
+  font-size: 26rpx;
+  padding: 60rpx 0;
+}
+
+.error {
+  color: #d0433a;
 }

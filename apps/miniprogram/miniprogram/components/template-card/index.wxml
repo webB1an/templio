@@ -1,10 +1,15 @@
-<view class="card" bindtap="onTap">
-  <image class="cover" src="{{coverUrl}}" mode="aspectFill" lazy-load="{{true}}" />
+<view class="tpl-card" hover-class="tpl-card-hover" bindtap="onTap">
+  <view class="cover-wrap">
+    <image class="cover" src="{{coverUrl}}" mode="aspectFill" lazy-load="{{true}}" />
+    <view class="price-chip {{item.baseCreditPrice === 0 ? 'free' : ''}}">
+      {{item.baseCreditPrice === 0 ? '免费' : '✦ ' + item.baseCreditPrice + ' 积分'}}
+    </view>
+  </view>
   <view class="info">
     <view class="title">{{item.title}}</view>
     <view class="meta">
       <text class="format">{{formatText}}</text>
-      <text class="price {{item.baseCreditPrice === 0 ? 'free' : ''}}">{{priceText}}</text>
+      <text class="hot" wx:if="{{item.heatScore > 0}}">🔥 {{item.heatScore}}</text>
     </view>
   </view>
 </view>

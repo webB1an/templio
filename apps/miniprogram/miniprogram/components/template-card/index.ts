@@ -15,13 +15,11 @@ Component({
       this.setData({
         coverUrl: resolveUrl(v.cover),
         formatText: FORMAT_LABELS[v.format] ?? v.format,
-        priceText: v.baseCreditPrice === 0 ? '免费' : `${v.baseCreditPrice} 积分`,
       });
     },
   },
   data: {
     coverUrl: '',
     formatText: '',
-    priceText: '',
   },
 });
