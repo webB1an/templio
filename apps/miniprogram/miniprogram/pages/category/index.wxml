@@ -1,0 +1,7 @@
+<view>
+  <view class="card">
+    <view style="font-weight: 600; margin-bottom: 12rpx;">分类</view>
+    <view class="secondary">多维分类：{{dimensions}}</view>
+  </view>
+  <view class="card secondary">分类树与筛选随 M1 落地</view>
+</view>

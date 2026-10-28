@@ -1,0 +1,7 @@
+<view>
+  <view class="card">
+    <view style="font-size: 40rpx; font-weight: 600;">{{title}}</view>
+    <view class="secondary">{{slogan}}</view>
+  </view>
+  <view class="card secondary">首页模块（Banner/分类入口/内容区）随 M1 落地</view>
+</view>

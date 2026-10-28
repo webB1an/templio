@@ -1,0 +1,18 @@
+{
+  "description": "Templio 小程序项目配置（微信原生 + TypeScript）",
+  "miniprogramRoot": "miniprogram/",
+  "compileType": "miniprogram",
+  "appid": "wx5f21980e48e92ae6",
+  "projectname": "templio",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "typescript": true,
+    "urlCheck": true,
+    "packNpmManually": false
+  },
+  "libVersion": "latest",
+  "condition": {}
+}

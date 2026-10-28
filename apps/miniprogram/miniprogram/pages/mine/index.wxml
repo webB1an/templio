@@ -1,0 +1,10 @@
+<view>
+  <view class="card">
+    <view style="font-weight: 600;">我的</view>
+    <view class="secondary">登录、收藏、浏览记录、已解锁随 M1/M3 落地</view>
+  </view>
+  <view class="card">
+    <view>意见反馈</view>
+    <view>用户协议 · 隐私政策 · 版权投诉</view>
+  </view>
+</view>

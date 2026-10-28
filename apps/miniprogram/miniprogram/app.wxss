@@ -1,0 +1,20 @@
+page {
+  background: #f4f7ff;
+  color: #17233f;
+  font-size: 28rpx;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 24rpx;
+  padding: 24rpx;
+  margin: 24rpx;
+}
+
+.primary {
+  color: #245bff;
+}
+
+.secondary {
+  color: #697995;
+}

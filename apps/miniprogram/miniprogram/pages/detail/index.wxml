@@ -1,0 +1,7 @@
+<view>
+  <view class="card">
+    <view style="font-weight: 600;">{{title}}</view>
+    <view class="secondary">预览截图区随 M1 落地（封面 + 1–5 张截图）</view>
+  </view>
+  <view class="card secondary">获取方式（免费/积分解锁）与版权说明随 M1/M3 落地</view>
+</view>
