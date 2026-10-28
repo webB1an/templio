@@ -263,7 +263,12 @@ export class AdminPayController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly credits: CreditsService,
+    private readonly config: ConfigService,
   ) {}
+
+  private get isMockPay() {
+    return this.config.get('MOCK_PAY') === 'true';
+  }
 
   @Get('pay/orders')
   async listOrders(@Query('status') status?: string, @Query('page') page?: string) {
