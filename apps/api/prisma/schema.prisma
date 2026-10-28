@@ -1,0 +1,568 @@
+// Templio 数据模型 v0.1（M0 初版，对应 PRD §9）
+// 约定：
+// - 金额/积分一律 Int（分 / 积分点数）
+// - 时间统一 UTC（Prisma 默认）；"自然日"用 @db.Date 存 Asia/Shanghai 计算出的日期
+// - 幂等键：充值=平台交易号；签到=(userId,date)；解锁=(userId,templateId)；分享奖励=(sharerId,templateId)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────── 用户 ───────────────────────────
+
+enum UserStatus {
+  active
+  banned
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  openid    String     @unique @db.VarChar(64)
+  unionid   String?    @db.VarChar(64)
+  nickname  String?    @db.VarChar(64)
+  avatarUrl String?    @db.VarChar(512)
+  status    UserStatus @default(active)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  creditAccount CreditAccount?
+  favorites     Favorite[]
+  viewHistories ViewHistory[]
+  creditLedgers CreditLedger[]
+  checkins      CheckinRecord[]
+  shareRewardsGiven ShareReward[] @relation("ShareRewardSharer")
+  shareRewardsReceived ShareReward[] @relation("ShareRewardReceiver")
+  paymentOrders PaymentOrder[]
+  unlocks       TemplateUnlock[]
+  feedbacks     Feedback[]
+
+  @@index([createdAt])
+}
+
+// ─────────────────────────── 模板与分类 ───────────────────────────
+
+enum TemplateStatus {
+  draft
+  pending_review
+  rejected
+  published
+  offline
+  banned
+}
+
+enum TemplateFormat {
+  ppt
+  word
+  excel
+  pdf
+  image
+  archive
+  other
+}
+
+enum CategoryDimension {
+  format
+  scene
+  audience
+  theme
+}
+
+model Template {
+  id                Int            @id @default(autoincrement())
+  title             String         @db.VarChar(128)
+  summary           String?        @db.VarChar(512)
+  cover             String?        @db.VarChar(512)
+  format            TemplateFormat @default(other)
+  status            TemplateStatus @default(draft)
+  copyrightSource   String?        @db.VarChar(256)
+  authorizationNote String?        @db.VarChar(512)
+  baseCreditPrice   Int            @default(0)
+  viewCount         Int            @default(0)
+  favoriteCount     Int            @default(0)
+  shareOpenCount    Int            @default(0)
+  heatScore         Float          @default(0)
+  rejectReason      String?        @db.VarChar(256)
+  publishedAt       DateTime?
+  meta              Json?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  files     TemplateFile[]
+  categories TemplateCategory[]
+  tags      TemplateTag[]
+  favorites Favorite[]
+  viewHistories ViewHistory[]
+  unlocks   TemplateUnlock[]
+  complaints Complaint[]
+  reviewRecords ReviewRecord[]
+  processingTasks ProcessingTask[]
+  shareRewards ShareReward[]
+
+  @@index([status, publishedAt])
+  @@index([status, heatScore])
+  @@index([format])
+  @@index([createdAt])
+}
+
+model TemplateFile {
+  id           Int           @id @default(autoincrement())
+  templateId   Int
+  filename     String        @db.VarChar(256)
+  format       TemplateFormat @default(other)
+  size         BigInt?
+  netdiskType  NetdiskType
+  netdiskFileId String?      @db.VarChar(128)
+  previewUrl   String?       @db.VarChar(512)
+  // 敏感字段：分享链接（自带提取码）。仅详情权限接口返回，绝不进列表/搜索/日志明文
+  shareUrl     String        @db.VarChar(1024)
+  createdAt    DateTime      @default(now())
+
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+enum NetdiskType {
+  quark
+  baidu
+}
+
+model Category {
+  id        Int               @id @default(autoincrement())
+  dimension CategoryDimension
+  parentId  Int?
+  name      String            @db.VarChar(64)
+  slug      String            @db.VarChar(64)
+  sort      Int               @default(0)
+  enabled   Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  templates TemplateCategory[]
+
+  @@unique([dimension, slug])
+  @@index([parentId])
+}
+
+model Tag {
+  id        Int           @id @default(autoincrement())
+  name      String        @unique @db.VarChar(64)
+  createdAt DateTime      @default(now())
+
+  templates TemplateTag[]
+}
+
+model TemplateCategory {
+  templateId Int
+  categoryId Int
+
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([templateId, categoryId])
+  @@index([categoryId])
+}
+
+model TemplateTag {
+  templateId Int
+  tagId      Int
+
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([templateId, tagId])
+  @@index([tagId])
+}
+
+// ─────────────────────────── 用户行为 ───────────────────────────
+
+model Favorite {
+  userId     Int
+  templateId Int
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@id([userId, templateId])
+  @@index([templateId])
+}
+
+model ViewHistory {
+  userId        Int
+  templateId    Int
+  lastViewedAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@id([userId, templateId])
+  @@index([userId, lastViewedAt])
+}
+
+// ─────────────────────────── 积分 ───────────────────────────
+
+model CreditAccount {
+  userId    Int      @id
+  balance   Int      @default(0)
+  version   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum CreditLedgerType {
+  recharge
+  gift
+  checkin
+  share_reward
+  unlock_deduct
+  admin_adjust
+  refund_deduct
+}
+
+model CreditLedger {
+  id           Int             @id @default(autoincrement())
+  userId       Int
+  type         CreditLedgerType
+  amount       Int
+  balanceAfter Int
+  idempotentKey String         @unique @db.VarChar(128)
+  reason       String?         @db.VarChar(256)
+  createdAt    DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+}
+
+model CheckinRecord {
+  userId     Int
+  date       DateTime @db.Date
+  reward     Int      @default(0)
+  streakDays Int      @default(1)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, date])
+  @@index([date])
+}
+
+model ShareReward {
+  id         Int      @id @default(autoincrement())
+  sharerId   Int
+  receiverId Int
+  templateId Int
+  reward     Int      @default(0)
+  ledgerKey  String?  @db.VarChar(128)
+  createdAt  DateTime @default(now())
+
+  sharer   User     @relation("ShareRewardSharer", fields: [sharerId], references: [id], onDelete: Cascade)
+  receiver User     @relation("ShareRewardReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  // 同一分享者对同一模板仅首次有效打开计奖（PRD §3.5）
+  @@unique([sharerId, templateId])
+  @@index([receiverId])
+  @@index([templateId])
+}
+
+// ─────────────────────────── 支付 ───────────────────────────
+
+model PaymentSku {
+  id           Int     @id @default(autoincrement())
+  skuKey       String  @unique @db.VarChar(64)
+  name         String  @db.VarChar(64)
+  description  String? @db.VarChar(256)
+  wxProductId  String  @db.VarChar(128)
+  wxPriceFen   Int
+  credits      Int
+  bonusCredits Int     @default(0)
+  badgeText    String? @db.VarChar(32)
+  activityNote String? @db.VarChar(128)
+  enabled      Boolean @default(false)
+  // "已在微信后台创建并发布，ID/价格已核对"勾选（PRD §3.6）
+  verified     Boolean @default(false)
+  sort         Int     @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders PaymentOrder[]
+}
+
+enum PaymentOrderStatus {
+  created
+  paid
+  closed
+  refunded
+}
+
+model PaymentOrder {
+  id            Int               @id @default(autoincrement())
+  orderNo       String            @unique @db.VarChar(64)
+  userId        Int
+  openid        String            @db.VarChar(64)
+  skuKey        String            @db.VarChar(64)
+  skuSnapshot   Json
+  amountFen     Int
+  creditsSnapshot Int
+  status        PaymentOrderStatus @default(created)
+  platformTxnId String?           @unique @db.VarChar(128)
+  notifyPayload Json?
+  notifiedAt    DateTime?
+  paidAt        DateTime?
+  closedAt      DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sku  PaymentSku @relation(fields: [skuKey], references: [skuKey])
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model TemplateUnlock {
+  userId          Int
+  templateId      Int
+  creditsSnapshot Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@id([userId, templateId])
+  @@index([templateId])
+}
+
+// ─────────────────────────── 反馈 / 公告 / 搜索 ───────────────────────────
+
+enum FeedbackStatus {
+  pending
+  resolved
+}
+
+model Feedback {
+  id        Int            @id @default(autoincrement())
+  userId    Int?
+  type      String         @db.VarChar(32)
+  content   String         @db.VarChar(1024)
+  contact   String?        @db.VarChar(128)
+  images    Json?
+  status    FeedbackStatus @default(pending)
+  reply     String?        @db.VarChar(1024)
+  handledBy Int?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
+enum AnnouncementPosition {
+  home
+  mine
+}
+
+model Announcement {
+  id        Int                 @id @default(autoincrement())
+  title     String              @db.VarChar(128)
+  content   String              @db.Text
+  position  AnnouncementPosition @default(home)
+  startAt   DateTime?
+  endAt     DateTime?
+  enabled   Boolean             @default(true)
+  sort      Int                 @default(0)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@index([enabled, position, sort])
+}
+
+model SearchKeywordStat {
+  id        Int      @id @default(autoincrement())
+  keyword   String   @unique @db.VarChar(64)
+  count7d   Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────── 上传与任务 ───────────────────────────
+
+enum UploadBatchSource {
+  local
+  netdisk
+  link
+}
+
+model UploadBatch {
+  id             Int               @id @default(autoincrement())
+  operatorId     Int?
+  source         UploadBatchSource @default(local)
+  status         String            @default("processing") @db.VarChar(32)
+  remark         String?           @db.VarChar(256)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  tasks ProcessingTask[]
+
+  @@index([status, createdAt])
+}
+
+enum ProcessingTaskType {
+  ai_classify
+  thumbnail
+  link_check
+  heat_score
+}
+
+enum ProcessingTaskStatus {
+  queued
+  running
+  succeeded
+  failed
+  retry_waiting
+}
+
+model ProcessingTask {
+  id           Int                  @id @default(autoincrement())
+  type         ProcessingTaskType
+  status       ProcessingTaskStatus @default(queued)
+  batchId      Int?
+  templateId   Int?
+  attempts     Int                  @default(0)
+  maxAttempts  Int                  @default(5)
+  idempotentKey String              @unique @db.VarChar(128)
+  payload      Json?
+  error        String?              @db.VarChar(1024)
+  nextRunAt    DateTime?
+  finishedAt   DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  batch    UploadBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  template Template?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@index([status, nextRunAt])
+  @@index([type, status])
+}
+
+model ReviewRecord {
+  id         Int      @id @default(autoincrement())
+  templateId Int
+  adminId    Int
+  action     String   @db.VarChar(32)
+  note       String?  @db.VarChar(512)
+  createdAt  DateTime @default(now())
+
+  template Template  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  admin    AdminUser @relation(fields: [adminId], references: [id])
+
+  @@index([templateId, createdAt])
+}
+
+// ─────────────────────────── 投诉 ───────────────────────────
+
+enum ComplaintType {
+  copyright
+  violation
+  other
+}
+
+enum ComplaintStatus {
+  pending
+  processing
+  resolved
+  rejected
+}
+
+model Complaint {
+  id           Int             @id @default(autoincrement())
+  templateId   Int
+  type         ComplaintType
+  reporterName String?         @db.VarChar(64)
+  contact      String?         @db.VarChar(128)
+  content      String          @db.VarChar(2048)
+  evidence     Json?
+  status       ComplaintStatus @default(pending)
+  handledBy    Int?
+  resolution   String?         @db.VarChar(1024)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([templateId])
+}
+
+// ─────────────────────────── 管理端 ───────────────────────────
+
+enum AdminRole {
+  super
+  operator
+}
+
+model AdminUser {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique @db.VarChar(64)
+  passwordHash String    @db.VarChar(128)
+  role         AdminRole @default(operator)
+  enabled      Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  reviewRecords ReviewRecord[]
+}
+
+model AdminAuditLog {
+  id         Int      @id @default(autoincrement())
+  adminId    Int
+  action     String   @db.VarChar(64)
+  targetType String   @db.VarChar(32)
+  targetId   String?  @db.VarChar(64)
+  // 摘要内容须对网盘链接等敏感字段脱敏（PRD §13）
+  summary    String?  @db.VarChar(1024)
+  createdAt  DateTime @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([targetType, targetId])
+}
+
+model SystemConfig {
+  key       String   @id @db.VarChar(64)
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+enum BannerLinkType {
+  none
+  template
+  category
+  url
+}
+
+model Banner {
+  id         Int            @id @default(autoincrement())
+  image      String         @db.VarChar(512)
+  linkType   BannerLinkType @default(none)
+  linkTarget String?        @db.VarChar(128)
+  sort       Int            @default(0)
+  startAt    DateTime?
+  endAt      DateTime?
+  enabled    Boolean        @default(true)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([enabled, sort])
+}
