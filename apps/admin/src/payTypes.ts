@@ -36,6 +36,11 @@ export interface PayConfig {
   checkin_reward: number;
   share_reward: number;
   share_reward_daily_cap: number;
+  /** 功能开关：1 开 / 0 关 */
+  checkin_enabled: number;
+  share_reward_enabled: number;
+  /** 只读：当前是否 mock 支付模式 */
+  mockPay?: boolean;
 }
 
 export const ORDER_STATUS_COLORS: Record<string, string> = {

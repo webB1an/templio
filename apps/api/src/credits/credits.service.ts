@@ -32,6 +32,15 @@ export class CreditsService {
     return Number.isFinite(v) && v >= 0 ? Math.floor(v) : DEFAULTS[key];
   }
 
+  /**
+   * 功能开关（SystemConfig，value 0 = 关，缺省/其他 = 开）。
+   * key: checkin_enabled / share_reward_enabled
+   */
+  async getFlag(key: string): Promise<boolean> {
+    const row = await this.prisma.systemConfig.findUnique({ where: { key } });
+    return Number(row?.value) !== 0;
+  }
+
   /** 读余额；账户不存在视为 0（不自动建，读端宽容） */
   async getBalance(userId: number) {
     const [account, todayCheckin, totalEarned] = await Promise.all([
@@ -75,6 +84,9 @@ export class CreditsService {
    * 连续天数按"昨天是否签到"递增；奖励写 ledger（幂等键 checkin:{userId}:{date}）。
    */
   async checkin(userId: number) {
+    if (!(await this.getFlag('checkin_enabled'))) {
+      throw new ForbiddenException('签到活动暂未开放');
+    }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const exists = await this.todayCheckin(userId);
@@ -115,6 +127,9 @@ export class CreditsService {
    * 防刷（PRD §3.5）：同一 sharer+template 仅首次计奖；sharer 每日奖励有上限。
    */
   async shareEvent(receiverId: number, templateId: number, sharerId: number) {
+    if (!(await this.getFlag('share_reward_enabled'))) {
+      throw new ForbiddenException('分享奖励活动已结束');
+    }
     if (sharerId === receiverId) {
       throw new BadRequestException('不能给自己发分享奖励');
     }

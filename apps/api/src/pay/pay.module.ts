@@ -184,6 +184,19 @@ class ConfigDto {
   @Type(() => Number)
   @Min(0)
   share_reward_daily_cap?: number;
+
+  /** 功能开关：1 开 / 0 关 */
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  @Min(0)
+  checkin_enabled?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  @Min(0)
+  share_reward_enabled?: number;
 }
 
 class SkuDto {
@@ -308,18 +321,27 @@ export class AdminPayController {
     });
   }
 
-  /** 规则配置读取 */
+  /** 规则配置读取（含功能开关） */
   @Get('config')
   async getConfig() {
-    const rows = await this.prisma.systemConfig.findMany({
-      where: { key: { in: ['checkin_reward', 'share_reward', 'share_reward_daily_cap'] } },
-    });
+    const keys = [
+      'checkin_reward',
+      'share_reward',
+      'share_reward_daily_cap',
+      'checkin_enabled',
+      'share_reward_enabled',
+    ];
+    const rows = await this.prisma.systemConfig.findMany({ where: { key: { in: keys } } });
     const map: Record<string, number> = {};
     for (const r of rows) map[r.key] = Number(r.value);
     return {
       checkin_reward: map.checkin_reward ?? 10,
       share_reward: map.share_reward ?? 5,
       share_reward_daily_cap: map.share_reward_daily_cap ?? 50,
+      checkin_enabled: map.checkin_enabled === 0 ? 0 : 1,
+      share_reward_enabled: map.share_reward_enabled === 0 ? 0 : 1,
+      /** 只读展示：当前是否为 mock 支付模式（上线前必须关闭） */
+      mockPay: this.isMockPay,
     };
   }
 

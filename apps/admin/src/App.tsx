@@ -8,6 +8,7 @@ import {
   Users,
   Settings,
   LogOut,
+  HardDrive,
 } from 'lucide-react';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -15,6 +16,9 @@ import { Templates } from './pages/Templates';
 import { TemplateEdit } from './pages/TemplateEdit';
 import { Categories } from './pages/Categories';
 import { Payments } from './pages/Payments';
+import { Settings as SettingsPage } from './pages/Settings';
+import { Netdisk } from './pages/Netdisk';
+import { Complaints } from './pages/Complaints';
 import { clearSession, getProfile } from './api';
 
 const { Sider, Content, Header } = Layout;
@@ -24,6 +28,7 @@ const menuItems = [
   { key: '/admin/dashboard', icon: <LayoutDashboard size={16} />, label: '工作台' },
   { key: '/admin/templates', icon: <FolderOpen size={16} />, label: '资源管理' },
   { key: '/admin/categories', icon: <Tags size={16} />, label: '分类标签' },
+  { key: '/admin/netdisk', icon: <HardDrive size={16} />, label: '网盘管理' },
   { key: '/admin/payments', icon: <CreditCard size={16} />, label: '订单积分' },
   { key: '/admin/users', icon: <Users size={16} />, label: '用户投诉' },
   { key: '/admin/settings', icon: <Settings size={16} />, label: '系统配置' },
@@ -116,7 +121,10 @@ export default function App() {
           <Route path="templates/new" element={<TemplateEdit />} />
           <Route path="templates/:id" element={<TemplateEdit />} />
           <Route path="categories" element={<Categories />} />
+          <Route path="netdisk" element={<Netdisk />} />
           <Route path="payments" element={<Payments />} />
+          <Route path="users" element={<Complaints />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/admin" replace />} />

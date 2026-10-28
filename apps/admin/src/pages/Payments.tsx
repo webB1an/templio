@@ -19,7 +19,6 @@ import { api } from '../api';
 import {
   ORDER_STATUS_COLORS,
   ORDER_STATUS_LABELS,
-  PayConfig,
   PaymentOrderItem,
   PaymentSkuItem,
 } from '../payTypes';
@@ -284,70 +283,6 @@ function SkusTab() {
   );
 }
 
-function ConfigTab() {
-  const [config, setConfig] = useState<PayConfig | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        setConfig(await api.get<PayConfig>('/admin/config'));
-      } catch (e) {
-        message.error(e instanceof Error ? e.message : '加载失败');
-      }
-    })();
-  }, []);
-
-  async function save() {
-    if (!config) return;
-    setSaving(true);
-    try {
-      const res = await api.patch<PayConfig>('/admin/config', config);
-      setConfig(res);
-      message.success('已保存');
-    } catch (e) {
-      message.error(e instanceof Error ? e.message : '保存失败');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (!config) return <Card loading />;
-  return (
-    <Card title="积分规则" style={{ maxWidth: 480 }}>
-      <Form layout="vertical">
-        <Form.Item label="每日签到奖励（积分）" extra="签到并入积分页（PRD §3.4）">
-          <InputNumber
-            min={0}
-            value={config.checkin_reward}
-            onChange={(v) => setConfig({ ...config, checkin_reward: v ?? 0 })}
-            style={{ width: '100%' }}
-          />
-        </Form.Item>
-        <Form.Item label="单次分享奖励（积分）">
-          <InputNumber
-            min={0}
-            value={config.share_reward}
-            onChange={(v) => setConfig({ ...config, share_reward: v ?? 0 })}
-            style={{ width: '100%' }}
-          />
-        </Form.Item>
-        <Form.Item label="分享者单日奖励上限（积分）" extra="防刷：超过后当日不再计奖（PRD §3.5）">
-          <InputNumber
-            min={0}
-            value={config.share_reward_daily_cap}
-            onChange={(v) => setConfig({ ...config, share_reward_daily_cap: v ?? 0 })}
-            style={{ width: '100%' }}
-          />
-        </Form.Item>
-        <Button type="primary" loading={saving} onClick={save}>
-          保存
-        </Button>
-      </Form>
-    </Card>
-  );
-}
-
 function AdjustTab() {
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
@@ -393,7 +328,6 @@ export function Payments() {
       items={[
         { key: 'orders', label: '充值订单', children: <OrdersTab /> },
         { key: 'skus', label: '充值项管理', children: <SkusTab /> },
-        { key: 'config', label: '积分规则', children: <ConfigTab /> },
         { key: 'adjust', label: '人工调账', children: <AdjustTab /> },
       ]}
     />
