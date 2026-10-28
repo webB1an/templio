@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { NetdiskType } from '@prisma/client';
+import { IsBoolean, IsEnum, IsOptional, IsString, Length } from 'class-validator';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -21,8 +22,15 @@ import { StorageCoordinatorService } from './storage-drives.service';
 import { StorageAccountService } from './storage-account.service';
 
 class CreateAccountDto {
+  @IsEnum(NetdiskType)
   provider!: NetdiskType;
+
+  @IsString()
+  @Length(1, 64)
   label!: string;
+
+  @IsOptional()
+  @IsBoolean()
   isDefault?: boolean;
 }
 

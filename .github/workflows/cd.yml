@@ -75,10 +75,11 @@ jobs:
               echo "deps changed, running npm ci..."
               npm ci --omit=dev --no-audit --no-fund
               echo "$LOCK_HASH" > .deps_hash
-              npx prisma generate --schema apps/api/prisma/schema.prisma
             else
               echo "deps unchanged, skip npm ci"
             fi
+            # Prisma Client 必须无条件生成（schema 变更不伴随依赖变更时也要生效）
+            npx prisma generate --schema apps/api/prisma/schema.prisma
 
             # 数据库迁移（.env 内含 DATABASE_URL）
             set -a; . /www/templio/.env; set +a
