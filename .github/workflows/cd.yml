@@ -69,11 +69,16 @@ jobs:
             tar xzf releases/bundle.tgz -C /www/templio
             rm -f releases/bundle.tgz
 
-            # 仅安装生产依赖
-            npm ci --omit=dev --no-audit --no-fund
-
-            # 生成 Prisma Client（npm ci 不会自动执行）
-            npx prisma generate --schema apps/api/prisma/schema.prisma
+            # 仅在依赖变化时重装（npm ci 是内存大户，1.6G 服务器不能每次都跑）
+            LOCK_HASH=$(sha256sum package-lock.json | cut -d" " -f1)
+            if [ "$LOCK_HASH" != "$(cat .deps_hash 2>/dev/null)" ] || [ ! -d node_modules ]; then
+              echo "deps changed, running npm ci..."
+              npm ci --omit=dev --no-audit --no-fund
+              echo "$LOCK_HASH" > .deps_hash
+              npx prisma generate --schema apps/api/prisma/schema.prisma
+            else
+              echo "deps unchanged, skip npm ci"
+            fi
 
             # 数据库迁移（.env 内含 DATABASE_URL）
             set -a; . /www/templio/.env; set +a
