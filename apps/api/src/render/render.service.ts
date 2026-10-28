@@ -94,9 +94,11 @@ export class RenderService {
   /** PDF：前 N 页转图 */
   private async fromPdf(pdfPath: string, workDir: string, maxPages: number): Promise<RenderResult | null> {
     const outPrefix = path.join(workDir, 'page');
+    // 注意参数顺序：pdftoppm [options] <PDF-file> [PREFIX]，文件必须在前、前缀在后，
+    // 写反会把输出前缀当成输入文件（报 Couldn't open file）。
     const result = await runCli(
       this.pdftoppmPath,
-      ['-png', '-r', '110', '-f', '1', '-l', String(maxPages), outPrefix, pdfPath],
+      ['-png', '-r', '110', '-f', '1', '-l', String(maxPages), pdfPath, outPrefix],
       { timeoutMs: 180_000 },
     );
     const pages = (await fs.readdir(workDir))
