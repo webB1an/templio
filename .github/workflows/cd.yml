@@ -72,12 +72,17 @@ jobs:
             # 仅安装生产依赖
             npm ci --omit=dev --no-audit --no-fund
 
+            # 生成 Prisma Client（npm ci 不会自动执行）
+            npx prisma generate --schema apps/api/prisma/schema.prisma
+
             # 数据库迁移（.env 内含 DATABASE_URL）
             set -a; . /www/templio/.env; set +a
             npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
 
             # 管理端静态文件
-            rsync -a --delete apps/admin/dist/ /www/wwwroot/templio/admin/
+            rm -rf /www/wwwroot/templio/admin
+            mkdir -p /www/wwwroot/templio/admin
+            cp -r apps/admin/dist/. /www/wwwroot/templio/admin/
 
             # 重启并健康检查
             pm2 reload ecosystem.config.js --update-env
