@@ -570,3 +570,27 @@ model Banner {
 
   @@index([enabled, sort])
 }
+
+/**
+ * 网盘账号（管理端维护，参照 wallpaper-manager 的多账号方案）：
+ * 每个账号独立 profile 目录隔离授权态；授权凭证只落服务器文件，不进数据库。
+ */
+model StorageAccount {
+  id               String      @id @default(cuid()) @db.VarChar(32)
+  provider         NetdiskType
+  label            String      @db.VarChar(64)
+  /** 授权态目录（夸克 = HOME 沙箱；百度 = cookies.txt 所在目录） */
+  profileDir       String      @db.VarChar(512)
+  /** 百度 cookies 文件路径；夸克为 null */
+  configPath       String?     @db.VarChar(512)
+  accountName      String?     @db.VarChar(128)
+  isDefault        Boolean     @default(false)
+  isActive         Boolean     @default(true)
+  lastProbeOk      Boolean?
+  lastProbeMessage String?     @db.Text
+  lastProbeAt      DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([provider, isDefault])
+}

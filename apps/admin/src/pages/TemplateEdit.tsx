@@ -13,7 +13,7 @@ import {
   Upload,
   message,
 } from 'antd';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Upload as UploadIcon } from 'lucide-react';
 import type { UploadFile, UploadProps } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
@@ -200,6 +200,41 @@ export function TemplateEdit() {
   }
 
   const [aiLoading, setAiLoading] = useState(false);
+  const [uploadingRow, setUploadingRow] = useState<number | null>(null);
+
+  /** 上传模板原文件到网盘并生成分享链接，回填到该行 */
+  async function uploadToNetdisk(rowKey: number, file: File) {
+    const row = files.find((f) => f.key === rowKey);
+    if (!row) return;
+    const provider = row.netdiskType;
+    if (provider === 'baidu') {
+      message.warning('百度账号需先粘贴 Cookie；夸克上传免提取码体验更好，建议优先使用');
+    }
+    setUploadingRow(rowKey);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('provider', provider);
+      fd.append('title', file.name);
+      const res = await api.upload<{ url: string; passcode?: string | null }>(
+        '/admin/storage-accounts/upload-share',
+        fd,
+      );
+      const full = `${res.url}${res.passcode ? `?pwd=${res.passcode}` : ''}`;
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.key === rowKey
+            ? { ...f, filename: f.filename || file.name, shareUrl: full }
+            : f,
+        ),
+      );
+      message.success('已上传到网盘并生成分享链接');
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : '上传分享失败');
+    } finally {
+      setUploadingRow(null);
+    }
+  }
 
   async function onAiEnrich() {
     setAiLoading(true);
@@ -339,7 +374,7 @@ export function TemplateEdit() {
         <Divider orientation="left">网盘文件（夸克 / 百度分享链接）</Divider>
         {files.map((f, i) => (
           <Row key={f.key} gutter={8} align="middle" style={{ marginBottom: 8 }}>
-            <Col span={7}>
+            <Col span={6}>
               <Input
                 placeholder="文件名，如 简历模板A.pptx"
                 value={f.filename}
@@ -375,6 +410,22 @@ export function TemplateEdit() {
                   setFiles(next);
                 }}
               />
+            </Col>
+            <Col span={1}>
+              <Upload
+                showUploadList={false}
+                customRequest={(opts) => {
+                  void uploadToNetdisk(f.key, opts.file as File);
+                }}
+              >
+                <Button
+                  size="small"
+                  type="text"
+                  title="上传原文件到网盘并自动生成分享链接"
+                  icon={<UploadIcon size={14} />}
+                  loading={uploadingRow === f.key}
+                />
+              </Upload>
             </Col>
             <Col span={2}>
               <Button
