@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { normalizeMediaUrl } from '../common/media-url';
 
 @Injectable()
 export class HomeService {
@@ -16,7 +17,7 @@ export class HomeService {
       orderBy: { sort: 'asc' },
       select: { id: true, image: true, linkType: true, linkTarget: true },
     });
-    return { items };
+    return { items: items.map((b) => ({ ...b, image: normalizeMediaUrl(b.image) })) };
   }
 
   async overview() {
@@ -55,7 +56,9 @@ export class HomeService {
         },
       }),
     ]);
-    return { hot, latest };
+    const hotItems = hot.map((t) => ({ ...t, cover: normalizeMediaUrl(t.cover) }));
+    const latestItems = latest.map((t) => ({ ...t, cover: normalizeMediaUrl(t.cover) }));
+    return { hot: hotItems, latest: latestItems };
   }
 
   // ── 管理端 Banner CRUD ──

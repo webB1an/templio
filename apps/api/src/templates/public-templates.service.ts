@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { normalizeMediaUrl, normalizePreviews } from '../common/media-url';
 
 /** 公开字段：绝不包含 shareUrl / 审核记录 / 管理字段 */
 const PUBLIC_LIST_SELECT = {
@@ -39,14 +40,14 @@ function toListItem(t: PublicTemplate) {
     id: t.id,
     title: t.title,
     summary: t.summary,
-    cover: t.cover,
+    cover: normalizeMediaUrl(t.cover),
     format: t.format,
     baseCreditPrice: t.baseCreditPrice,
     viewCount: t.viewCount,
     favoriteCount: t.favoriteCount,
     heatScore: t.heatScore,
     publishedAt: t.publishedAt,
-    previews: (meta.previews ?? []).slice(0, 5),
+    previews: normalizePreviews(meta.previews),
     categories: t.categories.map((c) => c.category),
     tags: t.tags.map((x) => x.tag),
   };
@@ -112,7 +113,7 @@ export class PublicTemplatesService {
       filename: f.filename,
       netdiskType: f.netdiskType,
       size: f.size === null ? null : Number(f.size),
-      previewUrl: f.previewUrl,
+      previewUrl: normalizeMediaUrl(f.previewUrl),
       shareUrl: null, // 分享链接在详情一律不直接下发；免费模板走专用换取接口
     }));
 
@@ -124,13 +125,13 @@ export class PublicTemplatesService {
       id: t.id,
       title: t.title,
       summary: t.summary,
-      cover: t.cover,
+      cover: normalizeMediaUrl(t.cover),
       format: t.format,
       baseCreditPrice: t.baseCreditPrice,
       viewCount: t.viewCount,
       favoriteCount: t.favoriteCount,
       publishedAt: t.publishedAt,
-      previews: (meta.previews ?? []).slice(0, 5),
+      previews: normalizePreviews(meta.previews),
       categories: t.categories.map((c) => c.category),
       tags: t.tags.map((x) => x.tag),
       free,
