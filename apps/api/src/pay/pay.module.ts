@@ -41,7 +41,6 @@ function genOrderNo(): string {
 }
 
 @Controller('pay')
-@UseGuards(UserJwtAuthGuard)
 export class PayController {
   constructor(
     private readonly prisma: PrismaService,
@@ -67,6 +66,7 @@ export class PayController {
   }
 
   /** 创建充值订单 */
+  @UseGuards(UserJwtAuthGuard)
   @Post('orders')
   async createOrder(@Req() req: { user: UserJwtPayload }, @Body() dto: CreateOrderDto) {
     const sku = await this.prisma.paymentSku.findUnique({ where: { skuKey: dto.skuKey } });
@@ -104,6 +104,7 @@ export class PayController {
   }
 
   /** mock 支付：仅 MOCK_PAY=true 时可用，模拟微信回调完成订单并到账 */
+  @UseGuards(UserJwtAuthGuard)
   @Post('mock-pay/:orderNo')
   async mockPay(@Req() req: { user: UserJwtPayload }, @Param('orderNo') orderNo: string) {
     if (!this.isMockPay) {
@@ -127,6 +128,7 @@ export class PayController {
   }
 
   /** 我的订单 */
+  @UseGuards(UserJwtAuthGuard)
   @Get('orders')
   async myOrders(@Req() req: { user: UserJwtPayload }, @Query('page') page?: string) {
     const p = Number(page) > 0 ? Number(page) : 1;

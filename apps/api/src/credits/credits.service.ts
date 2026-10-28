@@ -90,7 +90,15 @@ export class CreditsService {
     const streakDays = (yesterdayRecord?.streakDays ?? 0) + 1;
 
     return this.prisma.$transaction(async (tx) => {
-      await tx.checkinRecord.create({ data: { userId, date: today, reward, streakDays } });
+      // createMany 不做回读，规避 @db.Date 主键 create 的返回匹配问题；唯一键冲突 = 已签到
+      try {
+        await tx.checkinRecord.createMany({ data: { userId, date: today, reward, streakDays } });
+      } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+          throw new ConflictException('今天已经签到过啦');
+        }
+        throw e;
+      }
       const balanceAfter = await this.credit(tx, {
         userId,
         type: 'checkin',
