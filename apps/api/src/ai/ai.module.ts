@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { AiController } from './ai.controller';
+import { TaxonomyModule } from '../taxonomy/taxonomy.module';
 
 @Module({
+  imports: [TaxonomyModule],
   controllers: [AiController],
   providers: [AiService],
   exports: [AiService],

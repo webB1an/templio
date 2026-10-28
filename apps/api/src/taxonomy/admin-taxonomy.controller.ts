@@ -112,6 +112,12 @@ export class AdminTaxonomyController {
     return this.taxonomy.createCategory(dto);
   }
 
+  /** 补齐推荐分类树（只补空缺维度，不覆盖已有结构） */
+  @Post('categories/seed')
+  seed() {
+    return this.taxonomy.ensureSeedCategories();
+  }
+
   @Patch('categories/:id')
   update(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {
     return this.taxonomy.updateCategory(Number(id), dto);

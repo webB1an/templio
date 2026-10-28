@@ -23,7 +23,14 @@ export class HomeService {
   async overview() {
     const [totalTemplates, totalCategories, hotKeywords, publishedToday] = await Promise.all([
       this.prisma.template.count({ where: { status: 'published' } }),
-      this.prisma.category.count({ where: { enabled: true, parentId: { not: null } } }),
+      // 只统计真正有已发布模板的二级分类，避免自动建分类后数字虚高
+      this.prisma.category.count({
+        where: {
+          enabled: true,
+          parentId: { not: null },
+          templates: { some: { template: { status: 'published' } } },
+        },
+      }),
       this.prisma.searchKeywordStat.findMany({
         orderBy: { count7d: 'desc' },
         take: 10,

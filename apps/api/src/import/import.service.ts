@@ -13,6 +13,7 @@ import { RenderService } from '../render/render.service';
 import { StorageCoordinatorService } from '../storage/storage-drives.service';
 import { AiService } from '../ai/ai.service';
 import { TemplatesService, inferFormat } from '../templates/templates.service';
+import { TaxonomyService } from '../taxonomy/taxonomy.service';
 
 export interface ImportOptions {
   /** 目标网盘；不传则使用该类网盘的默认账号 */
@@ -70,6 +71,7 @@ export class ImportService implements OnModuleInit {
     private readonly storage: StorageCoordinatorService,
     private readonly ai: AiService,
     private readonly templates: TemplatesService,
+    private readonly taxonomy: TaxonomyService,
   ) {}
 
   async onModuleInit() {
@@ -91,6 +93,11 @@ export class ImportService implements OnModuleInit {
     if (!files?.length) throw new BadRequestException('请至少上传 1 个模板文件');
     // 先确认网盘可用：没有默认账号时立即失败，避免用户传完几十个文件后才在流水线里全军覆没
     await this.storage.resolveProvider(options.provider);
+    // 保证推荐分类树存在：AI 分类、提审校验都依赖它（幂等，已有则不动）
+    const seeded = await this.taxonomy.ensureSeedCategories();
+    if (seeded.created) {
+      this.logger.log(`已补齐推荐分类树：新建 ${seeded.created} 个分类（${seeded.dimensions.join('/')}）`);
+    }
     const batch = await this.prisma.uploadBatch.create({
       data: {
         operatorId: adminId,
@@ -387,7 +394,7 @@ export class ImportService implements OnModuleInit {
         await this.upsertTemplateFile(payload);
       }
 
-      // ④ AI 自动补全（失败不阻断：草稿仍可用，人工补分类后提审）
+      // ④ AI 自动补全（失败不阻断：仍会兜底挂一个分类，保证能提审）
       if (options.useAi && !payload.aiApplied && payload.render?.cover) {
         await this.stage(taskId, payload, {
           stage: 'ai',
@@ -395,14 +402,20 @@ export class ImportService implements OnModuleInit {
           message: 'AI 正在识别标题/分类/标签与建议定价',
         });
         try {
-          await this.ai.enrichTemplate(payload.templateId, true);
+          const result = await this.ai.enrichTemplate(payload.templateId, true);
           payload.aiApplied = true;
+          const created = (result.suggestion.createdCategories as string[] | undefined) ?? [];
+          if (created.length) {
+            payload.notes.push(`AI 自动新建分类 ${created.length} 个：${created.join('、')}`);
+          }
         } catch (error) {
           payload.notes.push(`AI 补全失败：${errMsg(error)}`);
           this.logger.warn(`AI 补全失败 template=${payload.templateId}：${errMsg(error)}`);
+          await this.ensureFallbackCategory(payload);
         }
       } else if (options.useAi && !payload.render?.cover) {
-        payload.notes.push('缺少封面图，跳过 AI 补全');
+        payload.notes.push('缺少封面图，跳过 AI 补全，已按格式兜底分类');
+        await this.ensureFallbackCategory(payload);
       }
 
       // ⑤ 自动提审
@@ -455,6 +468,32 @@ export class ImportService implements OnModuleInit {
   }
 
   /** 网盘文件行：分享链接（自带提取码）入库，供详情页换取 */
+  /**
+   * AI 不可用时的分类兜底：按文件格式挂到对应一级分类。
+   * 目的：不让「至少 1 个分类」的提审校验把整条流水线卡在最后一步。
+   */
+  private async ensureFallbackCategory(payload: ImportPayload) {
+    const templateId = payload.templateId;
+    if (!templateId) return;
+    try {
+      const template = await this.prisma.template.findUnique({
+        where: { id: templateId },
+        select: { format: true, _count: { select: { categories: true } } },
+      });
+      if (!template || template._count.categories > 0) return;
+      const categoryId = await this.taxonomy.fallbackCategoryId(template.format);
+      if (!categoryId) return;
+      await this.prisma.templateCategory.createMany({
+        data: [{ templateId, categoryId }],
+        skipDuplicates: true,
+      });
+      payload.notes = payload.notes ?? [];
+      payload.notes.push('已按文件格式兜底挂分类，建议人工复核');
+    } catch (error) {
+      this.logger.warn(`兜底分类失败 template=${templateId}：${errMsg(error)}`);
+    }
+  }
+
   private async upsertTemplateFile(payload: ImportPayload) {
     const share = payload.share!;
     const shareUrl = withPasscode(share.url, share.passcode);

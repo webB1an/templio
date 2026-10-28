@@ -41,6 +41,8 @@ interface AiSuggestion {
   categoryIds: number[];
   tagIds: number[];
   suggestedPrice: number;
+  createdCategories?: string[];
+  categoryPaths?: string[];
 }
 
 export function TemplateEdit() {
@@ -265,25 +267,31 @@ export function TemplateEdit() {
         { apply: false },
       );
       const s = res.suggestion;
+      // AI 可能新建了分类/标签，先刷新候选，否则新分类在表单里选不中
+      const [cats, tgs] = await Promise.all([
+        api.get<CategoryItem[]>('/admin/categories'),
+        api.get<TagItem[]>('/admin/tags?pageSize=100'),
+      ]);
+      setCategories(cats);
+      setTags(tgs);
+      const inDim = (dim: string) =>
+        s.categoryIds.filter((cid) => cats.some((c) => c.id === cid && c.dimension === dim));
       form.setFieldsValue({
         title: s.title,
         summary: s.summary,
         baseCreditPrice: s.suggestedPrice,
-        cat_format: s.categoryIds.filter((cid) =>
-          categories.some((c) => c.id === cid && c.dimension === 'format'),
-        ),
-        cat_scene: s.categoryIds.filter((cid) =>
-          categories.some((c) => c.id === cid && c.dimension === 'scene'),
-        ),
-        cat_audience: s.categoryIds.filter((cid) =>
-          categories.some((c) => c.id === cid && c.dimension === 'audience'),
-        ),
-        cat_theme: s.categoryIds.filter((cid) =>
-          categories.some((c) => c.id === cid && c.dimension === 'theme'),
-        ),
+        cat_format: inDim('format'),
+        cat_scene: inDim('scene'),
+        cat_audience: inDim('audience'),
+        cat_theme: inDim('theme'),
         tagIds: s.tagIds,
       });
-      message.success('AI 建议已填充到表单，请人工确认后保存');
+      const created = s.createdCategories ?? [];
+      if (created.length) {
+        message.success(`AI 新建 ${created.length} 个分类（${created.join('、')}）并已填入表单，确认后保存`);
+      } else {
+        message.success('AI 建议已填充到表单，请人工确认后保存');
+      }
     } catch (e) {
       message.error(e instanceof Error ? e.message : 'AI 补全失败');
     } finally {

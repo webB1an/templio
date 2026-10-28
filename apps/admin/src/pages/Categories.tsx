@@ -92,6 +92,20 @@ function CategoriesTab() {
     }
   }
 
+  async function seedRecommended() {
+    try {
+      const res = await api.post<{ created: number; dimensions: string[] }>('/admin/categories/seed');
+      if (res.created > 0) {
+        message.success(`已补齐 ${res.created} 个推荐分类（${res.dimensions.join('、')}）`);
+      } else {
+        message.info('四个维度都已有分类，未做改动');
+      }
+      void load();
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : '补齐失败');
+    }
+  }
+
   const columns = [
     { title: 'ID', dataIndex: 'id', width: 60 },
     { title: '名称', dataIndex: 'name', width: 160 },
@@ -151,6 +165,7 @@ function CategoriesTab() {
             options={DIMENSION_OPTIONS}
             onChange={(v) => setDimension(v)}
           />
+          <Button onClick={seedRecommended}>补齐推荐分类</Button>
           <Button
             type="primary"
             icon={<Plus size={14} />}
