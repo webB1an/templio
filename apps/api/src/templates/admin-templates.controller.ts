@@ -65,4 +65,9 @@ export class AdminTemplatesController {
   offline(@Param('id', ParseIntPipe) id: number, @Body() body: { note?: string }, @Req() req: AdminReq) {
     return this.templates.offline(id, req.admin.sub, body?.note);
   }
+
+  @Post(':id/check-files')
+  checkFiles(@Param('id', ParseIntPipe) id: number) {
+    return this.templates.checkFiles(id);
+  }
 }

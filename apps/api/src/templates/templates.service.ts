@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma, NetdiskType, TemplateFormat, TemplateStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { NetdiskService } from '../netdisk/netdisk.service';
 import { CreateTemplateDto, UpdateTemplateDto } from './dto';
 
 /** 审核状态机允许的迁移（PRD §5.3） */
@@ -37,7 +38,10 @@ const ADMIN_LIST_SELECT = {
 
 @Injectable()
 export class TemplatesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly netdisk: NetdiskService,
+  ) {}
 
   async create(dto: CreateTemplateDto, adminId: number) {
     await this.assertCategoriesAndTags(dto.categoryIds, dto.tagIds ?? []);
@@ -59,6 +63,8 @@ export class TemplatesService {
         },
       },
     });
+    // 创建后立即做分享链接健康检查（失败不阻塞创建）
+    await this.checkTemplateFiles(template.id).catch(() => undefined);
     return template;
   }
 
@@ -99,6 +105,8 @@ export class TemplatesService {
         },
       });
     });
+    // 文件有变更时重新检查分享链接（失败不阻塞更新）
+    if (files) await this.checkTemplateFiles(id).catch(() => undefined);
     return this.mustFind(id);
   }
 
@@ -139,8 +147,7 @@ export class TemplatesService {
     });
   }
 
-  /** 下架：published → offline（投诉下架 / 主动下架共用） */
-  async offline(id: number, adminId: number, note?: string) {
+  /** 下架：published → offline（投诉下架 / 主动下架共用） */  async offline(id: number, adminId: number, note?: string) {
     const template = await this.mustFind(id);
     this.assertTransition(template.status, TemplateStatus.offline);
     return this.prisma.template.update({
@@ -200,6 +207,9 @@ export class TemplatesService {
             netdiskFileId: true,
             previewUrl: true,
             shareUrl: true,
+            checkStatus: true,
+            checkMessage: true,
+            checkAt: true,
             createdAt: true,
           },
         },
@@ -224,6 +234,39 @@ export class TemplatesService {
     }
     await this.prisma.template.delete({ where: { id } });
     return { deleted: true };
+  }
+
+  /** 手动触发：重新检查某模板全部文件的分享链接 */
+  async checkFiles(id: number) {
+    await this.mustFind(id);
+    const results = await this.checkTemplateFiles(id);
+    return { checked: results.length, results };
+  }
+
+  /** 逐个检查模板文件的分享链接并落库，返回检查结果 */
+  private async checkTemplateFiles(templateId: number) {
+    const files = await this.prisma.templateFile.findMany({
+      where: { templateId },
+      select: { id: true, netdiskType: true, shareUrl: true },
+    });
+    const results: Array<{ fileId: number; status: string; message: string }> = [];
+    for (const file of files) {
+      let status = 'unknown';
+      let message = '检查失败';
+      try {
+        const r = await this.netdisk.checkShare(file.netdiskType, file.shareUrl);
+        status = r.status;
+        message = r.message;
+      } catch (e) {
+        message = (e as Error).message.slice(0, 500);
+      }
+      await this.prisma.templateFile.update({
+        where: { id: file.id },
+        data: { checkStatus: status, checkMessage: message, checkAt: new Date() },
+      });
+      results.push({ fileId: file.id, status, message });
+    }
+    return results;
   }
 
   private async mustFind(id: number) {

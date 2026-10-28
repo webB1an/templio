@@ -7,6 +7,7 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { TaxonomyModule } from './taxonomy/taxonomy.module';
 import { TemplatesModule } from './templates/templates.module';
+import { NetdiskModule } from './netdisk/netdisk.module';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
@@ -21,6 +22,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
     AuthModule,
     TaxonomyModule,
     TemplatesModule,
+    NetdiskModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

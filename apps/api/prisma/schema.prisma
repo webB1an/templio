@@ -120,6 +120,10 @@ model TemplateFile {
   previewUrl   String?       @db.VarChar(512)
   // 敏感字段：分享链接（自带提取码）。仅详情权限接口返回，绝不进列表/搜索/日志明文
   shareUrl     String        @db.VarChar(1024)
+  // 分享链接健康检查结果（M1-4）：ok=有效 / invalid=失效 / need_passcode=缺提取码 / unknown=未能确认
+  checkStatus  String?       @db.VarChar(16)
+  checkMessage String?       @db.VarChar(512)
+  checkAt      DateTime?
   createdAt    DateTime      @default(now())
 
   template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
