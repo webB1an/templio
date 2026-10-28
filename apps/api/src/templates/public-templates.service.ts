@@ -113,14 +113,23 @@ export class PublicTemplatesService {
       netdiskType: f.netdiskType,
       size: f.size === null ? null : Number(f.size),
       previewUrl: f.previewUrl,
-      shareUrl: free ? null : null, // 分享链接在详情一律不直接下发；免费模板走专用换取接口
+      shareUrl: null, // 分享链接在详情一律不直接下发；免费模板走专用换取接口
     }));
 
-    const { meta, ...rest } = t as PublicTemplate & { files: unknown[] };
-    const m = (meta ?? {}) as { previews?: string[] };
+    const meta = (t.meta ?? {}) as { previews?: string[] };
     return {
-      ...rest,
-      previews: (m.previews ?? []).slice(0, 5),
+      id: t.id,
+      title: t.title,
+      summary: t.summary,
+      cover: t.cover,
+      format: t.format,
+      baseCreditPrice: t.baseCreditPrice,
+      viewCount: t.viewCount,
+      favoriteCount: t.favoriteCount,
+      publishedAt: t.publishedAt,
+      previews: (meta.previews ?? []).slice(0, 5),
+      categories: t.categories.map((c) => c.category),
+      tags: t.tags.map((x) => x.tag),
       free,
       locked: !free,
       files,
