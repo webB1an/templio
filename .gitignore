@@ -31,3 +31,6 @@ coverage/
 .husky/_/
 dist-bundle/
 万用模板_产品需求与开发实施.md
+
+# 上传文件（本地开发目录）
+.uploads/

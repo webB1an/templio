@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { TaxonomyModule } from './taxonomy/taxonomy.module';
+import { TemplatesModule } from './templates/templates.module';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
@@ -19,6 +20,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
     HealthModule,
     AuthModule,
     TaxonomyModule,
+    TemplatesModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
