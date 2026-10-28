@@ -1,9 +1,13 @@
-<view>
-  <view class="card">
-    <view class="secondary">当前余额</view>
-    <view style="font-size: 56rpx; font-weight: 700; color: #245bff;">{{balance}}</view>
+<view class="page">
+  <view class="hero card">
+    <view class="balance-label">我的积分</view>
+    <view class="balance">{{balance}}</view>
+    <view class="hint">积分功能上线后可签到领积分、解锁付费模板</view>
   </view>
-  <view class="card">签到区块随 M3 落地（连续签到/日历/奖励规则）</view>
-  <view class="card">充值档位随 M3 落地（虚拟支付已确认可用）</view>
-  <view class="card">积分明细随 M3 落地</view>
+  <view class="card placeholder">
+    <view class="p-title">即将上线</view>
+    <view class="p-item">· 每日签到送积分</view>
+    <view class="p-item">· 分享给好友赚积分</view>
+    <view class="p-item">· 积分解锁付费模板</view>
+  </view>
 </view>

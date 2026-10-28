@@ -1,7 +1,51 @@
-<view>
-  <view class="card">
-    <view style="font-weight: 600;">{{title}}</view>
-    <view class="secondary">预览截图区随 M1 落地（封面 + 1–5 张截图）</view>
+<view class="page" wx:if="{{detail}}">
+  <swiper class="slides" indicator-dots circular wx:if="{{previewUrls.length > 1}}">
+    <swiper-item wx:for="{{previewUrls}}" wx:key="*this">
+      <image class="slide" src="{{item}}" mode="aspectFill" data-url="{{item}}" bindtap="onPreviewTap" />
+    </swiper-item>
+  </swiper>
+  <image wx:elif="{{coverUrl}}" class="single-cover" src="{{coverUrl}}" mode="aspectFill" data-url="{{coverUrl}}" bindtap="onPreviewTap" />
+
+  <view class="head card">
+    <view class="title">{{detail.title}}</view>
+    <view class="summary" wx:if="{{detail.summary}}">{{detail.summary}}</view>
+    <view class="meta-row">
+      <text class="tag">{{formatText}}</text>
+      <text class="price">{{priceText}}</text>
+      <text class="views" wx:if="{{detail.viewCount}}">{{detail.viewCount}} 次浏览</text>
+    </view>
   </view>
-  <view class="card secondary">获取方式（免费/积分解锁）与版权说明随 M1/M3 落地</view>
+
+  <view class="card" wx:if="{{files.length}}">
+    <view class="card-title">文件信息</view>
+    <view class="file-row" wx:for="{{files}}" wx:key="id">
+      <text class="file-name">{{item.filename}}</text>
+      <text class="file-meta">{{item.netdiskType}} {{item.sizeText}}</text>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{claimedLinks.length}}">
+    <view class="card-title">网盘分享链接</view>
+    <view class="link-row" wx:for="{{claimedLinks}}" wx:key="shareUrl">
+      <view class="link-text">{{item.shareUrl}}</view>
+      <view class="copy-btn" data-url="{{item.shareUrl}}" bindtap="onCopyLink">复制</view>
+    </view>
+    <view class="link-tip">复制链接后在浏览器打开即可转存</view>
+  </view>
+
+  <view class="section" wx:if="{{related.length}}">
+    <view class="section-title">相关推荐</view>
+    <view class="grid">
+      <template-card wx:for="{{related}}" wx:key="id" item="{{item}}" />
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="claim-btn {{detail.free ? 'free' : 'paid'}}" loading="{{claimLoading}}" bindtap="onClaim">
+      {{claimed ? '已获取链接' : claimText}}
+    </button>
+  </view>
 </view>
+
+<view class="error" wx:if="{{error}}">{{error}}</view>
+<view class="loading" wx:if="{{loading}}">加载中…</view>

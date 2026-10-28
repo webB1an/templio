@@ -1,0 +1,10 @@
+<view class="card" bindtap="onTap">
+  <image class="cover" src="{{coverUrl}}" mode="aspectFill" lazy-load="{{true}}" />
+  <view class="info">
+    <view class="title">{{item.title}}</view>
+    <view class="meta">
+      <text class="format">{{formatText}}</text>
+      <text class="price {{item.baseCreditPrice === 0 ? 'free' : ''}}">{{priceText}}</text>
+    </view>
+  </view>
+</view>

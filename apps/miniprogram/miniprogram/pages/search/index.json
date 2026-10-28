@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "template-card": "/components/template-card/index"
+  },
+  "navigationBarTitleText": "搜索"
+}

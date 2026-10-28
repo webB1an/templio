@@ -1,7 +1,40 @@
-<view>
-  <view class="card">
-    <view style="font-weight: 600; margin-bottom: 12rpx;">分类</view>
-    <view class="secondary">多维分类：{{dimensions}}</view>
+<view class="page">
+  <view class="dim-tabs">
+    <view
+      wx:for="{{dimensions}}"
+      wx:key="key"
+      class="dim-tab {{activeDim === item.key ? 'active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onDimTap"
+    >{{item.label}}</view>
   </view>
-  <view class="card secondary">分类树与筛选随 M1 落地</view>
+
+  <view class="cat-groups">
+    <view class="cat-group" wx:for="{{groups}}" wx:key="id" wx:for-item="group">
+      <view class="group-name">{{group.name}}</view>
+      <view class="group-cats">
+        <view
+          wx:for="{{group.children}}"
+          wx:key="id"
+          class="cat-chip {{activeCategoryId === item.id ? 'active' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onCategoryTap"
+        >{{item.name}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="sort-bar">
+    <view class="sort-item {{sort === 'latest' ? 'active' : ''}}" data-sort="latest" bindtap="onSortTap">最新</view>
+    <view class="sort-item {{sort === 'hot' ? 'active' : ''}}" data-sort="hot" bindtap="onSortTap">最热</view>
+    <view class="count">共 {{total}} 个</view>
+  </view>
+
+  <view class="grid">
+    <template-card wx:for="{{items}}" wx:key="id" item="{{item}}" />
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">加载中…</view>
+  <view wx:if="{{!loading && !items.length}}" class="empty">该分类暂无模板</view>
+  <view wx:if="{{error}}" class="error">{{error}}</view>
 </view>

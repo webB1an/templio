@@ -1,10 +1,15 @@
-<view>
-  <view class="card">
-    <view style="font-weight: 600;">我的</view>
-    <view class="secondary">登录、收藏、浏览记录、已解锁随 M1/M3 落地</view>
+<view class="page">
+  <view class="card user">
+    <view class="avatar">访</view>
+    <view class="user-info">
+      <view class="user-name">未登录</view>
+      <view class="user-sub">登录功能随积分支付一起上线</view>
+    </view>
   </view>
-  <view class="card">
-    <view>意见反馈</view>
-    <view>用户协议 · 隐私政策 · 版权投诉</view>
+  <view class="card menu">
+    <view class="menu-item">我的收藏（即将上线）</view>
+    <view class="menu-item">我的解锁记录（即将上线）</view>
+    <view class="menu-item">意见反馈（即将上线）</view>
   </view>
+  <view class="about">万用模板 Templio · v0.1.0</view>
 </view>

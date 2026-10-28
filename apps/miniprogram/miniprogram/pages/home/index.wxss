@@ -1,1 +1,80 @@
-/* 首页样式随 M1 补充（品牌渐层头部 + 玻璃搜索框） */
+.page {
+  padding: 24rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.search-bar {
+  margin-bottom: 24rpx;
+}
+
+.search-input {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: #fff;
+  border-radius: 40rpx;
+  padding: 16rpx 28rpx;
+  font-size: 26rpx;
+  color: #1a2233;
+  box-shadow: 0 2rpx 12rpx rgba(36, 91, 255, 0.06);
+}
+
+.banners {
+  height: 280rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin-bottom: 24rpx;
+}
+
+.banner-img {
+  width: 100%;
+  height: 280rpx;
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+  font-size: 24rpx;
+  color: #697995;
+  margin-bottom: 28rpx;
+}
+
+.hot-word {
+  color: #245bff;
+}
+
+.divider {
+  color: #d5dced;
+}
+
+.section {
+  margin-bottom: 36rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1a2233;
+  margin-bottom: 20rpx;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+
+.error,
+.loading {
+  text-align: center;
+  color: #697995;
+  font-size: 26rpx;
+  padding: 60rpx 0;
+}
+
+.error {
+  color: #e0564b;
+}

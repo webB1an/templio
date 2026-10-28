@@ -1,1 +1,6 @@
-{}
+{
+  "usingComponents": {
+    "template-card": "/components/template-card/index"
+  },
+  "enablePullDownRefresh": true
+}

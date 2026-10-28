@@ -1,1 +1,5 @@
-{}
+{
+  "usingComponents": {
+    "template-card": "/components/template-card/index"
+  }
+}

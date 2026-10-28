@@ -1,7 +1,45 @@
-<view>
-  <view class="card">
-    <view style="font-size: 40rpx; font-weight: 600;">{{title}}</view>
-    <view class="secondary">{{slogan}}</view>
+<view class="page">
+  <view class="search-bar">
+    <view class="search-input">
+      <text class="search-icon">🔍</text>
+      <input
+        placeholder="搜索模板，如：年终汇报"
+        confirm-type="search"
+        value="{{keyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearch"
+      />
+    </view>
   </view>
-  <view class="card secondary">首页模块（Banner/分类入口/内容区）随 M1 落地</view>
+
+  <swiper wx:if="{{banners.length}}" class="banners" autoplay circular indicator-dots interval="4000">
+    <swiper-item wx:for="{{banners}}" wx:key="id">
+      <image class="banner-img" src="{{item.image}}" mode="aspectFill" />
+    </swiper-item>
+  </swiper>
+
+  <view class="stats" wx:if="{{totalTemplates}}">
+    <text>已收录 {{totalTemplates}} 个模板</text>
+    <block wx:if="{{hotKeywords.length}}">
+      <text class="divider">|</text>
+      <text wx:for="{{hotKeywords}}" wx:key="*this" class="hot-word" data-keyword="{{item}}" bindtap="onHotKeywordTap">{{item}}</text>
+    </block>
+  </view>
+
+  <view class="section" wx:if="{{hot.length}}">
+    <view class="section-title">热门模板</view>
+    <view class="grid">
+      <template-card wx:for="{{hot}}" wx:key="id" item="{{item}}" />
+    </view>
+  </view>
+
+  <view class="section" wx:if="{{latest.length}}">
+    <view class="section-title">最新上架</view>
+    <view class="grid">
+      <template-card wx:for="{{latest}}" wx:key="id" item="{{item}}" />
+    </view>
+  </view>
+
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+  <view wx:if="{{loading}}" class="loading">加载中…</view>
 </view>
