@@ -34,3 +34,7 @@ dist-bundle/
 
 # 上传文件（本地开发目录）
 .uploads/
+
+# 批量导入暂存与大文件处理临时目录
+.import-staging/
+.storage-tmp/

@@ -57,8 +57,13 @@ export class AiService {
       this.prisma.tag.findMany({ select: { id: true, name: true }, take: 100 }),
     ]);
 
+    // 图片优先级：封面 → meta.previews（自动渲染的多页预览）→ 文件预览图，最多 3 张
+    const metaPreviews = Array.isArray((template.meta as { previews?: unknown } | null)?.previews)
+      ? ((template.meta as { previews: string[] }).previews ?? [])
+      : [];
     const images = [
       ...(template.cover ? [template.cover] : []),
+      ...metaPreviews.filter((url) => url !== template.cover),
       ...template.files.map((f) => f.previewUrl).filter((u): u is string => !!u),
     ].slice(0, 3);
 

@@ -202,7 +202,7 @@ export function TemplateEdit() {
   const [aiLoading, setAiLoading] = useState(false);
   const [uploadingRow, setUploadingRow] = useState<number | null>(null);
 
-  /** 上传模板原文件到网盘并生成分享链接，回填到该行 */
+  /** 上传模板原文件：自动生成首图/预览图 + 上传网盘生成分享链接，一并回填 */
   async function uploadToNetdisk(rowKey: number, file: File) {
     const row = files.find((f) => f.key === rowKey);
     if (!row) return;
@@ -215,20 +215,41 @@ export function TemplateEdit() {
       const fd = new FormData();
       fd.append('file', file);
       fd.append('provider', provider);
-      fd.append('title', file.name);
-      const res = await api.upload<{ url: string; passcode?: string | null }>(
-        '/admin/storage-accounts/upload-share',
-        fd,
-      );
-      const full = `${res.url}${res.passcode ? `?pwd=${res.passcode}` : ''}`;
+      const res = await api.upload<{
+        filename: string;
+        shareUrl: string;
+        passcode: string | null;
+        cover: string | null;
+        previews: string[];
+        pages: number;
+        notes: string[];
+      }>('/admin/templates/publish-file', fd);
+
       setFiles((prev) =>
         prev.map((f) =>
           f.key === rowKey
-            ? { ...f, filename: f.filename || file.name, shareUrl: full }
+            ? { ...f, filename: f.filename || res.filename, shareUrl: res.shareUrl }
             : f,
         ),
       );
-      message.success('已上传到网盘并生成分享链接');
+      // 封面与预览图自动回填（已有内容时不覆盖运营已选图片）
+      if (res.cover && !form.getFieldValue('cover')) {
+        form.setFieldValue('cover', res.cover);
+        setCoverList([{ uid: 'cover-auto', name: 'cover.webp', status: 'done', url: res.cover }]);
+      }
+      if (res.previews.length > 1) {
+        const prev = (form.getFieldValue('previews') as string[]) ?? [];
+        if (!prev.length) {
+          form.setFieldValue('previews', res.previews);
+          setPreviewList(
+            res.previews.map((u, i) => ({ uid: `auto-p${i}`, name: `preview${i}.webp`, status: 'done', url: u })),
+          );
+        }
+      }
+      message.success(
+        `已上传网盘并生成分享链接${res.pages ? `，自动生成 ${res.pages} 页预览图` : ''}`,
+      );
+      if (res.notes.length) message.warning(res.notes.join('；'));
     } catch (e) {
       message.error(e instanceof Error ? e.message : '上传分享失败');
     } finally {

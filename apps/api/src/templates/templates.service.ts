@@ -8,7 +8,7 @@ import { Prisma, NetdiskType, TemplateFormat, TemplateStatus } from '@prisma/cli
 import { PrismaService } from '../prisma/prisma.service';
 import { NetdiskService } from '../netdisk/netdisk.service';
 import { AiService } from '../ai/ai.service';
-import { CreateTemplateDto, QuickImportDto, UpdateTemplateDto } from './dto';
+import { CreateTemplateDto, UpdateTemplateDto } from './dto';
 
 /** 审核状态机允许的迁移（PRD §5.3） */
 const ALLOWED_TRANSITIONS: Record<TemplateStatus, TemplateStatus[]> = {
@@ -39,7 +39,7 @@ const ADMIN_LIST_SELECT = {
 } satisfies Prisma.TemplateSelect;
 
 /** 按文件名扩展名推断模板格式（批量导入用），无法识别时 other */
-function inferFormat(filename?: string): TemplateFormat {
+export function inferFormat(filename?: string): TemplateFormat {
   const ext = filename?.match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase() ?? '';
   if (['ppt', 'pptx', 'key'].includes(ext)) return 'ppt';
   if (['doc', 'docx', 'pages', 'rtf'].includes(ext)) return 'word';
@@ -256,79 +256,6 @@ export class TemplatesService {
     await this.mustFind(id);
     const results = await this.checkTemplateFiles(id);
     return { checked: results.length, results };
-  }
-
-  /**
-   * 快速建档（批量导入的单条流水线）：
-   * 创建草稿 → AI 全自动补全并应用 → 回填缺省文件名 → 链接检查（create 内置）→ 可选自动提审。
-   * 任何一步失败都不回滚草稿，结果里标注原因，便于管理端展示与人工补漏。
-   */
-  async quickImport(dto: QuickImportDto, adminId: number) {
-    const fallbackTitle =
-      dto.title?.trim() ||
-      dto.files[0]?.filename?.replace(/\.[a-z0-9]+$/i, '').trim() ||
-      '未命名模板';
-    const format = dto.format ?? inferFormat(dto.files[0]?.filename);
-
-    // 1. 创建草稿（分类先挂空，等 AI 填；不满足 create 的 categoryIds 校验，这里直接走 prisma）
-    const template = await this.prisma.template.create({
-      data: {
-        title: fallbackTitle.slice(0, 128),
-        format,
-        cover: dto.coverUrl,
-        baseCreditPrice: 0,
-        meta: dto.previewUrls?.length ? { previews: dto.previewUrls } : undefined,
-        files: {
-          create: dto.files.map((f) => ({
-            filename: f.filename?.trim() || '（待命名）',
-            netdiskType: f.netdiskType,
-            shareUrl: f.shareUrl,
-          })),
-        },
-        reviewRecords: { create: { adminId, action: 'create', note: '批量导入创建草稿' } },
-      },
-    });
-
-    const result: {
-      id: number;
-      title: string;
-      status: TemplateStatus;
-      aiApplied: boolean;
-      aiError?: string;
-      submitError?: string;
-    } = { id: template.id, title: template.title, status: template.status, aiApplied: false };
-
-    // 2. AI 补全（失败不阻塞）
-    if (dto.useAi !== false) {
-      try {
-        const enriched = await this.ai.enrichTemplate(template.id, true);
-        result.aiApplied = enriched.applied;
-        result.title = enriched.suggestion.title;
-      } catch (e) {
-        result.aiError = (e as Error).message.slice(0, 200);
-      }
-    }
-
-    // 3. 回填缺省文件名（用最终标题）
-    await this.prisma.templateFile.updateMany({
-      where: { templateId: template.id, filename: '（待命名）' },
-      data: { filename: result.title.slice(0, 256) },
-    });
-
-    // 4. 分享链接健康检查（失败不阻塞）
-    await this.checkTemplateFiles(template.id).catch(() => undefined);
-
-    // 5. 自动提审（完整性不足或状态不允许时留草稿并注明原因）
-    if (dto.autoSubmit !== false) {
-      try {
-        const submitted = await this.submit(template.id, adminId);
-        result.status = submitted.status;
-      } catch (e) {
-        result.submitError = (e as Error).message.slice(0, 200);
-      }
-    }
-
-    return result;
   }
 
   /** 批量审核：逐个走状态机，单条失败不影响其他，返回成功/失败明细 */

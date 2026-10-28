@@ -9,6 +9,7 @@ import { TaxonomyModule } from './taxonomy/taxonomy.module';
 import { TemplatesModule } from './templates/templates.module';
 import { NetdiskModule } from './netdisk/netdisk.module';
 import { StorageModule } from './storage/storage.module';
+import { ImportModule } from './import/import.module';
 import { HomeModule } from './home/home.module';
 import { AiModule } from './ai/ai.module';
 import { UsersModule } from './users/users.module';
@@ -31,6 +32,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
     TemplatesModule,
     NetdiskModule,
     StorageModule,
+    ImportModule,
     HomeModule,
     AiModule,
     UsersModule,

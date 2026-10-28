@@ -177,6 +177,19 @@ export class StorageCoordinatorService {
     private readonly baidu: BaiduStorageService,
   ) {}
 
+  /**
+   * 选定 provider：显式指定优先，否则用已设默认的账号（夸克优先）。
+   * 都没有时抛出带引导文案的错误。
+   */
+  async resolveProvider(preferred?: 'quark' | 'baidu'): Promise<'quark' | 'baidu'> {
+    if (preferred) return preferred;
+    if (await this.accounts.getDefaultAccount('quark')) return 'quark';
+    if (await this.accounts.getDefaultAccount('baidu')) return 'baidu';
+    throw new BadRequestException(
+      '未配置默认网盘账号，请先在「网盘管理」新增账号、完成授权并设为默认',
+    );
+  }
+
   async uploadAndShare(
     filePath: string,
     provider: 'quark' | 'baidu',

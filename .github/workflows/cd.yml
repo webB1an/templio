@@ -91,7 +91,10 @@ jobs:
             cp -r apps/admin/dist/. /www/wwwroot/templio/admin/
 
             # 重启并健康检查
-            pm2 reload ecosystem.config.js --update-env
+            # 注意：pm2 reload 会复用进程缓存的环境变量，.env 变更不生效；
+            # 必须 delete + start 重建进程，确保读到最新 .env。
+            pm2 delete templio-api || true
+            pm2 start ecosystem.config.js
             pm2 save
             sleep 3
             curl -fsS http://127.0.0.1:3000/api/health

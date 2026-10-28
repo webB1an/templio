@@ -427,6 +427,8 @@ enum ProcessingTaskType {
   thumbnail
   link_check
   heat_score
+  /** 批量导入全自动流水线：转预览图 → 上传网盘分享 → AI 补全 → 建模板 → 提审 */
+  import_pipeline
 }
 
 enum ProcessingTaskStatus {
@@ -446,6 +448,12 @@ model ProcessingTask {
   attempts     Int                  @default(0)
   maxAttempts  Int                  @default(5)
   idempotentKey String              @unique @db.VarChar(128)
+  /** 当前阶段标识（import_pipeline：render / upload / ai / create / submit） */
+  stage        String?              @db.VarChar(32)
+  /** 阶段进度 0-100 */
+  progress     Int                  @default(0)
+  /** 面向运营的阶段说明 */
+  message      String?              @db.VarChar(512)
   payload      Json?
   error        String?              @db.VarChar(1024)
   nextRunAt    DateTime?

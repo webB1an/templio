@@ -1,320 +1,372 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Button,
   Card,
-  Image,
-  Input,
+  Checkbox,
+  Empty,
+  InputNumber,
   Progress,
   Select,
   Space,
-  Steps,
-  Switch,
-  Table,
   Tag,
+  Tooltip,
   Typography,
   Upload,
   message,
 } from 'antd';
-import { PlayCircle, CheckCircle2, AlertCircle } from 'lucide-react';
-import { InboxOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd';
+import { PlayCircle, CheckCircle2, XCircle, RotateCcw, Images } from 'lucide-react';
+import { InboxOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
-import { FORMAT_OPTIONS } from '../types';
 
-interface ParsedLink {
-  filename?: string;
-  netdiskType: 'quark' | 'baidu';
-  shareUrl: string;
+const MAX_FILES = 50;
+
+interface ImportTaskView {
+  id: number;
+  status: 'queued' | 'running' | 'succeeded' | 'failed' | 'retry_waiting';
+  stage: string | null;
+  progress: number;
+  message: string | null;
+  error: string | null;
+  templateId: number | null;
+  fileName: string;
+  size: number | null;
+  cover: string | null;
+  previews: string[];
+  pages: number;
+  shareUrl: string | null;
+  provider: string | null;
+  aiApplied: boolean;
+  submitted: boolean;
 }
 
-interface ImportResult {
-  key: number;
-  cover: string;
-  ok: boolean;
-  id?: number;
-  title?: string;
-  status?: string;
-  aiApplied?: boolean;
-  aiError?: string;
-  submitError?: string;
-  error?: string;
+interface BatchDetail {
+  id: number;
+  status: string;
+  createdAt: string;
+  tasks: ImportTaskView[];
 }
 
-/** 从一行文本解析出网盘文件：支持「文件名 链接」或纯链接；同行多个链接拆成多个文件 */
-function parseLine(line: string): ParsedLink[] {
-  const urlRe = /(https?:\/\/[^\s，,]+)/g;
-  const urls = line.match(urlRe) ?? [];
-  if (urls.length === 0) return [];
-  const namePart = line.split(urlRe)[0]?.trim();
-  return urls.map((u) => ({
-    filename: urls.length === 1 ? namePart || undefined : undefined,
-    netdiskType: u.includes('pan.baidu.com') ? 'baidu' : 'quark',
-    shareUrl: u,
-  }));
-}
+const STAGE_LABEL: Record<string, string> = {
+  queued: '排队中',
+  render: '生成预览图',
+  create: '创建草稿',
+  upload: '上传网盘分享',
+  ai: 'AI 补全',
+  submit: '提交审核',
+  done: '完成',
+};
 
+/**
+ * 批量导入（资源管理 → 批量导入）
+ *
+ * 拖入模板原文件即可，后端按顺序自动完成：
+ * ① 渲染首图 + 多页预览图 ② 建模板草稿 ③ 上传默认网盘并生成永久分享链接
+ * ④ AI 识别标题/分类/标签/定价 ⑤ 自动提审
+ * 页面轮询展示每条任务的阶段进度，失败可断点重试。
+ */
 export function BatchImport() {
-  const [step, setStep] = useState(0);
-  const [coverList, setCoverList] = useState<UploadFile[]>([]);
-  const [coverUrls, setCoverUrls] = useState<string[]>([]);
-  const [linksText, setLinksText] = useState('');
-  const [defaultFormat, setDefaultFormat] = useState<string | undefined>();
+  const navigate = useNavigate();
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [provider, setProvider] = useState<'auto' | 'quark' | 'baidu'>('auto');
   const [useAi, setUseAi] = useState(true);
   const [autoSubmit, setAutoSubmit] = useState(true);
-  const [running, setRunning] = useState(false);
-  const [done, setDone] = useState(0);
-  const [results, setResults] = useState<ImportResult[]>([]);
+  const [maxPages, setMaxPages] = useState(6);
+  const [submitting, setSubmitting] = useState(false);
+  const [batchId, setBatchId] = useState<number | null>(null);
+  const [batch, setBatch] = useState<BatchDetail | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const parsedLinks = useMemo(
-    () => linksText.split('\n').flatMap((l) => parseLine(l.trim())).filter((l) => l.shareUrl),
-    [linksText],
+  const running = !!batch?.tasks.some(
+    (t) => t.status === 'queued' || t.status === 'running' || t.status === 'retry_waiting',
   );
 
-  const coverUpload = {
-    multiple: true,
-    accept: 'image/*',
-    listType: 'picture-card' as const,
-    fileList: coverList,
-    customRequest: (opts: { file: unknown; onSuccess?: (b: string) => void; onError?: (e: Error) => void }) => {
-      const fd = new FormData();
-      fd.append('file', opts.file as File);
-      api
-        .upload<{ url: string }>('/admin/uploads/image', fd)
-        .then((res) => {
-          setCoverUrls((prev) => [...prev, res.url]);
-          opts.onSuccess?.('');
-        })
-        .catch((e: Error) => opts.onError?.(e));
-    },
-    onChange: ({ fileList }: { fileList: UploadFile[] }) => setCoverList(fileList),
-    onRemove: (f: UploadFile) => {
-      const idx = coverList.findIndex((x) => x.uid === f.uid);
-      if (idx >= 0) setCoverUrls((prev) => prev.filter((_, i) => i !== idx));
-    },
-  };
+  const poll = useCallback(async (id: number) => {
+    try {
+      const detail = await api.get<BatchDetail>(`/admin/imports/${id}`);
+      setBatch(detail);
+      const busy = detail.tasks.some(
+        (t) => t.status === 'queued' || t.status === 'running' || t.status === 'retry_waiting',
+      );
+      if (busy) timer.current = setTimeout(() => void poll(id), 2500);
+    } catch {
+      timer.current = setTimeout(() => void poll(id), 5000);
+    }
+  }, []);
 
-  const mismatch =
-    coverUrls.length > 0 && parsedLinks.length > 0 && coverUrls.length !== parsedLinks.length;
+  useEffect(() => {
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, []);
 
-  async function run() {
-    if (coverUrls.length === 0) {
-      message.warning('请先上传至少 1 张封面图');
+  async function start() {
+    if (!fileList.length) {
+      message.warning('请先拖入或选择模板原文件');
       return;
     }
-    if (parsedLinks.length === 0) {
-      message.warning('请粘贴至少 1 条网盘分享链接');
-      return;
+    const fd = new FormData();
+    for (const item of fileList) {
+      if (item.originFileObj) fd.append('files', item.originFileObj as File);
     }
-    if (mismatch) {
-      message.warning(`封面 ${coverUrls.length} 张与链接 ${parsedLinks.length} 条数量不一致，将按下标配对，多余部分跳过`);
+    if (provider !== 'auto') fd.append('provider', provider);
+    fd.append('useAi', String(useAi));
+    fd.append('autoSubmit', String(autoSubmit));
+    fd.append('maxPages', String(maxPages));
+
+    setSubmitting(true);
+    try {
+      const res = await api.upload<{ batchId: number; total: number }>('/admin/imports', fd);
+      message.success(`已提交 ${res.total} 个文件，正在后台自动处理`);
+      setBatchId(res.batchId);
+      setFileList([]);
+      if (timer.current) clearTimeout(timer.current);
+      void poll(res.batchId);
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : '提交失败');
+    } finally {
+      setSubmitting(false);
     }
-    setRunning(true);
-    setResults([]);
-    setDone(0);
-    setStep(1);
-    const count = Math.min(coverUrls.length, parsedLinks.length);
-    const acc: ImportResult[] = [];
-    for (let i = 0; i < count; i++) {
-      try {
-        const res = await api.post<{
-          id: number;
-          title: string;
-          status: string;
-          aiApplied: boolean;
-          aiError?: string;
-          submitError?: string;
-        }>('/admin/templates/quick-import', {
-          coverUrl: coverUrls[i],
-          files: [parsedLinks[i]],
-          format: defaultFormat,
-          useAi,
-          autoSubmit,
-        });
-        acc.push({ key: i, cover: coverUrls[i], ok: true, ...res });
-      } catch (e) {
-        acc.push({ key: i, cover: coverUrls[i], ok: false, error: e instanceof Error ? e.message : '导入失败' });
-      }
-      setResults([...acc]);
-      setDone(i + 1);
-    }
-    setRunning(false);
-    setStep(2);
   }
 
-  const okCount = results.filter((r) => r.ok).length;
-  const aiFailCount = results.filter((r) => r.aiError).length;
+  async function retry(taskId: number) {
+    try {
+      await api.post(`/admin/imports/tasks/${taskId}/retry`);
+      message.success('已重新排队');
+      if (batchId) void poll(batchId);
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : '重试失败');
+    }
+  }
 
-  const columns = [
-    {
-      title: '封面',
-      dataIndex: 'cover',
-      width: 72,
-      render: (v: string) => <Image src={v} width={56} height={40} style={{ objectFit: 'cover', borderRadius: 6 }} />,
-    },
-    {
-      title: '结果',
-      dataIndex: 'ok',
-      width: 110,
-      render: (ok: boolean, r: ImportResult) =>
-        ok ? (
-          <Tag color="success" icon={<CheckCircle2 size={12} />}>
-            #{r.id}
-          </Tag>
-        ) : (
-          <Tag color="error" icon={<AlertCircle size={12} />}>
-            失败
-          </Tag>
-        ),
-    },
-    { title: '标题', dataIndex: 'title', ellipsis: true, render: (v?: string) => v ?? '-' },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      width: 110,
-      render: (v?: string) => (v === 'pending_review' ? <Tag color="blue">待审核</Tag> : v ? <Tag>草稿</Tag> : '-'),
-    },
-    {
-      title: '说明',
-      ellipsis: true,
-      render: (_: unknown, r: ImportResult) => {
-        if (!r.ok) return <span style={{ color: '#cf1322' }}>{r.error}</span>;
-        const tips: string[] = [];
-        if (r.aiError) tips.push(`AI 未生效：${r.aiError}`);
-        if (r.submitError) tips.push(`未自动提审：${r.submitError}`);
-        if (!tips.length) return <span style={{ color: '#389e0d' }}>AI 已应用 · 链接已检查 · 已提审</span>;
-        return <span style={{ color: '#d46b08' }}>{tips.join('；')}</span>;
-      },
-    },
-  ];
+  const tasks = batch?.tasks ?? [];
+  const succeeded = tasks.filter((t) => t.status === 'succeeded').length;
+  const failed = tasks.filter((t) => t.status === 'failed').length;
+  const finished = tasks.length > 0 && !running;
 
   return (
-    <div style={{ maxWidth: 1080 }}>
-      <Steps
-        current={step}
-        items={[{ title: '准备素材' }, { title: '自动导入中' }, { title: '完成' }]}
-        style={{ marginBottom: 24 }}
-      />
+    <Space direction="vertical" style={{ width: '100%' }} size={16}>
+      <Card title="批量导入模板">
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message="拖入模板原文件（PPT / Word / Excel / PDF），后端全自动完成后续流程"
+          description={
+            <Typography.Text type="secondary">
+              自动生成首图与预览图 → 上传默认网盘并生成永久分享链接 → AI 识别标题/分类/标签/定价 →
+              信息完整即自动提审。发布终审仍由人工在资源管理中一键完成。
+              <br />
+              <Typography.Text type="warning">
+                提示：PPTX/DOCX 会提取文档内置缩略图作为首图；如需多页预览图，请先将文件导出为 PDF
+                再导入（PDF 会逐页渲染）。
+              </Typography.Text>
+            </Typography.Text>
+          }
+        />
 
-      {step === 0 && (
-        <>
-          <Card title="① 批量上传封面图（1 张 = 1 个模板）" style={{ marginBottom: 16 }}>
-            <Upload.Dragger {...coverUpload}>
-              <p className="ant-upload-drag-icon">
-                <InboxOutlined />
-              </p>
-              <p className="ant-upload-text">点击或拖拽图片到此处（可多选）</p>
-              <p className="ant-upload-hint">封面顺序即模板顺序，与下方链接逐一配对；图片会自动转 webp</p>
-            </Upload.Dragger>
-            {coverUrls.length > 0 && (
-              <Alert
-                type="success"
-                showIcon
-                style={{ marginTop: 12 }}
-                message={`已上传 ${coverUrls.length} 张封面`}
-              />
-            )}
-          </Card>
+        <Upload.Dragger
+          multiple
+          accept=".ppt,.pptx,.pps,.ppsx,.doc,.docx,.pdf,.xls,.xlsx,.csv,.zip,.rar,.7z,.png,.jpg,.jpeg,.webp"
+          fileList={fileList}
+          beforeUpload={() => false}
+          onChange={({ fileList: list }) => setFileList(list.slice(0, MAX_FILES))}
+          disabled={submitting || running}
+        >
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined style={{ fontSize: 40, color: '#245BFF' }} />
+          </p>
+          <p className="ant-upload-text">点击或拖拽模板原文件到此处</p>
+          <p className="ant-upload-hint">
+            一个文件 = 一个模板，单文件最大 300MB，一次最多 {MAX_FILES} 个
+          </p>
+        </Upload.Dragger>
 
-          <Card title="② 粘贴网盘分享链接（一行一个模板）" style={{ marginBottom: 16 }}>
-            <Input.TextArea
-              rows={8}
-              placeholder={
-                'https://pan.quark.cn/s/xxxxx 提取码：abc\n简历模板套装.zip https://pan.baidu.com/s/xxxx?pwd=ab12\n\n支持：\n· 夸克 / 百度链接自动识别\n· 行首可写文件名（可选）\n· 同行多个链接 = 一个模板多个文件'
-              }
-              value={linksText}
-              onChange={(e) => setLinksText(e.target.value)}
+        <Space wrap size={16} style={{ marginTop: 16 }}>
+          <Space size={6}>
+            <Typography.Text type="secondary">目标网盘</Typography.Text>
+            <Select
+              value={provider}
+              onChange={setProvider}
+              style={{ width: 148 }}
+              options={[
+                { value: 'auto', label: '自动（默认账号）' },
+                { value: 'quark', label: '夸克网盘' },
+                { value: 'baidu', label: '百度网盘' },
+              ]}
             />
-            <div style={{ marginTop: 8 }}>
-              已解析 <b>{parsedLinks.length}</b> 条链接（夸克 {parsedLinks.filter((l) => l.netdiskType === 'quark').length} / 百度 {parsedLinks.filter((l) => l.netdiskType === 'baidu').length}）
-              {mismatch && (
-                <Typography.Text type="warning" style={{ marginLeft: 12 }}>
-                  ⚠ 与封面数量不一致，将按顺序配对
-                </Typography.Text>
-              )}
-            </div>
-          </Card>
-
-          <Card title="③ 导入选项" style={{ marginBottom: 16 }}>
-            <Space size={40} wrap>
-              <div>
-                <div style={{ marginBottom: 4 }}>默认格式（文件名可推断时优先）</div>
-                <Select
-                  allowClear
-                  placeholder="自动推断"
-                  style={{ width: 160 }}
-                  options={FORMAT_OPTIONS}
-                  value={defaultFormat}
-                  onChange={setDefaultFormat}
-                />
-              </div>
-              <div>
-                <div style={{ marginBottom: 4 }}>AI 自动补全并应用</div>
-                <Switch checked={useAi} onChange={setUseAi} />
-                <Typography.Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
-                  标题/摘要/分类/标签/定价直接写入
-                </Typography.Text>
-              </div>
-              <div>
-                <div style={{ marginBottom: 4 }}>信息完整时自动提审</div>
-                <Switch checked={autoSubmit} onChange={setAutoSubmit} />
-                <Typography.Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
-                  发布仍需人工审核通过
-                </Typography.Text>
-              </div>
-            </Space>
-          </Card>
-
-          <Button type="primary" size="large" icon={<PlayCircle size={16} />} loading={running} onClick={run}>
-            开始导入（{Math.min(coverUrls.length || 0, parsedLinks.length || 0)} 个模板）
+          </Space>
+          <Space size={6}>
+            <Typography.Text type="secondary">预览页数</Typography.Text>
+            <InputNumber
+              min={1}
+              max={20}
+              value={maxPages}
+              onChange={(v) => setMaxPages(v ?? 6)}
+              style={{ width: 78 }}
+            />
+          </Space>
+          <Checkbox checked={useAi} onChange={(e) => setUseAi(e.target.checked)}>
+            自动补全（标题/分类/标签/定价）
+          </Checkbox>
+          <Checkbox checked={autoSubmit} onChange={(e) => setAutoSubmit(e.target.checked)}>
+            完成后自动提审
+          </Checkbox>
+          <Button
+            type="primary"
+            icon={<PlayCircle size={15} />}
+            loading={submitting}
+            disabled={running || !fileList.length}
+            onClick={() => void start()}
+          >
+            开始导入（{fileList.length}）
           </Button>
-        </>
-      )}
+        </Space>
+      </Card>
 
-      {step >= 1 && (
-        <Card title={`导入进度（${done}/${Math.max(results.length, done)}）`}>
-          <Progress
-            percent={Math.round((done / Math.max(results.length || 1, done || 1)) * 100)}
-            status={running ? 'active' : 'normal'}
-            style={{ maxWidth: 480, marginBottom: 16 }}
-          />
-          <Table
-            rowKey="key"
-            size="small"
-            columns={columns as never}
-            dataSource={results}
-            pagination={false}
-            footer={() =>
-              !running && results.length > 0 ? (
-                <Space>
-                  <span>成功 {okCount}</span>
-                  <span>失败 {results.length - okCount}</span>
-                  {aiFailCount > 0 && <Tag color="warning">{aiFailCount} 条 AI 未生效（已留草稿，可进编辑页人工补）</Tag>}
-                </Space>
-              ) : null
-            }
-          />
-          {!running && step === 2 && (
-            <Space style={{ marginTop: 16 }}>
-              <Button
-                onClick={() => {
-                  setStep(0);
-                  setResults([]);
-                  setDone(0);
-                  setCoverUrls([]);
-                  setCoverList([]);
-                  setLinksText('');
-                }}
-              >
-                继续导入下一批
+      {!batch ? (
+        <Card>
+          <Empty description="还没有导入任务。拖入文件后点击「开始导入」。" />
+        </Card>
+      ) : (
+        <Card
+          title={`导入进度 · 批次 #${batch.id}`}
+          extra={
+            <Space>
+              <Tag color="success">成功 {succeeded}</Tag>
+              {failed > 0 && <Tag color="error">失败 {failed}</Tag>}
+              {running && <Tag color="processing">处理中…</Tag>}
+              <Button size="small" onClick={() => navigate('/admin/templates?status=pending_review')}>
+                去资源管理
               </Button>
-              <a href="/admin/templates?status=pending_review" target="_blank" rel="noreferrer">
-                <Button type="primary">去资源管理批量审核</Button>
-              </a>
             </Space>
+          }
+        >
+          {finished && (
+            <Alert
+              type={failed ? 'warning' : 'success'}
+              showIcon
+              style={{ marginBottom: 12 }}
+              message={
+                failed
+                  ? `本批次完成：成功 ${succeeded} 个，失败 ${failed} 个。失败项可点「重试」从断点继续（已完成阶段不会重复执行）。`
+                  : `本批次全部完成：${succeeded} 个模板已生成${autoSubmit ? '并提交审核' : ''}。`
+              }
+            />
           )}
+          <Space direction="vertical" style={{ width: '100%' }} size={10}>
+            {tasks.map((task) => (
+              <TaskRow key={task.id} task={task} onRetry={() => void retry(task.id)} />
+            ))}
+          </Space>
         </Card>
       )}
-    </div>
+    </Space>
+  );
+}
+
+function TaskRow({ task, onRetry }: { task: ImportTaskView; onRetry: () => void }) {
+  const ok = task.status === 'succeeded';
+  const bad = task.status === 'failed';
+  return (
+    <Card size="small" styles={{ body: { padding: 12 } }}>
+      <Space align="start" style={{ width: '100%' }} size={12}>
+        <div style={{ width: 76, flex: '0 0 auto' }}>
+          {task.cover ? (
+            <div style={{ position: 'relative' }}>
+              <img
+                src={task.cover}
+                alt=""
+                style={{
+                  width: 76,
+                  height: 57,
+                  objectFit: 'cover',
+                  borderRadius: 6,
+                  border: '1px solid #eef1f8',
+                }}
+              />
+              {task.pages > 1 && (
+                <Tooltip title={`已生成 ${task.pages} 页预览图`}>
+                  <Tag
+                    color="blue"
+                    style={{
+                      position: 'absolute',
+                      right: -6,
+                      bottom: -8,
+                      fontSize: 10,
+                      lineHeight: '16px',
+                      padding: '0 4px',
+                    }}
+                  >
+                    <Images size={10} /> {task.pages}
+                  </Tag>
+                </Tooltip>
+              )}
+            </div>
+          ) : (
+            <div
+              style={{
+                width: 76,
+                height: 57,
+                borderRadius: 6,
+                background: '#f5f7fc',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#9aa7c2',
+                fontSize: 11,
+              }}
+            >
+              无预览
+            </div>
+          )}
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Space size={8} wrap>
+            <Typography.Text strong ellipsis style={{ maxWidth: 380 }}>
+              {task.fileName}
+            </Typography.Text>
+            {ok && (
+              <Tag color="success" icon={<CheckCircle2 size={12} />}>
+                完成
+              </Tag>
+            )}
+            {bad && (
+              <Tag color="error" icon={<XCircle size={12} />}>
+                失败
+              </Tag>
+            )}
+            {(task.status === 'running' || task.status === 'queued') && (
+              <Tag color="processing">{STAGE_LABEL[task.stage ?? 'queued'] ?? task.stage}</Tag>
+            )}
+            {task.aiApplied && <Tag color="purple">AI 已补全</Tag>}
+            {task.submitted && <Tag color="gold">已提审</Tag>}
+            {task.templateId && (
+              <Typography.Link href={`/admin/templates/${task.templateId}`} target="_blank">
+                查看模板 #{task.templateId}
+              </Typography.Link>
+            )}
+          </Space>
+          <Progress
+            percent={task.progress}
+            size="small"
+            status={bad ? 'exception' : ok ? 'success' : 'active'}
+            style={{ marginBottom: 0, marginTop: 6 }}
+          />
+          <Typography.Text type={bad ? 'danger' : 'secondary'} style={{ fontSize: 12 }}>
+            {bad ? task.error : task.message}
+          </Typography.Text>
+        </div>
+
+        {bad && (
+          <Button size="small" icon={<RotateCcw size={13} />} onClick={onRetry}>
+            重试
+          </Button>
+        )}
+      </Space>
+    </Card>
   );
 }
