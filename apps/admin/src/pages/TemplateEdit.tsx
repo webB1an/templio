@@ -94,7 +94,7 @@ export function TemplateEdit() {
             t.previews.map((u, i) => ({ uid: `p${i}`, name: `preview${i}.webp`, status: 'done', url: u })),
           );
         }
-        if (t.files.length) {
+        if (t.files?.length) {
           setFiles(
             t.files.map((f) => ({
               key: fileKeySeq++,
