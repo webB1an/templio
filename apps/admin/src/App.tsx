@@ -14,6 +14,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Templates } from './pages/Templates';
 import { TemplateEdit } from './pages/TemplateEdit';
 import { Categories } from './pages/Categories';
+import { Payments } from './pages/Payments';
 import { clearSession, getProfile } from './api';
 
 const { Sider, Content, Header } = Layout;
@@ -115,6 +116,7 @@ export default function App() {
           <Route path="templates/new" element={<TemplateEdit />} />
           <Route path="templates/:id" element={<TemplateEdit />} />
           <Route path="categories" element={<Categories />} />
+          <Route path="payments" element={<Payments />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/admin" replace />} />
