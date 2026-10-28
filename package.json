@@ -1,0 +1,37 @@
+{
+  "name": "templio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "万用模板 | All-in-One Templates",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:admin": "npm run dev -w apps/admin",
+    "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w apps/admin",
+    "typecheck": "npm run typecheck --workspaces --if-present && npm run miniprogram:check",
+    "lint": "eslint .",
+    "test": "npm run test --workspaces --if-present",
+    "prisma:generate": "prisma generate --schema apps/api/prisma/schema.prisma",
+    "prisma:migrate": "bash scripts/safe-migrate.sh dev",
+    "prisma:deploy": "bash scripts/safe-migrate.sh deploy",
+    "prisma:validate": "prisma validate --schema apps/api/prisma/schema.prisma",
+    "db:backup": "bash scripts/backup-db.sh",
+    "miniprogram:check": "tsc --noEmit -p apps/miniprogram",
+    "tunnel:db": "ssh -N -L 3307:127.0.0.1:3306 -L 6380:127.0.0.1:6379 templio-server"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "eslint": "^9.21.0",
+    "husky": "^9.1.7",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.0"
+  }
+}

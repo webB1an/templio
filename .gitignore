@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+
+# env & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# miniprogram compiled output
+apps/miniprogram/miniprogram/**/*.js
+apps/miniprogram/miniprogram/**/*.js.map
+
+# logs
+logs/
+*.log
+npm-debug.log*
+
+# misc
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+coverage/
+.workbuddy/
+.husky/_/
+dist-bundle/
+万用模板_产品需求与开发实施.md
