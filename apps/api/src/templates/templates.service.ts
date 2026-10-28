@@ -34,6 +34,7 @@ const ADMIN_LIST_SELECT = {
   updatedAt: true,
   categories: { select: { category: { select: { id: true, name: true, dimension: true } } } },
   tags: { select: { tag: { select: { id: true, name: true } } } },
+  files: { select: { id: true, checkStatus: true } },
 } satisfies Prisma.TemplateSelect;
 
 @Injectable()

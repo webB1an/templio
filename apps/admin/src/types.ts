@@ -66,7 +66,7 @@ export interface TemplateItem {
   reviewNote: string | null;
   createdAt: string;
   updatedAt: string;
-  files: TemplateFile[];
+  files?: TemplateFile[];
   categories: { category: { id: number; name: string; dimension: string } }[];
   tags: { tag: { id: number; name: string } }[];
 }

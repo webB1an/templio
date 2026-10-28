@@ -143,12 +143,13 @@ export function Templates() {
       title: '链接',
       dataIndex: 'files',
       width: 80,
-      render: (v: { id: number; checkStatus: string | null }[]) => {
-        const ok = v.filter((f) => f.checkStatus === 'ok').length;
-        const checked = v.filter((f) => f.checkStatus).length;
+      render: (v: { id: number; checkStatus: string | null }[] | undefined) => {
+        const files = v ?? [];
+        const ok = files.filter((f) => f.checkStatus === 'ok').length;
+        const checked = files.filter((f) => f.checkStatus).length;
         return (
           <span style={{ fontSize: 12 }}>
-            {ok}/{v.length}
+            {ok}/{files.length}
             {checked > 0 ? ' 已检' : ''}
           </span>
         );
