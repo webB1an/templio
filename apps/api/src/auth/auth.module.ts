@@ -8,7 +8,9 @@ import { PrismaModule } from '../prisma/prisma.module';
 @Module({
   imports: [
     PrismaModule,
+    // global: JwtAuthGuard 可在任意模块使用 JwtService
     JwtModule.register({
+      global: true,
       secret: process.env.JWT_SECRET || 'dev-only-secret-change-me',
       signOptions: { expiresIn: '12h' },
     }),
