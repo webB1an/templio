@@ -26,6 +26,17 @@ interface SeedNode {
   children: { name: string; slug: string }[];
 }
 
+/** 文件格式 → format 维度的一级分类名（由系统确定，不交给 AI 猜） */
+const FORMAT_ROOT_NAME: Record<string, string> = {
+  ppt: 'PPT 模板',
+  word: 'Word 文档',
+  excel: 'Excel 表格',
+  pdf: '设计素材',
+  image: '设计素材',
+  archive: '设计素材',
+  other: 'PPT 模板',
+};
+
 /**
  * 推荐分类树：作为 AI 分类的种子候选。
  * 只在该维度完全没有分类时播种，不覆盖运营已有的任何结构。
@@ -327,43 +338,78 @@ export class TaxonomyService {
   // ─────────────────── AI 自动分类支持（种子 / 路径解析 / 自动建分类） ───────────────────
 
   /**
-   * 补齐推荐分类树：仅当某维度一个分类都没有时才播种，绝不动运营已建的结构。
-   * 返回本次新建的分类数量，便于日志与前端提示。
+   * 补齐推荐分类树：按「一级分类是否已存在」逐个补，不动运营已建的结构。
+   * 例：format 维度已有「PPT 模板」时，只补「Word 文档 / Excel 表格 / 设计素材」及其子类。
    */
   async ensureSeedCategories(): Promise<{ created: number; dimensions: Dimension[] }> {
-    const counts = await this.prisma.category.groupBy({
-      by: ['dimension'],
-      _count: { _all: true },
+    const existingRoots = await this.prisma.category.findMany({
+      where: { parentId: null },
+      select: { id: true, dimension: true, name: true },
     });
-    const existing = new Set(counts.map((c) => c.dimension as string));
-    const seeded: Dimension[] = [];
+    const seeded = new Set<Dimension>();
     let created = 0;
 
     for (const dimension of DIMENSIONS) {
-      if (existing.has(dimension)) continue;
-      seeded.push(dimension);
-      let sort = 0;
+      const dimRoots = existingRoots.filter((c) => c.dimension === dimension);
+      let sort = dimRoots.length;
       for (const root of SEED_TREE[dimension]) {
-        const rootRow = await this.prisma.category.create({
-          data: { dimension, name: root.name, slug: root.slug, sort: sort++ },
-        });
-        created += 1;
-        let childSort = 0;
-        for (const child of root.children) {
-          await this.prisma.category.create({
-            data: {
-              dimension,
-              parentId: rootRow.id,
-              name: child.name,
-              slug: child.slug,
-              sort: childSort++,
-            },
-          });
+        // 一级已存在就复用，但仍要检查其下是否缺推荐子分类
+        let rootId: number;
+        const hit = dimRoots.find((c) => normName(c.name) === normName(root.name));
+        if (hit) {
+          rootId = hit.id;
+        } else {
+          const row = await this.createSeedRow(dimension, null, root.name, root.slug, sort++);
+          rootId = row.id;
           created += 1;
+          seeded.add(dimension);
+        }
+
+        const children = await this.prisma.category.findMany({
+          where: { parentId: rootId },
+          select: { name: true },
+        });
+        const takenChild = children.map((c) => normName(c.name));
+        let childSort = children.length;
+        for (const child of root.children) {
+          if (takenChild.includes(normName(child.name))) continue;
+          await this.createSeedRow(dimension, rootId, child.name, child.slug, childSort++);
+          created += 1;
+          seeded.add(dimension);
         }
       }
     }
-    return { created, dimensions: seeded };
+    return { created, dimensions: [...seeded] };
+  }
+
+  /** 播种专用创建：slug 被占用时自动改用哈希 slug，保证幂等不中断 */
+  private async createSeedRow(
+    dimension: Dimension,
+    parentId: number | null,
+    name: string,
+    slug: string,
+    sort: number,
+  ) {
+    let finalSlug = slug;
+    const dup = await this.prisma.category.findUnique({
+      where: { dimension_slug: { dimension: dimension as never, slug: finalSlug } },
+    });
+    if (dup) finalSlug = autoSlug(name);
+    try {
+      return await this.prisma.category.create({
+        data: { dimension: dimension as never, parentId, name, slug: finalSlug, sort },
+        select: { id: true },
+      });
+    } catch {
+      // 并发或极端冲突：直接复用已有分类
+      const siblings = await this.prisma.category.findMany({
+        where: { dimension: dimension as never, parentId },
+        select: { id: true, name: true },
+      });
+      const hit = siblings.find((c) => normName(c.name) === normName(name));
+      if (hit) return hit;
+      throw new Error(`创建推荐分类失败：${dimension}/${name}`);
+    }
   }
 
   /** 当前分类树快照，供 AI prompt 使用 */
@@ -390,11 +436,18 @@ export class TaxonomyService {
    */
   async resolveCategoryPaths(
     paths: unknown,
-    opts: { autoCreate?: boolean; allowNewRoots?: boolean; maxNew?: number } = {},
+    opts: {
+      autoCreate?: boolean;
+      allowNewRoots?: boolean;
+      maxNew?: number;
+      /** 强制指定某维度的一级分类（如 format 由文件格式决定），AI 只需给二级名 */
+      rootOverride?: Partial<Record<Dimension, string>>;
+    } = {},
   ): Promise<{ ids: number[]; created: string[] }> {
     const autoCreate = opts.autoCreate !== false;
     const allowNewRoots = opts.allowNewRoots === true;
     const maxNew = opts.maxNew ?? 3;
+    const rootOverride = opts.rootOverride ?? {};
     const ids = new Set<number>();
     const created: string[] = [];
     let newCount = 0;
@@ -406,8 +459,16 @@ export class TaxonomyService {
       if (parts.length < 2) continue;
       const dimension = parts[0] as Dimension;
       if (!DIMENSIONS.includes(dimension)) continue;
-      const rootName = parts[1];
-      const childName = parts[2];
+
+      let rootName = parts[1];
+      let childName: string | undefined = parts[2];
+      const override = rootOverride[dimension];
+      if (override) {
+        // 系统已定一级：忽略 AI 给的一级名，只取其最后一段作为二级
+        const rest = parts.slice(1).filter((p) => normName(p) !== normName(override));
+        rootName = override;
+        childName = rest.length ? rest[rest.length - 1] : undefined;
+      }
 
       // 一级分类：先复用
       let root = await this.findCategoryBySiblingName(dimension, null, rootName);
@@ -495,26 +556,26 @@ export class TaxonomyService {
     return [...ids];
   }
 
+  /** 文件格式对应的一级分类名 */
+  formatRootName(format: string): string {
+    return FORMAT_ROOT_NAME[format] ?? FORMAT_ROOT_NAME.other;
+  }
+
   /**
-   * AI 分类失败时的兜底：按文件格式挂到对应的一级分类，保证能通过「至少 1 个分类」的提审校验。
+   * 兜底：按文件格式挂到对应的一级分类，保证能通过「至少 1 个分类」的提审校验。
+   * 一级分类不存在时按推荐树创建。
    */
   async fallbackCategoryId(format: string): Promise<number | null> {
-    const map: Record<string, string> = {
-      ppt: 'PPT 模板',
-      word: 'Word 文档',
-      excel: 'Excel 表格',
-      pdf: '设计素材',
-      image: '设计素材',
-      archive: '设计素材',
-      other: 'PPT 模板',
-    };
-    const want = normName(map[format] ?? 'PPT 模板');
+    const name = this.formatRootName(format);
+    const resolved = await this.resolveCategoryPaths([`format/${name}`], {
+      autoCreate: true,
+      allowNewRoots: true,
+    });
+    if (resolved.ids.length) return resolved.ids[0];
     const roots = await this.prisma.category.findMany({
       where: { dimension: 'format', parentId: null, enabled: true },
-      select: { id: true, name: true },
+      select: { id: true },
     });
-    const hit = roots.find((c) => normName(c.name) === want);
-    if (hit) return hit.id;
     return roots[0]?.id ?? null;
   }
 

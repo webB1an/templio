@@ -84,6 +84,11 @@ export class AiService {
       theme: '风格',
     };
     const treeLines = (['format', 'scene', 'audience', 'theme'] as const).map((dim) => {
+      if (dim === 'format') {
+        // format 一级由系统定，只把二级名给 AI 参考
+        const children = categoryRows.filter((c) => c.dimension === 'format').map((c) => c.name);
+        return `- format（格式细分：只写二级名，一级由系统确定）：${children.join('、') || '（暂无，可自拟）'}`;
+      }
       const dimRoots = roots.filter((c) => c.dimension === dim);
       const parts = dimRoots.map((root) => {
         const children = categoryRows
@@ -104,19 +109,20 @@ export class AiService {
       ...template.files.map((f) => f.previewUrl).filter((u): u is string => !!u),
     ].slice(0, 3);
 
+    const formatRootName = this.taxonomy.formatRootName(template.format);
     const systemPrompt = [
       '你是模板资源库的内容运营助手。根据模板封面/预览截图与元信息，输出内容建议。',
       '必须只输出一个 JSON 对象，不要任何多余文字或 Markdown 代码块标记。',
       'JSON 字段：',
       'title（字符串，≤32字，有吸引力的标题）、summary（字符串，≤80字，一句话卖点）、',
-      'categoryPaths（字符串数组，2-4 条分类路径）、tags（字符串数组，0-6 个中文短标签，每个≤6字）、',
+      'categoryPaths（字符串数组，3-4 条分类路径）、tags（字符串数组，0-6 个中文短标签，每个≤6字）、',
       'suggestedPrice（整数，0-100，0=免费；普通模板 10-30）。',
       '',
       'categoryPaths 规则（非常重要）：',
-      '1. 每条格式必须是「维度/一级分类」或「维度/一级分类/二级分类」，维度只能是 format/scene/audience/theme。',
-      '2. 第二段必须原样使用下面列出的已有「一级分类」名称，禁止凭空造新的一级分类。',
-      '3. 第三段优先复用括号内的已有二级分类名称；确实没有贴切的，才可以自拟一个简洁通用名（≤8字，不要带书名号或引号）。',
-      '4. format 维度必须给 1 条，且要与文件格式一致；scene/audience/theme 各最多 1 条，宁缺勿滥。',
+      `1. 格式维度固定 1 条，写成「format/二级分类名」，例如 format/简历求职。一级分类由系统按文件格式自动确定为「${formatRootName}」，你不要写一级名，也不要依据封面图改变格式判断；二级请从 format 列表里选最贴切的。`,
+      '2. scene/audience/theme 三个维度写成「维度/一级分类/二级分类」，一级必须原样使用下面列出的已有名称，禁止凭空造新的一级分类。',
+      '3. 二级优先复用括号内的已有名称；括号里确实没有贴切的，才自拟一个简洁通用名（≤8字，不带书名号或引号）。宁可省略该维度，也不要硬凑不相关的二级。',
+      '4. scene/audience/theme 各最多 1 条，宁缺勿滥。',
       '',
       '可用分类：',
       ...treeLines,
@@ -175,23 +181,22 @@ export class AiService {
       parsed = JSON.parse(match[0]) as Record<string, unknown>;
     }
 
-    // ── 分类：路径解析 + 自动落库 ──
+    // ── 分类：路径解析 + 自动落库（format 一级由系统按文件格式直定） ──
     const paths = Array.isArray(parsed.categoryPaths) ? parsed.categoryPaths : [];
     const resolved = await this.taxonomy.resolveCategoryPaths(paths, {
       autoCreate,
       allowNewRoots: false,
       maxNew: 3,
+      rootOverride: { format: formatRootName },
     });
     let categoryIds = resolved.ids;
+    // 兜底：无论 AI 是否给出格式分类，都保证 format 维度有值
+    const formatRootId = await this.taxonomy.fallbackCategoryId(template.format);
+    if (formatRootId) categoryIds = [formatRootId, ...categoryIds.filter((id) => id !== formatRootId)];
     if (!categoryIds.length) {
       // 兼容 AI 直接给 id 的旧格式
       const legacyIds = Array.isArray(parsed.categoryIds) ? (parsed.categoryIds as number[]) : [];
       categoryIds = legacyIds.filter((id) => categoryRows.some((c) => c.id === id)).slice(0, 4);
-    }
-    if (!categoryIds.length) {
-      // 兜底：按格式挂一级分类，保证提审「至少 1 个分类」不被卡住
-      const fallback = await this.taxonomy.fallbackCategoryId(template.format);
-      if (fallback) categoryIds = [fallback];
     }
 
     // ── 标签：按名解析，不存在则创建 ──
