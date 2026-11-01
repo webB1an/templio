@@ -113,6 +113,8 @@ export const templateTextSchema = z.object({
   firstPagesText: z.array(z.string()).max(12).default([]),
   slideCount: z.number().int().nonnegative().optional(),
   wordCount: z.number().int().nonnegative().optional(),
+  /** 模板实际使用的字体（渲染机需安装，缺失会漂移） */
+  fonts: z.array(z.string().trim()).max(30).default([]),
 });
 export type TemplateText = z.infer<typeof templateTextSchema>;
 
@@ -143,7 +145,9 @@ export const templateManifestSchema = z.object({
   }),
   /** 渲染告警：字体缺失、页数异常等，管理端展示 */
   warnings: z.array(z.string()).max(20).default([]),
-  generatedAt: z.string().datetime({ offset: true }),
+  generatedAt: z
+    .string()
+    .refine((value) => !Number.isNaN(Date.parse(value)), "需要可解析的 ISO 时间字符串"),
 });
 export type TemplateManifest = z.infer<typeof templateManifestSchema>;
 

@@ -11,10 +11,22 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "tsx src/index.ts",
-    "doctor": "tsx src/index.ts doctor"
+    "doctor": "tsx src/index.ts doctor",
+    "render": "tsx src/index.ts render",
+    "status": "tsx src/index.ts status",
+    "fixtures": "tsx src/index.ts fixtures"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^1.1.0",
     "@templio/shared": "0.1.0",
-    "commander": "^13.1.0"
+    "commander": "^13.1.0",
+    "fast-xml-parser": "^5.11.2",
+    "jszip": "^3.10.2",
+    "pdfjs-dist": "^6.4.299",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "docx": "^9.15.1",
+    "pptxgenjs": "^4.0.1"
   }
 }

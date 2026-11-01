@@ -1,5 +1,9 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { copyFile, mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { extname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -64,5 +68,110 @@ export async function readSofficeVersion(bin: string): Promise<string> {
     return match?.[1] ?? text.split(/\r?\n/).find(Boolean) ?? "unknown";
   } catch (error) {
     return `无法获取版本：${(error as Error).message}`;
+  }
+}
+
+export interface ConvertToPdfOptions {
+  /** 单文件超时，默认 5 分钟 */
+  timeoutMs?: number;
+}
+
+/**
+ * 把 PPTX/DOCX 转成 PDF。
+ *
+ * 做法：拷到 ASCII 临时目录再转换，规避中文路径 / 并发锁 / 残留文件问题；
+ * 每个并发任务使用独立的 UserInstallation 配置目录。
+ */
+export async function convertToPdf(
+  sofficePath: string,
+  sourcePath: string,
+  options: ConvertToPdfOptions = {},
+): Promise<Buffer> {
+  const workDir = await mkdtemp(join(tmpdir(), "templio-lo-"));
+  try {
+    const ext = extname(sourcePath).toLowerCase() || ".pptx";
+    const inputPath = join(workDir, `input${ext}`);
+    const profileDir = join(workDir, "profile");
+    await mkdir(profileDir, { recursive: true });
+    await copyFile(sourcePath, inputPath);
+
+    const args = [
+      "--headless",
+      "--norestore",
+      "--invisible",
+      "--nodefault",
+      "--nologo",
+      "--nolockcheck",
+      `-env:UserInstallation=${pathToFileURL(profileDir).href}`,
+      "--convert-to",
+      "pdf",
+      "--outdir",
+      workDir,
+      inputPath,
+    ];
+
+    await runProcess(sofficePath, args, options.timeoutMs ?? 300_000);
+
+    const pdfPath = join(workDir, "input.pdf");
+    return await readFile(pdfPath);
+  } finally {
+    await rm(workDir, { recursive: true, force: true }).catch(() => undefined);
+  }
+}
+
+function runProcess(command: string, args: string[], timeoutMs: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    let timer: NodeJS.Timeout | undefined;
+
+    const finish = (error?: Error): void => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      if (error) reject(error);
+      else resolve();
+    };
+
+    timer = setTimeout(() => {
+      killTree(child.pid);
+      finish(new Error(`LibreOffice 转换超时（${Math.round(timeoutMs / 1000)}s）`));
+    }, timeoutMs);
+
+    child.stdout?.on("data", (chunk: Buffer) => {
+      stdout = (stdout + chunk.toString()).slice(-4000);
+    });
+    child.stderr?.on("data", (chunk: Buffer) => {
+      stderr = (stderr + chunk.toString()).slice(-4000);
+    });
+    child.on("error", (error) => finish(new Error(`无法启动 LibreOffice：${error.message}`)));
+    child.on("close", (code) => {
+      if (settled) return;
+      if (code === 0) {
+        finish();
+        return;
+      }
+      const detail = (stderr || stdout).trim().slice(-800);
+      finish(new Error(`LibreOffice 转换失败（exit ${code}）${detail ? `：${detail}` : ""}`));
+    });
+  });
+}
+
+function killTree(pid?: number): void {
+  if (!pid) return;
+  if (process.platform === "win32") {
+    execFile("taskkill", ["/pid", String(pid), "/T", "/F"], { windowsHide: true }, () => undefined);
+    return;
+  }
+  try {
+    process.kill(pid, "SIGKILL");
+  } catch {
+    // 进程可能已经退出
   }
 }

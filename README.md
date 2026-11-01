@@ -26,13 +26,37 @@ templio/
 ```bash
 npm install
 
-# 渲染环境检查（需要 LibreOffice + 中文字体）
+# 1. 渲染环境检查（需要 LibreOffice + 中文字体）
 npm run doctor
 
-# 运行 CLI
-npm run cli -- doctor
-npm run cli -- --help
+# 2. 生成合成测试模板（真实模板到位后跳过）
+npm run fixtures
+
+# 3. 批量渲染 → 标准物料包
+npm run render -- fixtures/samples -o fixtures/packages
+
+# 4. 检查物料包完整性
+npm run status -- fixtures/packages
 ```
+
+物料包结构（详见 `docs/01-流程确认稿-v1.md` §5）：
+
+```
+<dist>/<hash8>-<slug>/
+├── manifest.json
+├── text.json
+├── source/原始文件
+└── images/{cover,thumb,preview-01..}.webp
+```
+
+| CLI 命令 | 说明 |
+| --- | --- |
+| `doctor` | 检查 LibreOffice / 中文字体 / Node / 图片预算 |
+| `render <srcDir> -o <out>` | 批量渲染：OOXML 抽文字 → LibreOffice 转 PDF → 图片 → 物料包 |
+| `status [distDir]` | 校验物料包 manifest 与文件完整性 |
+| `fixtures` | 生成合成 PPT/Word 测试模板（开发用） |
+
+渲染管线特性：SHA-256 幂等（同文件跳过）、`.ledger.jsonl` 断点账本、LibreOffice 独立 profile 并发、字体名抽取告警、图片体积预算内自动降质。
 
 ## 约束（个人开发者）
 

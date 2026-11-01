@@ -15,6 +15,7 @@ coverage/
 # 运行时数据
 storage/
 .runs/
+fixtures/
 fixtures-out/
 dist-packages/
 *.log

@@ -9,6 +9,60 @@ export interface FontCheck {
   detail: string;
 }
 
+/**
+ * 渲染机通常已安装的常用字体（Windows 自带 + 常见免费商用字体）。
+ * 只对"非常用字体"告警，避免每个模板都提示 Microsoft YaHei。
+ */
+const COMMON_FONTS = new Set(
+  [
+    "microsoft yahei",
+    "微软雅黑",
+    "simsun",
+    "宋体",
+    "simhei",
+    "黑体",
+    "kaiti",
+    "楷体",
+    "dengxian",
+    "等线",
+    "fangsong",
+    "仿宋",
+    "arial",
+    "calibri",
+    "cambria",
+    "times new roman",
+    "segoe ui",
+    "verdana",
+    "tahoma",
+    "georgia",
+    "consolas",
+    "courier new",
+    "arial unicode ms",
+    "source han sans",
+    "思源黑体",
+    "source han serif",
+    "思源宋体",
+    "alibaba pu hui ti",
+    "阿里巴巴普惠体",
+    "harmonyos sans",
+    "pingfang sc",
+    "苹方",
+  ].map((font) => font.toLowerCase()),
+);
+
+/** 返回模板里使用、但可能不在渲染机上的字体 */
+export function filterUnknownFonts(fonts: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const font of fonts) {
+    const key = font.trim().toLowerCase();
+    if (!key || COMMON_FONTS.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    result.push(font.trim());
+  }
+  return result;
+}
+
 /** 渲染保真的前提：常用中文字体必须存在，否则 LibreOffice 会静默替换字体导致版面漂移。 */
 const WIN_FONTS: Array<{ label: string; file: string }> = [
   { label: "微软雅黑", file: "msyh.ttc" },

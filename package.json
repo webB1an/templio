@@ -14,11 +14,17 @@
     "build": "npm run build -w @templio/shared && npm run build -w @templio/desktop-cli",
     "typecheck": "npm run typecheck -w @templio/shared && npm run typecheck -w @templio/desktop-cli",
     "doctor": "npm run build -w @templio/shared && npm run doctor -w @templio/desktop-cli",
-    "cli": "npm run dev -w @templio/desktop-cli --"
+    "fixtures": "npm run build -w @templio/shared && npm run fixtures -w @templio/desktop-cli --",
+    "render": "npm run build -w @templio/shared && npm run render -w @templio/desktop-cli --",
+    "status": "npm run build -w @templio/shared && npm run status -w @templio/desktop-cli --",
+    "cli": "npm run dev -w @templio/desktop-cli"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
+  },
+  "overrides": {
+    "image-size": "^2.0.4"
   }
 }
