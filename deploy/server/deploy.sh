@@ -29,6 +29,11 @@ set -a
 . apps/api/.env
 set +a
 
+echo "-- Prisma generate (server native target)"
+# CI runner 与服务器 OpenSSL target 不同（CI: debian-openssl-3.0.x / 服务器: debian-openssl-1.0.x），
+# 必须在服务器上按本机 target 重新生成 client。
+npx prisma generate --schema apps/api/prisma/schema.prisma
+
 echo "-- Prisma migrate deploy"
 npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
 
