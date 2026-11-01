@@ -64,6 +64,20 @@ jobs:
           ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
           echo "SSH configured for $DEPLOY_HOST"
 
+      - name: Prepare server directories
+        if: steps.artifacts.outputs.enabled == 'true' && steps.secrets.outputs.configured == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          APP_ROOT="${DEPLOY_PATH:-/www/wwwroot/templio}"
+          ssh -i "$HOME/.ssh/deploy_key" -p "$PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "mkdir -p '${APP_ROOT}/apps/api/dist' '${APP_ROOT}/apps/api/prisma' '${APP_ROOT}/apps/admin/dist' '${APP_ROOT}/packages/shared/dist' '${APP_ROOT}/deploy' '${APP_ROOT}/logs' '${APP_ROOT}/storage'"
+
       - name: Sync release to server
         if: steps.artifacts.outputs.enabled == 'true' && steps.secrets.outputs.configured == 'true'
         env:
