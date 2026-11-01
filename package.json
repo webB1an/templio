@@ -13,7 +13,7 @@
   "scripts": {
     "prepare": "node scripts/git-hooks/install.mjs",
     "build": "npm run build -w @templio/shared && npm run build -w @templio/desktop-cli",
-    "typecheck": "npm run typecheck -w @templio/shared && npm run typecheck -w @templio/desktop-cli",
+    "typecheck": "npm run build -w @templio/shared && npm run typecheck -w @templio/shared && npm run typecheck -w @templio/desktop-cli",
     "doctor": "npm run build -w @templio/shared && npm run doctor -w @templio/desktop-cli",
     "fixtures": "npm run build -w @templio/shared && npm run fixtures -w @templio/desktop-cli --",
     "render": "npm run build -w @templio/shared && npm run render -w @templio/desktop-cli --",
