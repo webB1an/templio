@@ -17,7 +17,7 @@ templio/
 │   ├── desktop-cli/      桌面批处理 CLI（LibreOffice 渲染 + 物料包 + 上传）
 │   ├── api/              服务端（NestJS + Prisma + MySQL，/health 已就绪）
 │   ├── admin/            Web 管理端（React + AntD，待建）
-│   └── miniprogram/      微信原生小程序（液态玻璃，待建）
+│   └── miniprogram/      微信原生小程序（液态玻璃 UI，P0 演示已初始化）
 ├── packages/
 │   └── shared/           跨端契约：枚举、物料包 schema、图片规格
 ├── docs/                 规划与设计文档
@@ -65,6 +65,14 @@ npm run status -- fixtures/packages
 | `fixtures` | 生成合成 PPT/Word 测试模板（开发用） |
 
 渲染管线特性：SHA-256 幂等（同文件跳过）、`.ledger.jsonl` 断点账本、LibreOffice 独立 profile 并发、字体名抽取告警、图片体积预算内自动降质。
+
+## 小程序
+
+- 目录：`apps/miniprogram`（微信原生 JS + 液态玻璃 UI）
+- 用微信开发者工具直接导入该目录（AppID 已写入 `project.config.json`）
+- 生产接口域名：`https://templio.wdbzk.com`（需在微信公众平台配置 request 合法域名）
+- 静态检查：`npm run check:miniprogram`（页面四件套 / JSON / JS 语法 / WXML 标签闭合）
+- 详细说明：`apps/miniprogram/README.md`
 
 ## 约束（个人开发者）
 

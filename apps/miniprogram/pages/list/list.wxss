@@ -1,0 +1,20 @@
+.nav-placeholder {
+  width: 68rpx;
+  height: 68rpx;
+}
+
+.list-head {
+  padding: 12rpx 8rpx 30rpx;
+}
+
+.list-title {
+  font-size: 44rpx;
+}
+
+.list-grid {
+  margin-top: 8rpx;
+}
+
+.empty {
+  order: 1;
+}

@@ -23,6 +23,11 @@ dist-packages/
 # husky 自动生成的内部目录
 .husky/_
 
+# 微信开发者工具本地配置 / 构建产物
+apps/miniprogram/project.private.config.json
+apps/miniprogram/miniprogram_npm/
+apps/miniprogram/.eslintrc.js
+
 # 系统
 .DS_Store
 Thumbs.db

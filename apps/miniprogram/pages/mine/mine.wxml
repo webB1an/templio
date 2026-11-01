@@ -1,0 +1,52 @@
+<view class="bg-orb orb-a"></view>
+<view class="bg-orb orb-b"></view>
+
+<view class="nav" style="padding-top: {{navTop}}px;">
+  <view class="nav-inner glass glass-pill" style="margin-right: {{menuRight}}px;">
+    <text class="brand">我的</text>
+    <text class="brand-sub">Templio</text>
+  </view>
+</view>
+
+<view class="page" style="padding-top: {{contentTop}}px;">
+  <view class="profile glass">
+    <view class="avatar">T</view>
+    <view class="profile-main">
+      <text class="profile-name">微信用户</text>
+      <text class="profile-sub">登录后可同步收藏与下载记录</text>
+    </view>
+  </view>
+
+  <view class="stats glass">
+    <view class="stat">
+      <text class="stat-num">{{favCount}}</text>
+      <text class="stat-label">收藏</text>
+    </view>
+    <view class="stat">
+      <text class="stat-num">0</text>
+      <text class="stat-label">下载</text>
+    </view>
+    <view class="stat">
+      <text class="stat-num">0</text>
+      <text class="stat-label">浏览</text>
+    </view>
+  </view>
+
+  <view class="menu glass">
+    <view
+      wx:for="{{menu}}"
+      wx:key="key"
+      class="menu-row"
+      data-key="{{item.key}}"
+      bindtap="onMenu"
+    >
+      <text class="menu-icon">{{item.icon}}</text>
+      <text class="menu-label">{{item.label}}</text>
+      <text class="menu-tip">{{item.tip}}</text>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <view class="footer-tip">Templio · 模板仅供学习交流，版权归原作者</view>
+  <view class="tabbar-pad"></view>
+</view>

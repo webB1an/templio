@@ -1,0 +1,26 @@
+{
+  "appid": "wx5f21980e48e92ae6",
+  "compileType": "miniprogram",
+  "libVersion": "3.6.5",
+  "projectname": "templio",
+  "miniprogramRoot": "./",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "coverView": true,
+    "showShadowRootInWxmlPanel": true,
+    "packNpmManually": false,
+    "ignoreUploadUnusedFiles": true
+  },
+  "condition": {
+    "miniprogram": {
+      "list": [
+        { "name": "首页", "pathName": "pages/index/index", "query": "", "scene": null },
+        { "name": "详情", "pathName": "pages/detail/detail", "query": "id=demo-01", "scene": null }
+      ]
+    }
+  }
+}

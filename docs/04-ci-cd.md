@@ -165,9 +165,9 @@ git push origin main
 
 **待办：**
 
-1. 微信小程序 AppID / 上传密钥
+1. 微信小程序：AppID / AppSecret 已在服务器 `.env` 配置；还需要公众平台下载的「代码上传密钥」才能让 CI 上传体验版
 2. 百度网盘 / 夸克网盘官方 Skill 安装与账号授权
-3. Web 管理端（`apps/admin`）与小程序（`apps/miniprogram`）开发
+3. Web 管理端（`apps/admin`）开发；小程序 P0 演示已初始化（见 `apps/miniprogram`），待接模板接口 / 登录 / 收藏
 
 ---
 

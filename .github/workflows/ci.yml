@@ -45,6 +45,8 @@ jobs:
         run: npm run typecheck
       - name: Build
         run: npm run build
+      - name: Check mini program
+        run: npm run check:miniprogram
 
   render-smoke:
     name: Render smoke (LibreOffice)

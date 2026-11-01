@@ -19,6 +19,7 @@
     "fixtures": "npm run build -w @templio/shared && npm run fixtures -w @templio/desktop-cli --",
     "render": "npm run build -w @templio/shared && npm run render -w @templio/desktop-cli --",
     "status": "npm run build -w @templio/shared && npm run status -w @templio/desktop-cli --",
+    "check:miniprogram": "node scripts/check-miniprogram.mjs",
     "cli": "npm run dev -w @templio/desktop-cli",
     "dev:api": "npm run dev -w @templio/api",
     "commitlint": "commitlint --edit"

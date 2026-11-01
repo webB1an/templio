@@ -1,0 +1,8 @@
+.hero {
+  padding: 12rpx 8rpx 0;
+}
+
+.card-hover {
+  transform: scale(0.98);
+  transition: transform 0.12s ease;
+}

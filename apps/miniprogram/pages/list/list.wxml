@@ -1,0 +1,45 @@
+<view class="bg-orb orb-a"></view>
+<view class="bg-orb orb-b"></view>
+
+<view class="nav" style="padding-top: {{navTop}}px;">
+  <view class="nav-inner glass glass-pill" style="margin-right: {{menuRight}}px;">
+    <view class="nav-back" bindtap="goBack">‹</view>
+    <text class="nav-title">{{title}}</text>
+    <view class="nav-placeholder"></view>
+  </view>
+</view>
+
+<view class="page" style="padding-top: {{contentTop}}px;">
+  <view class="list-head">
+    <text class="hero-title list-title">{{title}}</text>
+    <text class="hero-sub">{{templates.length}} 个模板</text>
+  </view>
+
+  <view wx:if="{{templates.length === 0}}" class="empty glass">
+    没有找到相关模板，换个关键词试试
+  </view>
+
+  <view class="grid list-grid">
+    <view
+      wx:for="{{templates}}"
+      wx:key="id"
+      class="card"
+      data-id="{{item.id}}"
+      bindtap="openDetail"
+    >
+      <view class="cover tone-{{item.tone}}">
+        <text class="cover-format">{{item.format}}</text>
+        <text class="cover-title">{{item.title}}</text>
+      </view>
+      <view class="card-body">
+        <text class="card-title">{{item.title}}</text>
+        <view class="card-meta">
+          <text>{{item.category}}</text>
+          <text>{{item.pageCount}} 页</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="tabbar-pad"></view>
+</view>

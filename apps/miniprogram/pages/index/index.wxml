@@ -1,0 +1,64 @@
+<view class="bg-orb orb-a"></view>
+<view class="bg-orb orb-b"></view>
+<view class="bg-orb orb-c"></view>
+
+<view class="nav" style="padding-top: {{navTop}}px;">
+  <view class="nav-inner glass glass-pill" style="margin-right: {{menuRight}}px;">
+    <text class="brand">Templio</text>
+    <text class="brand-sub">模板库</text>
+  </view>
+</view>
+
+<view class="page" style="padding-top: {{contentTop}}px;">
+  <view class="hero">
+    <text class="hero-title">找到你的</text>
+    <text class="hero-title">下一份灵感</text>
+    <text class="hero-sub">PPT · Word 模板，精选每周更新</text>
+  </view>
+
+  <view class="search glass glass-pill" bindtap="goSearch">
+    <text class="search-icon">⌕</text>
+    <text class="search-text">搜索模板 / 场景 / 风格</text>
+  </view>
+
+  <scroll-view class="chips" scroll-x enhanced show-scrollbar="{{false}}">
+    <view
+      wx:for="{{categories}}"
+      wx:key="key"
+      class="chip {{activeCategory === item.key ? 'chip-active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onCategory"
+    >{{item.name}}</view>
+  </scroll-view>
+
+  <view class="section-head">
+    <text class="section-title">精选模板</text>
+    <text class="section-more" bindtap="goList">全部 ›</text>
+  </view>
+
+  <view class="grid">
+    <view
+      wx:for="{{templates}}"
+      wx:key="id"
+      class="card"
+      data-id="{{item.id}}"
+      bindtap="openDetail"
+      hover-class="card-hover"
+    >
+      <view class="cover tone-{{item.tone}}">
+        <text class="cover-format">{{item.format}}</text>
+        <text class="cover-title">{{item.title}}</text>
+      </view>
+      <view class="card-body">
+        <text class="card-title">{{item.title}}</text>
+        <view class="card-meta">
+          <text>{{item.category}}</text>
+          <text>{{item.pageCount}} 页</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer-tip">Templio · 模板仅供学习交流，版权归原作者</view>
+  <view class="tabbar-pad"></view>
+</view>
