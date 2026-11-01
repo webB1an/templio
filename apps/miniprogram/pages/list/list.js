@@ -2,6 +2,16 @@ const { TEMPLATES } = require("../../data/mock");
 const { getNavMetrics } = require("../../utils/layout");
 const { fetchTemplates } = require("../../utils/api");
 
+/** URL query 里可能是 encodeURIComponent 后的中文，安全解码 */
+function safeDecode(value) {
+  if (!value) return "";
+  try {
+    return decodeURIComponent(value);
+  } catch (error) {
+    return value;
+  }
+}
+
 Page({
   data: {
     title: "全部模板",
@@ -17,14 +27,16 @@ Page({
   onLoad(options) {
     const metrics = getNavMetrics();
     const categoryKey = options.categoryKey || "";
-    const title = options.category || (options.q ? "搜索结果" : "全部模板");
+    const keyword = safeDecode(options.q || "");
+    const categoryName = safeDecode(options.category || "");
+    const title = categoryName || (keyword ? `搜索：${keyword}` : "全部模板");
     this.setData({
       navTop: metrics.statusBarHeight,
       navHeight: metrics.navHeight,
       menuRight: metrics.menuRight,
       contentTop: metrics.statusBarHeight + metrics.navHeight + 28,
       title,
-      keyword: options.q || "",
+      keyword,
       categoryKey
     });
     this.applyFilter();
@@ -67,6 +79,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: "Templio · 模板库", path: "/pages/index/index" };
+    return { title: "模板宝 · 模板库", path: "/pages/index/index" };
   }
 });
