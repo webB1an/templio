@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Templio 服务器发布脚本：由 GitHub Actions 通过 SSH 调用。
-# 前置：代码/产物已通过 rsync 同步到 APP_ROOT，且 apps/api/.env 已存在。
+# 说明：依赖（node_modules）由 CI 侧安装后随 rsync 同步，2C2G 服务器上不执行 npm install。
 set -euo pipefail
 
 APP_ROOT="${APP_ROOT:-/www/wwwroot/templio}"
@@ -18,19 +18,16 @@ if [ ! -f apps/api/.env ]; then
   exit 1
 fi
 
-# 加载 .env（Prisma 迁移与 PM2 健康检查需要）
+if [ ! -d node_modules/@nestjs/core ]; then
+  echo "✘ node_modules 不完整（CI 未同步依赖），请检查 deploy workflow 的 Sync release 步骤"
+  exit 1
+fi
+
+# 加载 .env（Prisma 迁移与健康检查需要）
 set -a
 # shellcheck disable=SC1091
 . apps/api/.env
 set +a
-
-echo "-- 安装生产依赖（仅 api + shared workspace）"
-npm ci --omit=dev --no-audit --no-fund \
-  --workspace @templio/api \
-  --workspace @templio/shared
-
-echo "-- Prisma generate"
-npx prisma generate --schema apps/api/prisma/schema.prisma
 
 echo "-- Prisma migrate deploy"
 npx prisma migrate deploy --schema apps/api/prisma/schema.prisma

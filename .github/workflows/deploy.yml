@@ -29,6 +29,15 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Install production dependencies for deploy bundle
+        env:
+          HUSKY: "0"
+        run: |
+          # 2C2G 服务器上不跑 npm install：依赖在 CI 侧装好随产物一起同步
+          npm ci --omit=dev --no-audit --no-fund \
+            --workspace @templio/api \
+            --workspace @templio/shared
+
       - name: Detect deployable artifacts
         id: artifacts
         run: |
@@ -76,7 +85,7 @@ jobs:
           PORT="${DEPLOY_PORT:-22}"
           APP_ROOT="${DEPLOY_PATH:-/www/wwwroot/templio}"
           ssh -i "$HOME/.ssh/deploy_key" -p "$PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "mkdir -p '${APP_ROOT}/apps/api/dist' '${APP_ROOT}/apps/api/prisma' '${APP_ROOT}/apps/admin/dist' '${APP_ROOT}/packages/shared/dist' '${APP_ROOT}/deploy' '${APP_ROOT}/scripts' '${APP_ROOT}/logs' '${APP_ROOT}/storage'"
+            "mkdir -p '${APP_ROOT}/apps/api/dist' '${APP_ROOT}/apps/api/prisma' '${APP_ROOT}/apps/admin/dist' '${APP_ROOT}/packages/shared/dist' '${APP_ROOT}/deploy' '${APP_ROOT}/scripts' '${APP_ROOT}/node_modules' '${APP_ROOT}/logs' '${APP_ROOT}/storage'"
 
       - name: Sync release to server
         if: steps.artifacts.outputs.enabled == 'true' && steps.secrets.outputs.configured == 'true'
@@ -104,6 +113,10 @@ jobs:
             rsync $RSYNC_OPTS -e "$RSYNC_SSH" packages/shared/package.json "$TARGET/packages/shared/"
           fi
           rsync $RSYNC_OPTS -e "$RSYNC_SSH" package.json package-lock.json "$TARGET/"
+          rsync $RSYNC_OPTS --delete -e "$RSYNC_SSH" node_modules/ "$TARGET/node_modules/"
+          if [ -d apps/api/node_modules ]; then
+            rsync $RSYNC_OPTS --delete -e "$RSYNC_SSH" apps/api/node_modules/ "$TARGET/apps/api/node_modules/"
+          fi
           rsync $RSYNC_OPTS --delete -e "$RSYNC_SSH" deploy/ "$TARGET/deploy/"
           rsync $RSYNC_OPTS --delete -e "$RSYNC_SSH" scripts/ "$TARGET/scripts/"
 
