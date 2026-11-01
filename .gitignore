@@ -20,6 +20,9 @@ fixtures-out/
 dist-packages/
 *.log
 
+# husky 自动生成的内部目录
+.husky/_
+
 # 系统
 .DS_Store
 Thumbs.db

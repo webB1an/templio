@@ -1,5 +1,7 @@
 # Templio
 
+[![CI](https://github.com/webB1an/templio/actions/workflows/ci.yml/badge.svg)](https://github.com/webB1an/templio/actions/workflows/ci.yml)
+
 PPT / Word 模板库小程序：微信小程序（用户端）+ Web 管理端 + NestJS 服务端 + 桌面批处理 CLI。
 
 > 当前阶段：**P0 打样**（渲染管线 + 环境验证），未上线。
@@ -17,14 +19,18 @@ templio/
 ├── packages/
 │   └── shared/           跨端契约：枚举、物料包 schema、图片规格
 ├── docs/                 规划与设计文档
-├── scripts/              运维 / 验收脚本（待建）
-└── deploy/               部署配置（待建）
+├── scripts/              运维 / 验收脚本、git hooks 安装
+└── deploy/               部署：服务器 bootstrap、发布脚本、PM2、Nginx 示例
 ```
 
 ## 快速开始
 
 ```bash
-npm install
+npm ci
+
+# 类型检查 + 构建（CI 同款）
+npm run typecheck
+npm run build
 
 # 1. 渲染环境检查（需要 LibreOffice + 中文字体）
 npm run doctor
@@ -66,9 +72,28 @@ npm run status -- fixtures/packages
 
 详见 `docs/03-资源受限部署修订.md`。
 
+## CI / CD
+
+- **CI**（`.github/workflows/ci.yml`）：提交信息校验 + typecheck/build + LibreOffice 渲染管线冒烟测试
+- **CD**（`.github/workflows/deploy.yml`）：push 到 `main` 自动构建并部署到服务器（当前服务端应用尚未实现，部署会自动跳过）
+- **服务器初始化**：`APP_ROOT=/www/wwwroot/templio bash deploy/server/bootstrap.sh`
+- 部署细节与 GitHub Secrets 配置见 [docs/04-ci-cd.md](docs/04-ci-cd.md)
+
+## 提交规范
+
+使用 [Conventional Commits](https://www.conventionalcommits.org/)，本地 husky `commit-msg` 钩子与 CI commitlint 双重校验。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+```
+feat(cli): 支持 PPT/Word 批量渲染为标准物料包
+fix(cli): 修复 Windows 下 soffice 版本探测失败
+ci: 增加渲染冒烟测试
+```
+
 ## 文档
 
 - [00 思路可行性与流程拷打](docs/00-思路可行性与流程拷打.md)
 - [01 流程确认稿 v1](docs/01-流程确认稿-v1.md)
 - [02 可行性复核（产品 × 技术）](docs/02-可行性复核-产品与技术.md)
 - [03 资源受限部署修订](docs/03-资源受限部署修订.md)
+- [04 CI/CD 与提交规范](docs/04-ci-cd.md)
+- [贡献指南](CONTRIBUTING.md)

@@ -1,0 +1,105 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & deploy to server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+
+      - name: Detect deployable artifacts
+        id: artifacts
+        run: |
+          if [ -d apps/api/dist ] || [ -d apps/admin/dist ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::apps/api 与 apps/admin 还没有构建产物，跳过部署（当前仅验证构建）"
+          fi
+
+      - name: Check deploy secrets
+        id: secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          if [ -n "$DEPLOY_HOST" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::未配置 DEPLOY_HOST / DEPLOY_USER / DEPLOY_SSH_KEY 等 secrets，跳过部署。配置方法见 docs/04-ci-cd.md"
+          fi
+
+      - name: Configure SSH
+        if: steps.artifacts.outputs.enabled == 'true' && steps.secrets.outputs.configured == 'true'
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          echo "SSH configured for $DEPLOY_HOST"
+
+      - name: Sync release to server
+        if: steps.artifacts.outputs.enabled == 'true' && steps.secrets.outputs.configured == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          APP_ROOT="${DEPLOY_PATH:-/www/wwwroot/templio}"
+          TARGET="${DEPLOY_USER}@${DEPLOY_HOST}:${APP_ROOT}"
+          RSYNC_SSH="ssh -i $HOME/.ssh/deploy_key -p ${PORT} -o StrictHostKeyChecking=yes"
+
+          if [ -d apps/api/dist ]; then
+            rsync -az --delete --exclude '.env' -e "$RSYNC_SSH" apps/api/dist/ "$TARGET/apps/api/dist/"
+            rsync -az -e "$RSYNC_SSH" apps/api/package.json "$TARGET/apps/api/"
+            if [ -f package-lock.json ]; then
+              rsync -az -e "$RSYNC_SSH" package-lock.json "$TARGET/"
+            fi
+          fi
+          if [ -d apps/admin/dist ]; then
+            rsync -az --delete -e "$RSYNC_SSH" apps/admin/dist/ "$TARGET/apps/admin/dist/"
+          fi
+          rsync -az --delete -e "$RSYNC_SSH" deploy/ "$TARGET/deploy/"
+
+      - name: Run remote release
+        if: steps.artifacts.outputs.enabled == 'true' && steps.secrets.outputs.configured == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          APP_ROOT="${DEPLOY_PATH:-/www/wwwroot/templio}"
+          ssh -i "$HOME/.ssh/deploy_key" -p "$PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "APP_ROOT='${APP_ROOT}' bash '${APP_ROOT}/deploy/server/deploy.sh'"

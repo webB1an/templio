@@ -1,0 +1,46 @@
+# Templio 生产 Nginx 配置示例
+# 宝塔路径：/www/server/panel/vhost/nginx/templio.conf
+# 部署前：
+#   1. 把 templio.example.com 换成已备案域名
+#   2. 在宝塔「SSL」申请 Let's Encrypt 证书并开启强制 HTTPS
+#   3. 微信小程序后台把 https://<域名> 加入 request 合法域名
+
+server {
+    listen 80;
+    server_name templio.example.com;
+
+    # 源文件分片上传：单请求上限（按分片大小调整）
+    client_max_body_size 108m;
+
+    # Web 管理端（React 构建产物）
+    location /admin/ {
+        alias /www/wwwroot/templio/apps/admin/dist/;
+        try_files $uri $uri/ /admin/index.html;
+    }
+
+    # 封面 / 缩略图 / 预览图：长期强缓存（文件名带 hash）
+    location /assets/ {
+        alias /www/wwwroot/templio/storage/public/;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    # 公开 API（小程序 request 域名）
+    location /api/ {
+        proxy_pass http://127.0.0.1:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+    }
+
+    # 网盘短链跳转
+    location /r/ {
+        proxy_pass http://127.0.0.1:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+}
