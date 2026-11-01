@@ -1,0 +1,20 @@
+{
+  "name": "@templio/desktop-cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Templio 桌面批处理 CLI：PPT/Word 渲染、物料包生成、上传",
+  "bin": {
+    "templio": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/index.ts",
+    "doctor": "tsx src/index.ts doctor"
+  },
+  "dependencies": {
+    "@templio/shared": "0.1.0",
+    "commander": "^13.1.0"
+  }
+}

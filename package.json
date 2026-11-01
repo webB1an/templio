@@ -1,0 +1,24 @@
+{
+  "name": "templio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Templio - PPT/Word 模板库小程序（服务端 + Web 管理端 + 微信小程序 + 桌面批处理 CLI）",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @templio/shared && npm run build -w @templio/desktop-cli",
+    "typecheck": "npm run typecheck -w @templio/shared && npm run typecheck -w @templio/desktop-cli",
+    "doctor": "npm run build -w @templio/shared && npm run doctor -w @templio/desktop-cli",
+    "cli": "npm run dev -w @templio/desktop-cli --"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
