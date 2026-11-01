@@ -13,7 +13,7 @@ PPT / Word 模板库小程序：微信小程序（用户端）+ Web 管理端 + 
 templio/
 ├── apps/
 │   ├── desktop-cli/      桌面批处理 CLI（LibreOffice 渲染 + 物料包 + 上传）
-│   ├── api/              服务端（NestJS，待建）
+│   ├── api/              服务端（NestJS + Prisma + MySQL，/health 已就绪）
 │   ├── admin/            Web 管理端（React + AntD，待建）
 │   └── miniprogram/      微信原生小程序（液态玻璃，待建）
 ├── packages/

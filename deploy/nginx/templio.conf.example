@@ -1,18 +1,23 @@
 # Templio 生产 Nginx 配置示例
-# 宝塔路径：/www/server/panel/vhost/nginx/templio.conf
+# 宝塔路径：/www/server/panel/vhost/nginx/templio.wdbzk.com.conf
 # 部署前：
-#   1. 把 templio.example.com 换成已备案域名
-#   2. 在宝塔「SSL」申请 Let's Encrypt 证书并开启强制 HTTPS
-#   3. 微信小程序后台把 https://<域名> 加入 request 合法域名
+#   1. 在宝塔「SSL」申请 Let's Encrypt 证书并开启强制 HTTPS（或使用 acme.sh）
+#   2. 微信小程序后台把 https://templio.wdbzk.com 加入 request 合法域名
 
 server {
     listen 80;
-    server_name templio.example.com;
+    server_name templio.wdbzk.com;
+
+    # ACME HTTP-01 校验（Let's Encrypt / acme.sh）
+    location /.well-known/acme-challenge/ {
+        root /www/wwwroot/templio/acme-challenge;
+        try_files $uri =404;
+    }
 
     # 源文件分片上传：单请求上限（按分片大小调整）
     client_max_body_size 108m;
 
-    # Web 管理端（React 构建产物）
+    # Web 管理端（React 构建产物，后续实现）
     location /admin/ {
         alias /www/wwwroot/templio/apps/admin/dist/;
         try_files $uri $uri/ /admin/index.html;
@@ -24,6 +29,12 @@ server {
         expires 1y;
         add_header Cache-Control "public, immutable";
         access_log off;
+    }
+
+    # 健康检查
+    location = /health {
+        proxy_pass http://127.0.0.1:4000/health;
+        proxy_set_header Host $host;
     }
 
     # 公开 API（小程序 request 域名）
@@ -42,5 +53,11 @@ server {
         proxy_pass http://127.0.0.1:4000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
+    }
+
+    # 其它路径：占位页
+    location / {
+        default_type text/plain;
+        return 200 "Templio server is running\n";
     }
 }

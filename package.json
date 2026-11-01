@@ -12,13 +12,15 @@
   ],
   "scripts": {
     "prepare": "node scripts/git-hooks/install.mjs",
-    "build": "npm run build -w @templio/shared && npm run build -w @templio/desktop-cli",
-    "typecheck": "npm run build -w @templio/shared && npm run typecheck -w @templio/shared && npm run typecheck -w @templio/desktop-cli",
+    "postinstall": "npm run prisma:generate -w @templio/api",
+    "build": "npm run build -w @templio/shared && npm run build -w @templio/desktop-cli && npm run build -w @templio/api",
+    "typecheck": "npm run build -w @templio/shared && npm run typecheck -w @templio/shared && npm run typecheck -w @templio/desktop-cli && npm run typecheck -w @templio/api",
     "doctor": "npm run build -w @templio/shared && npm run doctor -w @templio/desktop-cli",
     "fixtures": "npm run build -w @templio/shared && npm run fixtures -w @templio/desktop-cli --",
     "render": "npm run build -w @templio/shared && npm run render -w @templio/desktop-cli --",
     "status": "npm run build -w @templio/shared && npm run status -w @templio/desktop-cli --",
     "cli": "npm run dev -w @templio/desktop-cli",
+    "dev:api": "npm run dev -w @templio/api",
     "commitlint": "commitlint --edit"
   },
   "devDependencies": {

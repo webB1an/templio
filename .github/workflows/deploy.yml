@@ -81,13 +81,16 @@ jobs:
           if [ -d apps/api/dist ]; then
             rsync -az --delete --exclude '.env' -e "$RSYNC_SSH" apps/api/dist/ "$TARGET/apps/api/dist/"
             rsync -az -e "$RSYNC_SSH" apps/api/package.json "$TARGET/apps/api/"
-            if [ -f package-lock.json ]; then
-              rsync -az -e "$RSYNC_SSH" package-lock.json "$TARGET/"
-            fi
+            rsync -az --delete -e "$RSYNC_SSH" apps/api/prisma/ "$TARGET/apps/api/prisma/"
           fi
           if [ -d apps/admin/dist ]; then
             rsync -az --delete -e "$RSYNC_SSH" apps/admin/dist/ "$TARGET/apps/admin/dist/"
           fi
+          if [ -d packages/shared/dist ]; then
+            rsync -az --delete -e "$RSYNC_SSH" packages/shared/dist/ "$TARGET/packages/shared/dist/"
+            rsync -az -e "$RSYNC_SSH" packages/shared/package.json "$TARGET/packages/shared/"
+          fi
+          rsync -az -e "$RSYNC_SSH" package.json package-lock.json "$TARGET/"
           rsync -az --delete -e "$RSYNC_SSH" deploy/ "$TARGET/deploy/"
 
       - name: Run remote release
