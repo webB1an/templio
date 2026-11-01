@@ -1,0 +1,92 @@
+<view class="bg-orb orb-a"></view>
+<view class="bg-orb orb-b"></view>
+
+<view class="nav" style="padding-top: {{navTop}}px;">
+  <view class="nav-inner glass glass-pill" style="margin-right: {{menuRight}}px;">
+    <view class="nav-back" bindtap="onCancel">‹</view>
+    <view class="search-field">
+      <text class="search-icon">⌕</text>
+      <input
+        class="search-input"
+        value="{{inputValue}}"
+        focus="{{autoFocus}}"
+        placeholder="搜索模板 / 场景 / 风格"
+        placeholder-class="search-placeholder"
+        confirm-type="search"
+        bindinput="onInput"
+        bindconfirm="onConfirm"
+      />
+      <view wx:if="{{inputValue}}" class="clear-btn" bindtap="onClearInput">×</view>
+    </view>
+  </view>
+</view>
+
+<view class="page search-page" style="padding-top: {{contentTop}}px;">
+  <block wx:if="{{!hasSearched}}">
+    <view class="block-title">热门搜索</view>
+    <view class="chip-wrap">
+      <view
+        wx:for="{{hotKeywords}}"
+        wx:key="*this"
+        class="chip"
+        data-keyword="{{item}}"
+        bindtap="onHotTap"
+      >{{item}}</view>
+    </view>
+
+    <block wx:if="{{history.length}}">
+      <view class="block-head">
+        <text class="block-title">搜索历史</text>
+        <text class="block-clear" bindtap="onClearHistory">清空</text>
+      </view>
+      <view class="chip-wrap">
+        <view
+          wx:for="{{history}}"
+          wx:key="*this"
+          class="chip"
+          data-keyword="{{item}}"
+          bindtap="onHistoryTap"
+        >{{item}}</view>
+      </view>
+    </block>
+
+    <view wx:if="{{!history.length}}" class="search-tip">
+      输入关键词开始搜索，例如「答辩」「简历」「合同」
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="result-head">
+      <text class="result-title">搜索结果</text>
+      <text class="result-count">{{results.length}} 个模板</text>
+    </view>
+
+    <view wx:if="{{results.length === 0}}" class="empty glass">
+      没有找到「{{keyword}}」相关模板，换个关键词试试
+    </view>
+
+    <view class="grid">
+      <view
+        wx:for="{{results}}"
+        wx:key="id"
+        class="card"
+        data-id="{{item.id}}"
+        bindtap="openDetail"
+      >
+        <view class="cover tone-{{item.tone}}">
+          <text class="cover-format">{{item.format}}</text>
+          <text class="cover-title">{{item.title}}</text>
+        </view>
+        <view class="card-body">
+          <text class="card-title">{{item.title}}</text>
+          <view class="card-meta">
+            <text>{{item.category}}</text>
+            <text>{{item.pageCount}} 页</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <view class="tabbar-pad"></view>
+</view>

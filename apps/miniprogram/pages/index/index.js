@@ -54,7 +54,7 @@ Page({
   },
 
   goSearch() {
-    wx.navigateTo({ url: "/pages/list/list?focus=1" });
+    wx.navigateTo({ url: "/pages/search/search" });
   },
 
   goList() {

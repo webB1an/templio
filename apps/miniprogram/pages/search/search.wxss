@@ -1,0 +1,101 @@
+.search-page {
+  padding-bottom: 80rpx;
+}
+
+.search-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 64rpx;
+  padding: 0 8rpx 0 4rpx;
+}
+
+.search-input {
+  flex: 1;
+  height: 64rpx;
+  font-size: 26rpx;
+  color: var(--ink);
+}
+
+.search-placeholder {
+  color: var(--ink-3);
+  font-size: 26rpx;
+}
+
+.clear-btn {
+  width: 40rpx;
+  height: 40rpx;
+  flex: none;
+  margin-left: 8rpx;
+  border-radius: 50%;
+  font-size: 28rpx;
+  line-height: 38rpx;
+  text-align: center;
+  color: var(--ink-3);
+  background: rgba(31, 58, 147, 0.08);
+}
+
+.block-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  margin: 30rpx 0 20rpx;
+}
+
+.block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 46rpx;
+}
+
+.block-head .block-title {
+  margin: 0 0 20rpx;
+}
+
+.block-clear {
+  font-size: 24rpx;
+  color: var(--ink-3);
+  margin-bottom: 20rpx;
+}
+
+.chip-wrap {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.chip-wrap .chip {
+  margin: 0 16rpx 16rpx 0;
+}
+
+.search-tip {
+  margin-top: 60rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--ink-3);
+}
+
+.result-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 20rpx 6rpx 26rpx;
+}
+
+.result-title {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.result-count {
+  font-size: 23rpx;
+  color: var(--ink-3);
+}
+
+.empty {
+  margin: 40rpx 0;
+  padding: 70rpx 40rpx;
+  text-align: center;
+  font-size: 25rpx;
+  color: var(--ink-3);
+  line-height: 1.6;
+}
