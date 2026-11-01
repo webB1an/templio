@@ -81,7 +81,7 @@ Page({
   onShareAppMessage() {
     const item = this.data.item || {};
     return {
-      title: item.title || "Templio 模板",
+      title: item.title || "模板宝 模板",
       path: `/pages/detail/detail?id=${item.id || "demo-01"}`
     };
   }

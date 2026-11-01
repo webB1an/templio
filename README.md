@@ -1,10 +1,12 @@
-# Templio
+# 模板宝
 
 [![CI](https://github.com/webB1an/templio/actions/workflows/ci.yml/badge.svg)](https://github.com/webB1an/templio/actions/workflows/ci.yml)
 
 PPT / Word 模板库小程序：微信小程序（用户端）+ Web 管理端 + NestJS 服务端 + 桌面批处理 CLI。
 
-> 当前阶段：**P0 打样**。服务端已上线并通过健康检查；管理端与小程序待开发。
+> 产品展示名：**模板宝**；仓库名、包名、域名仍保留 `templio` 技术标识（不影响 CI/CD 与已配置的域名）。
+>
+> 当前阶段：**P0 打样**。服务端已上线并通过健康检查；小程序 P0 演示已初始化；管理端待开发。
 > 线上 API：<https://templio.wdbzk.com/health>
 >
 > 规划文档见 `docs/`，部署与 CI/CD 见 `docs/04-ci-cd.md`。

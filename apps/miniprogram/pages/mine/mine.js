@@ -10,7 +10,7 @@ Page({
     menu: [
       { key: "favorites", icon: "♡", label: "我的收藏", tip: "已收藏模板" },
       { key: "downloads", icon: "↓", label: "下载记录", tip: "最近获取" },
-      { key: "about", icon: "ⓘ", label: "关于 Templio", tip: "v0.1.0 P0" },
+      { key: "about", icon: "ⓘ", label: "关于模板宝", tip: "v0.1.0 P0" },
       { key: "feedback", icon: "✉", label: "意见反馈", tip: "帮助改进" }
     ]
   },
@@ -46,7 +46,7 @@ Page({
     }
     if (key === "about") {
       wx.showModal({
-        title: "Templio",
+        title: "模板宝",
         content: "PPT / Word 模板库\nP0 打样版本 v0.1.0\n模板仅供学习交流",
         showCancel: false
       });
@@ -64,6 +64,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: "Templio · 模板库", path: "/pages/index/index" };
+    return { title: "模板宝 · 模板库", path: "/pages/index/index" };
   }
 });

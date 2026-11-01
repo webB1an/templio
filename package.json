@@ -2,7 +2,7 @@
   "name": "templio",
   "version": "0.1.0",
   "private": true,
-  "description": "Templio - PPT/Word 模板库小程序（服务端 + Web 管理端 + 微信小程序 + 桌面批处理 CLI）",
+  "description": "模板宝 - PPT/Word 模板库小程序（服务端 + Web 管理端 + 微信小程序 + 桌面批处理 CLI）",
   "engines": {
     "node": ">=22.12.0"
   },

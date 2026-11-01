@@ -66,6 +66,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: "Templio · PPT/Word 模板库", path: "/pages/index/index" };
+    return { title: "模板宝 · PPT/Word 模板库", path: "/pages/index/index" };
   }
 });

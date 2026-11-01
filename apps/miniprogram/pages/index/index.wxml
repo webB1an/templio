@@ -4,7 +4,7 @@
 
 <view class="nav" style="padding-top: {{navTop}}px;">
   <view class="nav-inner glass glass-pill" style="margin-right: {{menuRight}}px;">
-    <text class="brand">Templio</text>
+    <text class="brand">模板宝</text>
     <text class="brand-sub">模板库</text>
   </view>
 </view>
@@ -59,6 +59,6 @@
     </view>
   </view>
 
-  <view class="footer-tip">Templio · 模板仅供学习交流，版权归原作者</view>
+  <view class="footer-tip">模板宝 · 模板仅供学习交流，版权归原作者</view>
   <view class="tabbar-pad"></view>
 </view>

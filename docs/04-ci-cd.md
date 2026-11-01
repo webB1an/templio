@@ -1,4 +1,4 @@
-# CI / CD 与提交规范
+# 模板宝 · CI / CD 与提交规范
 
 > CI/CD 已上线并完成首次真实部署（2026-11-01）。
 > 文件：`.github/workflows/ci.yml`、`.github/workflows/deploy.yml`
@@ -143,7 +143,7 @@ git push origin main
 | API 根路由 | `GET https://templio.wdbzk.com/api` → `{"service":"templio-api","status":"ok"}` |
 | HTTP → HTTPS | 301 跳转正常 |
 | TLS 证书 | Let's Encrypt（acme.sh 自动续期，到期 2027-01-30） |
-| 数据库 | MySQL 8 `templio`，Prisma 迁移已应用（14 张表） |
+| 数据库 | MySQL 8 `模板宝`，Prisma 迁移已应用（14 张表） |
 | PM2 | `templio-api` online，内存约 105MB，0 次重启 |
 | 开机自启 | `pm2-root.service` enabled / active |
 

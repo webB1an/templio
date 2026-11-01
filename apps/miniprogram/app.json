@@ -8,6 +8,7 @@
   ],
   "window": {
     "navigationStyle": "custom",
+    "navigationBarTitleText": "模板宝",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#F3F6FF",
     "backgroundColorTop": "#EDF2FF",

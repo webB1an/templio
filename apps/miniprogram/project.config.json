@@ -2,7 +2,7 @@
   "appid": "wx5f21980e48e92ae6",
   "compileType": "miniprogram",
   "libVersion": "3.6.5",
-  "projectname": "templio",
+  "projectname": "模板宝",
   "miniprogramRoot": "./",
   "setting": {
     "urlCheck": false,
@@ -13,14 +13,47 @@
     "coverView": true,
     "showShadowRootInWxmlPanel": true,
     "packNpmManually": false,
-    "ignoreUploadUnusedFiles": true
+    "ignoreUploadUnusedFiles": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
   "condition": {
     "miniprogram": {
       "list": [
-        { "name": "首页", "pathName": "pages/index/index", "query": "", "scene": null },
-        { "name": "详情", "pathName": "pages/detail/detail", "query": "id=demo-01", "scene": null }
+        {
+          "name": "首页",
+          "pathName": "pages/index/index",
+          "query": "",
+          "scene": null
+        },
+        {
+          "name": "详情",
+          "pathName": "pages/detail/detail",
+          "query": "id=demo-01",
+          "scene": null
+        }
       ]
     }
-  }
+  },
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }

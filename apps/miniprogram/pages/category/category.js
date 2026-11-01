@@ -52,6 +52,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: "Templio · 模板分类", path: "/pages/category/category" };
+    return { title: "模板宝 · 模板分类", path: "/pages/category/category" };
   }
 });
