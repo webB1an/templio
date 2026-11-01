@@ -1,7 +1,11 @@
 # Templio 生产 Nginx 配置示例
 # 宝塔路径：/www/server/panel/vhost/nginx/templio.wdbzk.com.conf
+#
+# 证书由 acme.sh 签发（Let's Encrypt），安装路径：
+#   /www/server/panel/vhost/cert/templio.wdbzk.com/{fullchain.pem,privkey.pem}
+#
 # 部署前：
-#   1. 在宝塔「SSL」申请 Let's Encrypt 证书并开启强制 HTTPS（或使用 acme.sh）
+#   1. 域名解析到服务器 IP
 #   2. 微信小程序后台把 https://templio.wdbzk.com 加入 request 合法域名
 
 server {
@@ -13,6 +17,25 @@ server {
         root /www/wwwroot/templio/acme-challenge;
         try_files $uri =404;
     }
+
+    # 其余请求强制 HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name templio.wdbzk.com;
+
+    ssl_certificate     /www/server/panel/vhost/cert/templio.wdbzk.com/fullchain.pem;
+    ssl_certificate_key /www/server/panel/vhost/cert/templio.wdbzk.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
 
     # 源文件分片上传：单请求上限（按分片大小调整）
     client_max_body_size 108m;

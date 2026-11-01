@@ -1,7 +1,7 @@
 # CI / CD 与提交规范
 
-> 本文说明模板库项目的持续集成、持续部署与 Git 提交规范。
-> CI/CD 文件：`.github/workflows/ci.yml`、`.github/workflows/deploy.yml`。
+> CI/CD 已上线并完成首次真实部署（2026-11-01）。
+> 文件：`.github/workflows/ci.yml`、`.github/workflows/deploy.yml`
 
 ---
 
@@ -21,8 +21,8 @@
 
 ```
 feat(cli): 支持 PPT/Word 批量渲染为标准物料包
-fix(cli): 修复 Windows 下 soffice 版本探测失败
-ci: 增加 commitlint 与渲染冒烟测试
+fix(deploy): 服务器端按本机 OpenSSL target 重新生成 Prisma Client
+ci: 增加渲染冒烟测试
 ```
 
 **三层校验：**
@@ -42,8 +42,8 @@ ci: 增加 commitlint 与渲染冒烟测试
 | Job | 内容 |
 | --- | --- |
 | `commitlint` | 校验提交信息 |
-| `verify` | `npm ci` → `npm run typecheck` → `npm run build` |
-| `render-smoke` | 安装 LibreOffice + Noto CJK 字体 → `npm run fixtures` → `npm run render` → `npm run status`，验证渲染管线在 Linux 上可用 |
+| `verify` | `npm ci` → `npm run typecheck` → `npm run build`（shared / cli / api） |
+| `render-smoke` | 安装 LibreOffice + Noto CJK 字体 → 生成测试模板 → 渲染 → 校验物料包 |
 
 CI 使用 Node.js 22，依赖 npm 缓存。
 
@@ -53,76 +53,99 @@ CI 使用 Node.js 22，依赖 npm 缓存。
 
 触发：push 到 `main`、手动 `workflow_dispatch`。
 
-流程：
-
 ```
-checkout → npm ci → build
-  → 检测 apps/api/dist、apps/admin/dist 是否存在
-  → 检测 GitHub Secrets 是否配置
-  → rsync 产物到服务器
+checkout → npm ci → build（shared / cli / api）
+  → 安装 api + shared 的生产依赖（仅 CI 侧，不碰服务器）
+  → 检测 apps/api/dist、apps/admin/dist
+  → 检测 GitHub Secrets
+  → SSH mkdir 目标目录
+  → rsync：dist / prisma / node_modules / package 清单 / deploy / scripts
   → SSH 执行 deploy/server/deploy.sh
-      → 安装生产依赖（有 lock 时 npm ci --omit=dev）
-      → pm2 startOrReload
-      → curl /health 健康检查
+       1. 校验 node_modules（缺失则报错，不在服务器安装）
+       2. 加载 apps/api/.env
+       3. npx prisma generate（按服务器本机 target 重新生成）
+       4. npx prisma migrate deploy
+       5. pm2 startOrReload + pm2 save
+       6. curl /health 健康检查（30s 超时则失败）
 ```
 
-**当前状态：** `apps/api`、`apps/admin` 尚未实现，工作流会自动跳过部署并在 Actions 日志中给出 notice。
+**关键设计（针对 2C2G 服务器）：**
 
-### 3.1 必要的 GitHub Secrets
+- **服务器上不执行 `npm install`**：依赖在 CI 安装后随 rsync 同步，避免 2G 内存被 npm 安装过程拖垮。
+- **Prisma Client 在服务器上重新生成**：CI runner（debian-openssl-3.0.x）与服务器（debian-openssl-1.0.x）平台不同，必须按服务器 target 生成，否则运行时报找不到 query engine。
+- **rsync 使用 `--no-owner --no-group`**：避免把 GitHub runner 的 uid 映射成服务器上的 `mysql` 用户。
+- **同步 `scripts/` 目录**：根 `prepare` 脚本依赖 `scripts/git-hooks/install.mjs`，缺失会导致服务器安装阶段失败（已保留容错）。
 
-进入仓库 **Settings → Secrets and variables → Actions → New repository secret** 添加：
+### 3.1 GitHub Secrets（已配置）
 
-| Secret | 是否必需 | 说明 |
-| --- | --- | --- |
-| `DEPLOY_HOST` | 必需 | 服务器 IP 或域名 |
-| `DEPLOY_USER` | 必需 | SSH 用户（当前为 `root`） |
-| `DEPLOY_SSH_KEY` | 必需 | 部署私钥完整内容（含 `BEGIN/END` 行，本地 `~/.ssh/templio_server`） |
-| `DEPLOY_PORT` | 可选 | SSH 端口，默认 22 |
-| `DEPLOY_PATH` | 可选 | 部署目录，默认 `/www/wwwroot/templio` |
+仓库 **Settings → Secrets and variables → Actions**：
 
-> 私钥、服务器 IP 等敏感信息**不写入仓库**。
+| Secret | 说明 |
+| --- | --- |
+| `DEPLOY_HOST` | 服务器地址（不写入仓库） |
+| `DEPLOY_USER` | SSH 用户 |
+| `DEPLOY_SSH_KEY` | 部署私钥完整内容 |
+| `DEPLOY_PORT` | 可选，默认 22 |
+| `DEPLOY_PATH` | 可选，默认 `/www/wwwroot/templio` |
 
-### 3.2 服务器初始化
+> 私钥、服务器 IP 等敏感信息不写入仓库；GitHub Actions 使用加密 Secrets 注入。
 
-服务器（Node 22 / PM2 / Nginx / MySQL 已就绪）执行一次：
+**跳过逻辑**：如果 `apps/api/dist` 与 `apps/admin/dist` 都不存在，或 Secrets 未配置，部署会输出 notice 并安全跳过。
+
+### 3.2 服务器初始化（已执行）
 
 ```bash
 APP_ROOT=/www/wwwroot/templio bash deploy/server/bootstrap.sh
 ```
 
-脚本会创建目录、检查依赖、配置 PM2 开机自启（幂等，可重复执行）。
+脚本创建目录、检查 Node/PM2/Nginx/MySQL/rsync/curl、配置 PM2 开机自启（幂等）。
 
 服务器目录：
 
 ```
 /www/wwwroot/templio/
-├── apps/api/          # 服务端产物（dist/ + package.json + .env）
-├── apps/admin/       # 管理端静态产物（dist/）
-├── deploy/           # 部署脚本与 PM2 配置（CI 同步）
+├── apps/api/          # 服务端（dist/ + package.json + prisma/ + .env）
+├── apps/admin/       # 管理端静态产物（待实现）
+├── node_modules/     # 由 CI 同步的生产依赖
+├── packages/shared/  # 跨端共享包
+├── deploy/           # 部署脚本、PM2 配置、Nginx 示例
+├── scripts/          # git hooks 等脚本
 ├── logs/             # PM2 日志
 └── storage/          # 封面/预览图 + 源文件临时区
 ```
 
-### 3.3 服务器环境变量
+### 3.3 服务器环境变量（已配置）
 
 ```bash
 cp deploy/production.env.example /www/wwwroot/templio/apps/api/.env
 chmod 600 /www/wwwroot/templio/apps/api/.env
-# 填入 DEEPSEEK_API_KEY / DATABASE_URL / JWT_SECRET 等
+# 已填入 DATABASE_URL / DEEPSEEK_API_KEY / JWT_SECRET / ADMIN_PASSWORD / APP_ORIGIN
 ```
 
-`.env` 不在 rsync 范围内，部署不会覆盖。
+`.env` 不在 rsync 范围内，部署不会覆盖，也不进入 Git。
 
 ### 3.4 回滚
 
 当前采用"重新部署旧提交"的方式：
 
 ```bash
-git revert <bad-commit>        # 生成一个 revert 提交
-git push origin main           # 自动触发部署
+git revert <bad-commit>
+git push origin main
 ```
 
 后续可扩展为 `releases/<sha>` + `current` 软链的原子发布。
+
+### 3.5 线上验收（2026-11-01）
+
+| 项 | 结果 |
+| --- | --- |
+| API 健康检查 | `GET https://templio.wdbzk.com/health` → `{"ok":true,"service":"templio-api","db":"ok"}` |
+| API 根路由 | `GET https://templio.wdbzk.com/api` → `{"service":"templio-api","status":"ok"}` |
+| HTTP → HTTPS | 301 跳转正常 |
+| TLS 证书 | Let's Encrypt（acme.sh 自动续期，到期 2027-01-30） |
+| 数据库 | MySQL 8 `templio`，Prisma 迁移已应用（14 张表） |
+| PM2 | `templio-api` online，内存约 105MB，0 次重启 |
+| 开机自启 | `pm2-root.service` enabled / active |
 
 ---
 
@@ -131,20 +154,20 @@ git push origin main           # 自动触发部署
 | 项 | 值 |
 | --- | --- |
 | 系统 | Alibaba Cloud Linux 4 |
-| CPU / 内存 / 磁盘 | 2 核 / 2G（可用约 1.6G）/ 40G（已用 12G） |
+| CPU / 内存 / 磁盘 | 2 核 / 1.67G（可用约 520M + 3G swap）/ 40G（已用 12G） |
 | Node / npm / PM2 | 22.22.2 / 10.9.7 / 7.1.1 |
 | Nginx / MySQL / Redis | 1.30.6 / 8.0.46 / 已运行 |
+| 域名 | `templio.wdbzk.com`（HTTPS） |
 | 额外负载 | 宝塔面板、MySQL（约 430MB）、Docker（astrbot 容器） |
 
-> 内存偏紧：API 进程通过 PM2 `max_memory_restart: 500M` 限制；部署/安装依赖期间注意 OOM。
+> 内存仍然偏紧：API 由 PM2 `max_memory_restart: 500M` 兜底；部署时不要在服务器跑 npm/构建。
 > 渲染（LibreOffice）只在 Windows 桌面执行，不在服务器上跑。
 
-**待办（需要人工提供）：**
+**待办：**
 
-1. 域名（已备案）+ HTTPS 证书 → 配置 `deploy/nginx/templio.conf.example`
-2. MySQL 数据库 `templio` 与账号（宝塔面板创建或提供 root 密码）
-3. 微信小程序 AppID / 上传密钥
-4. 百度网盘 / 夸克网盘官方 Skill 安装与账号授权
+1. 微信小程序 AppID / 上传密钥
+2. 百度网盘 / 夸克网盘官方 Skill 安装与账号授权
+3. Web 管理端（`apps/admin`）与小程序（`apps/miniprogram`）开发
 
 ---
 
@@ -154,7 +177,26 @@ git push origin main           # 自动触发部署
 npm ci
 npm run typecheck
 npm run build
+
+# 渲染管线冒烟
 npm run fixtures
 npm run render -- fixtures/samples -o fixtures/packages
 npm run status -- fixtures/packages
+
+# 本地起 API（数据库走线上，SSH 隧道，不在本地装 MySQL）
+ssh -N -L 13306:127.0.0.1:3306 <ssh-alias>
+# 然后在 apps/api/.env 里把 DATABASE_URL 指向 127.0.0.1:13306
+npm run dev:api
 ```
+
+---
+
+## 6. 已踩过的坑（Runbook）
+
+| 现象 | 原因 | 解决 |
+| --- | --- | --- |
+| Actions 部署 `Sync release` 失败 | 服务器目标子目录不存在 | 部署前 SSH `mkdir -p` 所有目标目录 |
+| 服务器文件属主变成 `mysql` | rsync `-a` 保留 CI runner 的 uid(1001) | rsync 加 `--no-owner --no-group` |
+| 服务器安装阶段 `Cannot find module scripts/git-hooks/install.mjs` | 未同步 `scripts/` | rsync 同步 scripts 目录；安装脚本加容错 |
+| 部署时 npm 把 2C2G 服务器拖死 | 服务器上执行两次 `npm ci` | 依赖改为 CI 侧安装并随 rsync 同步 |
+| API 启动报 Prisma query engine 找不到 | CI 与服务器 OpenSSL target 不同 | 部署时在服务器执行 `prisma generate` |
