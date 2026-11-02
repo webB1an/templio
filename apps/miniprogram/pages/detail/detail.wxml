@@ -87,18 +87,28 @@
   </view>
 
   <view class="action-bar">
-    <view class="action-row">
+    <view class="action-group">
+      <view class="action-item" bindtap="goBack">
+        <image class="action-icon" src="/assets/icons/back.png" mode="aspectFit" />
+        <text class="action-label">返回</text>
+      </view>
+
       <view class="action-item" bindtap="toggleFav">
-        <text class="action-icon {{fav ? 'fav-active' : ''}}">{{fav ? "♥" : "♡"}}</text>
+        <image class="action-icon" src="{{fav ? '/assets/icons/heart-filled.png' : '/assets/icons/heart.png'}}" mode="aspectFit" />
         <text class="action-label">{{fav ? "已收藏" : "收藏"}}</text>
       </view>
 
       <button class="action-item share-action" open-type="share">
-        <text class="action-icon">↗</text>
+        <image class="action-icon" src="/assets/icons/share.png" mode="aspectFit" />
         <text class="action-label">分享</text>
       </button>
 
-      <view class="action-primary {{item.shortLink ? '' : 'action-disabled'}}" bindtap="copyLink">{{item.shortLink ? "复制链接" : "暂无链接"}}</view>
+      <view class="action-item" bindtap="reportTemplate">
+        <image class="action-icon" src="/assets/icons/report.png" mode="aspectFit" />
+        <text class="action-label">举报</text>
+      </view>
     </view>
+
+    <view class="action-primary {{item.shortLink ? '' : 'action-disabled'}}" bindtap="copyLink">{{item.shortLink ? "复制链接" : "暂无链接"}}</view>
   </view>
 </view>
