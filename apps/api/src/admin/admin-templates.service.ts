@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import { randomBytes } from "node:crypto";
-import { stat, unlink } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { stat, unlink, rmdir } from "node:fs/promises";
+import { basename, dirname, join } from "node:path";
 import { Prisma, StorageProvider, TemplateStatus } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -393,7 +393,9 @@ export class AdminTemplatesService {
 
     const storageRoot = process.env.STORAGE_ROOT || join(process.cwd(), "storage");
     for (const file of files) {
-      await unlink(join(storageRoot, "private", file.objectKey)).catch(() => undefined);
+      const absolutePath = join(storageRoot, "private", file.objectKey);
+      await unlink(absolutePath).catch(() => undefined);
+      await rmdir(dirname(absolutePath)).catch(() => undefined);
       await this.prisma.templateFile.delete({ where: { id: file.id } });
     }
     return { removed: true };

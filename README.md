@@ -92,7 +92,8 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - 物料包按源文件 SHA-256 幂等，重复上传会返回 duplicate，不会重复创建
 - 导入后模板状态为 `imported`，在管理端「模板库」复核：可点「AI」让 DeepSeek 生成标题/分类/标签/简介并一键应用，再点「网盘」补齐分享链接/提取码（自动生成短链），最后「上架」
 - 封面/缩略图/预览图保存到 `storage/public/templates/<hash8>/`，由 `/assets/` 直出
-- `--with-source` 可把源文件暂存到 `storage/private/sources/<hash8>/`；管理端「网盘」弹窗可下载/删除，确认源文件已上传网盘后务必删除服务器源文件
+- `--with-source` 可把源文件暂存到 `storage/private/sources/<hash8>/`；管理端「网盘」弹窗可下载/删除/同步，确认源文件已上传网盘后务必删除服务器源文件
+- 配置 `NETDISK_SYNC_COMMAND` 后可在管理端点「同步到网盘」自动上传并回写链接、清理源文件
 
 ## 用户登录与收藏
 
@@ -114,7 +115,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - 地址：<https://templio.wdbzk.com/admin/>
 - 账号：`admin`，密码在服务器 `/www/wwwroot/templio/apps/api/.env` 的 `ADMIN_PASSWORD`
 - 本地开发：`npm run dev:admin`（Vite 5174，`/api` 代理到线上）
-- 功能：登录、概览数据看板（模板/浏览/下载/收藏/待复核/热门模板）、模板库（筛选 / 编辑 / 单条上下架 / 批量上下架 / 网盘链接与短链配置 / 服务器源文件管理 / AI 单条与批量标注 / AI 自动应用 / 待复核队列）、导入说明
+- 功能：登录、概览数据看板（模板/浏览/下载/收藏/待复核/热门模板）、模板库（筛选 / 编辑 / 单条上下架 / 批量上下架 / 网盘链接与短链配置 / 源文件下载与自动同步 / 服务器源文件清理 / AI 单条与批量标注 / AI 自动应用 / 待复核队列）、导入说明
 
 ## 小程序
 

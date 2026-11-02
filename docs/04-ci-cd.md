@@ -173,6 +173,7 @@ git push origin main
 | 源文件上传 | `templio upload --with-source` → `source` 暂存 `/storage/private/sources/<hash8>/`，大小 68688 字节 |
 | 源文件下载 | `GET /api/admin/templates/:id/source` → 200，`Content-Disposition` 中文文件名正确 |
 | 源文件清理 | `DELETE .../source` → 删除文件与 `TemplateFile` 记录；再次下载 404 |
+| 网盘同步任务 | 配置 mock `NETDISK_SYNC_COMMAND` 后：任务 success、短链 302、源文件自动清理 |
 
 ### 3.6 公开 API（已上线）
 
@@ -208,7 +209,7 @@ node prisma/seed.cjs
 | 登录 | 账号密码登录，JWT（HMAC-SHA256）12 小时有效 |
 | 概览 | 模板总数、已上架、待复核、已下架；总浏览/下载/收藏、今日互动；热门模板 Top5；最近更新；分类分布 |
 | 模板库 | 搜索 / 状态 / 分类筛选；分页；行内编辑（标题/简介/分类/状态）；单条上下架；批量上下架；封面缩略图 |
-| 网盘配置 | 模板行「网盘」弹窗：选百度/夸克 → 填分享链接/提取码 → 自动生成短链，可复制/移除；同时管理服务器源文件（下载/删除） |
+| 网盘配置 | 模板行「网盘」弹窗：选百度/夸克 → 填分享链接/提取码 → 自动生成短链，可复制/移除；同时管理服务器源文件（下载/删除/一键同步） |
 | AI 标注 | 模板行「AI」弹窗：DeepSeek 读取 `textContent` 生成标题/分类/标签/简介，显示置信度，可「重新标注」/「应用建议」 |
 | AI 批量标注 | 工具栏「AI 批量标注」：一次最多 5 个，自动挑选「已导入/草稿且未标注」的模板，成功后转「待复核」 |
 | AI 自动应用 | 工具栏「AI 自动应用」：置信度 ≥90% 且 safe 的建议批量写回模板（最多 20 条），仍保留待复核状态，需人工上架 |
@@ -231,6 +232,8 @@ node prisma/seed.cjs
 | DELETE | `/api/admin/templates/:id/netdisk` | 移除网盘链接（短链随之失效） |
 | GET | `/api/admin/templates/:id/source` | 下载服务器暂存源文件 |
 | DELETE | `/api/admin/templates/:id/source` | 删除服务器暂存源文件 |
+| POST | `/api/admin/templates/:id/netdisk/sync` | 创建网盘同步任务 |
+| GET | `/api/admin/tasks/:id` | 查询网盘同步任务状态 |
 | POST | `/api/admin/ai/templates/:id` | DeepSeek 标注（生成 AiAnalysis） |
 | POST | `/api/admin/ai/templates/:id/apply` | 应用 AI 建议（标题/分类/标签/简介） |
 | POST | `/api/admin/ai/batch` | 批量标注（一次最多 5 个） |
@@ -375,6 +378,37 @@ templio upload <dist> --with-source
 - 删除 → `{removed:true}`；文件被删；再次下载 404
 - 测试模板与存储目录已清理
 
+### 3.15 网盘同步任务框架（已上线，等网盘账号授权）
+
+**接口：**
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/admin/templates/:id/netdisk/sync` | 创建 `netdisk_sync` 任务（需源文件） |
+| GET | `/api/admin/tasks/:id` | 轮询任务状态/进度/结果 |
+
+**执行逻辑：**
+
+1. 校验模板/源文件/provider
+2. 创建 `Task(type=netdisk_sync, status=queued)` 并异步执行
+3. 执行服务器命令 `NETDISK_SYNC_COMMAND`，支持 `{file}` / `{provider}` 占位符
+4. 命令 stdout 需输出 JSON：`{"url":"https://pan.baidu.com/s/xxx","passcode":"abcd"}`
+5. 成功后写 `NetdiskLink` + 短链；`DELETE_SOURCE_AFTER_SYNC !== "false"` 时删除服务器源文件
+6. 未配置命令时任务直接 `failed`，提示走手动下载/上传流程
+
+**管理端：**
+
+- 「网盘」弹窗内「同步到网盘」按钮，轮询任务到成功/失败；成功自动刷新模板
+
+**已验证（mock 命令）：**
+
+- 配置 `/tmp/templio-mock-netdisk.sh` 输出固定 JSON
+- 任务 `success`，result 含 `shortLink=https://templio.wdbzk.com/r/eb991c7e98`
+- 模板 `hasNetdisk=true`、`passcode=sync`、`source=null`；短链 302 到 mock 地址
+- 测试后已移除 mock 环境变量与脚本并重启 API
+
+> 接入真实百度/夸克 Skill 时，只需在服务器 `.env` 配置 `NETDISK_SYNC_COMMAND`，无需改代码。
+
 ---
 
 ## 4. 服务器现状（不含敏感信息）
@@ -394,8 +428,8 @@ templio upload <dist> --with-source
 **待办：**
 
 1. 微信小程序：AppID / AppSecret 已在服务器 `.env` 配置；还需要公众平台下载的「代码上传密钥」才能让 CI 上传体验版
-2. 百度网盘 / 夸克网盘官方 Skill 安装与账号授权（目前网盘链接需在管理端手动填写）
-3. 网盘 Skill 自动同步/删除（源文件暂存与手动清理已上线）
+2. 百度网盘 / 夸克网盘官方 Skill 安装与账号授权，并配置 `NETDISK_SYNC_COMMAND`（任务框架已就绪）
+3. 数据库备份 / 监控告警 / 日志轮转
 4. 数据趋势图/周报与自动上架阈值配置（当前只有 Top5 与今日汇总）
 
 ---
