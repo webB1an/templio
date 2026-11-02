@@ -43,6 +43,7 @@ export default function Templates() {
   const [aiEditing, setAiEditing] = useState<AdminTemplate | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiApplying, setAiApplying] = useState(false);
+  const [batchLoading, setBatchLoading] = useState(false);
   const [aiResult, setAiResult] = useState<{
     analysis: AiAnalysis;
     matchedCategory: { key: string; name: string } | null;
@@ -153,6 +154,23 @@ export default function Templates() {
       message.error((error as Error).message);
     } finally {
       setAiApplying(false);
+    }
+  };
+
+  const batchAnnotate = async () => {
+    setBatchLoading(true);
+    try {
+      const result = await api.batchAnnotate({ limit: 3 });
+      if (result.total === 0) {
+        message.info("没有待标注的已导入模板");
+      } else {
+        message.success(`AI 标注完成：成功 ${result.succeeded} / ${result.total} 个`);
+      }
+      await load();
+    } catch (error) {
+      message.error((error as Error).message);
+    } finally {
+      setBatchLoading(false);
     }
   };
 
@@ -271,6 +289,22 @@ export default function Templates() {
         )
     },
     {
+      title: "AI",
+      dataIndex: "ai",
+      width: 190,
+      render: (ai: AdminTemplate["ai"]) =>
+        ai ? (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600 }}>{ai.title || "已标注"}</div>
+            <div style={{ color: "#8a90a6", fontSize: 12 }}>
+              {ai.categoryKey || "-"} · {Math.round((ai.confidence || 0) * 100)}%
+            </div>
+          </div>
+        ) : (
+          <Tag>未标注</Tag>
+        )
+    },
+    {
       title: "更新时间",
       dataIndex: "updatedAt",
       width: 180,
@@ -345,7 +379,11 @@ export default function Templates() {
           }}
         />
         <Button onClick={() => void load()}>刷新</Button>
+        <Button onClick={() => { setStatus("pending_review"); setPage(1); }}>待复核</Button>
         <div style={{ flex: 1 }} />
+        <Button loading={batchLoading} onClick={() => void batchAnnotate()}>
+          AI 批量标注
+        </Button>
         <Button disabled={selected.length === 0} onClick={() => void bulkAction("publish")}>
           批量上架
         </Button>
@@ -368,7 +406,7 @@ export default function Templates() {
           showTotal: (count) => `共 ${count} 个模板`,
           onChange: (nextPage) => setPage(nextPage)
         }}
-        scroll={{ x: 980 }}
+        scroll={{ x: 1180 }}
       />
 
       <Modal

@@ -132,5 +132,20 @@ export const api = {
       tags: string[];
       status: string;
     }>(`/admin/ai/templates/${id}/apply`, { method: "POST" });
+  },
+
+  batchAnnotate(body: { ids?: string[]; limit?: number }) {
+    return request<{
+      total: number;
+      succeeded: number;
+      failed: number;
+      items: Array<{
+        id: string;
+        title: string;
+        ok: boolean;
+        message?: string;
+        analysis?: AiAnalysis;
+      }>;
+    }>("/admin/ai/batch", { method: "POST", body });
   }
 };
