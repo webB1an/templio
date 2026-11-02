@@ -239,6 +239,13 @@ node prisma/seed.cjs
 | DELETE | `/api/admin/templates/:id/source` | 删除服务器暂存源文件 |
 | POST | `/api/admin/templates/:id/netdisk/sync` | 创建网盘同步任务 |
 | GET | `/api/admin/tasks/:id` | 查询网盘同步任务状态 |
+| GET/POST | `/api/admin/storage-accounts` | 网盘账号列表 / 新增 |
+| PATCH | `/api/admin/storage-accounts/:id` | 改名 |
+| POST | `/api/admin/storage-accounts/:id/default` | 设为默认账号 |
+| POST | `/api/admin/storage-accounts/:id/probe` | 探活 |
+| DELETE | `/api/admin/storage-accounts/:id` | 删除/停用账号 |
+| POST | `/api/admin/storage-accounts/:id/baidu-cookie` | 百度 Cookie 授权 |
+| POST | `/api/admin/storage-accounts/:id/quark-auth/start\|finish` | 夸克授权码授权 |
 | POST | `/api/admin/ai/templates/:id` | DeepSeek 标注（生成 AiAnalysis） |
 | POST | `/api/admin/ai/templates/:id/apply` | 应用 AI 建议（标题/分类/标签/简介） |
 | POST | `/api/admin/ai/batch` | 批量标注（一次最多 5 个） |
