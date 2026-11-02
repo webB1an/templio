@@ -8,6 +8,17 @@ export type TemplateStatus =
   | "archived"
   | "failed";
 
+export interface AiAnalysis {
+  title: string | null;
+  categoryKey: string | null;
+  tags: string[];
+  summary: string | null;
+  confidence: number | null;
+  safe: boolean;
+  needsReview: boolean;
+  model: string | null;
+}
+
 export interface AdminTemplate {
   id: string;
   title: string;
@@ -25,6 +36,7 @@ export interface AdminTemplate {
   provider: string | null;
   passcode: string | null;
   hasNetdisk: boolean;
+  ai: AiAnalysis | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;

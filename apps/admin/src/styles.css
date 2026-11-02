@@ -177,3 +177,25 @@ body {
   line-height: 1.7;
   overflow-x: auto;
 }
+
+/* ---------------- AI 标注 ---------------- */
+
+.ai-result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 6px 0;
+}
+
+.ai-row {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.ai-row > span {
+  flex: none;
+  width: 72px;
+  color: #8a90a6;
+}

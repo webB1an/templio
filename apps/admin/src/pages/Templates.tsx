@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Key } from "react";
-import { Button, Form, Input, Modal, Select, Space, Table, Tag, Typography, message } from "antd";
+import { Button, Form, Input, Modal, Select, Space, Spin, Table, Tag, Typography, message } from "antd";
 import type { TableProps } from "antd";
 import { api } from "../api";
-import type { AdminTemplate, Facets, TemplateStatus } from "../types";
+import type { AdminTemplate, AiAnalysis, Facets, TemplateStatus } from "../types";
 import { STATUS_META, STATUS_OPTIONS, formatSize, formatTime } from "../utils";
 
 const PAGE_SIZE = 10;
@@ -40,6 +40,13 @@ export default function Templates() {
   const [saving, setSaving] = useState(false);
   const [netdiskEditing, setNetdiskEditing] = useState<AdminTemplate | null>(null);
   const [netdiskSaving, setNetdiskSaving] = useState(false);
+  const [aiEditing, setAiEditing] = useState<AdminTemplate | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiApplying, setAiApplying] = useState(false);
+  const [aiResult, setAiResult] = useState<{
+    analysis: AiAnalysis;
+    matchedCategory: { key: string; name: string } | null;
+  } | null>(null);
   const [form] = Form.useForm<EditValues>();
   const [netdiskForm] = Form.useForm<NetdiskValues>();
 
@@ -112,6 +119,40 @@ export default function Templates() {
       await load();
     } catch (error) {
       message.error((error as Error).message);
+    }
+  };
+
+  const runAi = async (record: AdminTemplate) => {
+    setAiLoading(true);
+    try {
+      const result = await api.annotateAi(record.id);
+      setAiResult({ analysis: result.analysis, matchedCategory: result.matchedCategory });
+      await load();
+    } catch (error) {
+      message.error((error as Error).message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const openAi = (record: AdminTemplate) => {
+    setAiEditing(record);
+    setAiResult(record.ai ? { analysis: record.ai, matchedCategory: null } : null);
+    void runAi(record);
+  };
+
+  const applyAi = async () => {
+    if (!aiEditing) return;
+    setAiApplying(true);
+    try {
+      await api.applyAi(aiEditing.id);
+      message.success("已应用 AI 建议");
+      setAiEditing(null);
+      await load();
+    } catch (error) {
+      message.error((error as Error).message);
+    } finally {
+      setAiApplying(false);
     }
   };
 
@@ -243,6 +284,9 @@ export default function Templates() {
         <Space size={4}>
           <Button type="link" size="small" onClick={() => openEdit(record)}>
             编辑
+          </Button>
+          <Button type="link" size="small" onClick={() => openAi(record)}>
+            AI
           </Button>
           <Button type="link" size="small" onClick={() => openNetdisk(record)}>
             网盘
@@ -397,6 +441,69 @@ export default function Templates() {
         <div style={{ marginTop: 12, color: "#8a90a6", fontSize: 12, lineHeight: 1.7 }}>
           保存后自动生成短链，详情页「复制链接和提取码」会复制短链 + 提取码；短链 302 跳到真实网盘地址。
         </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(aiEditing)}
+        title={aiEditing ? `AI 标注 · ${aiEditing.title}` : "AI 标注"}
+        onCancel={() => setAiEditing(null)}
+        footer={[
+          <Button key="close" onClick={() => setAiEditing(null)}>
+            关闭
+          </Button>,
+          <Button key="retry" loading={aiLoading} onClick={() => aiEditing && void runAi(aiEditing)}>
+            重新标注
+          </Button>,
+          <Button
+            key="apply"
+            type="primary"
+            loading={aiApplying}
+            disabled={!aiResult || aiLoading}
+            onClick={() => void applyAi()}
+          >
+            应用建议
+          </Button>
+        ]}
+      >
+        {aiLoading ? (
+          <div style={{ padding: "48px 0", textAlign: "center" }}>
+            <Spin />
+            <div style={{ marginTop: 12, color: "#8a90a6", fontSize: 13 }}>DeepSeek 正在阅读模板文字...</div>
+          </div>
+        ) : aiResult ? (
+          <div className="ai-result">
+            <div className="ai-row">
+              <span>建议标题</span>
+              <b>{aiResult.analysis.title || "-"}</b>
+            </div>
+            <div className="ai-row">
+              <span>分类</span>
+              <b>{aiResult.matchedCategory?.name || aiResult.analysis.categoryKey || "未匹配"}</b>
+            </div>
+            <div className="ai-row">
+              <span>标签</span>
+              <div>
+                {aiResult.analysis.tags.length > 0
+                  ? aiResult.analysis.tags.map((tag) => <Tag key={tag}>{tag}</Tag>)
+                  : "-"}
+              </div>
+            </div>
+            <div className="ai-row">
+              <span>简介</span>
+              <div>{aiResult.analysis.summary || "-"}</div>
+            </div>
+            <div className="ai-row">
+              <span>置信度</span>
+              <div>
+                {Math.round((aiResult.analysis.confidence || 0) * 100)}%
+                {aiResult.analysis.safe ? " · 内容安全" : " · 建议重点复核"}
+                {aiResult.analysis.needsReview ? " · 待人工确认" : ""}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding: 20, color: "#8a90a6" }}>暂无 AI 结果，可点「重新标注」。</div>
+        )}
       </Modal>
     </div>
   );

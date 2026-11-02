@@ -10,8 +10,8 @@ templio upload D:\\templates-dist --api https://templio.wdbzk.com`;
 const STEPS = [
   "桌面端执行 templio render，把 PPT / Word 渲染成标准物料包（封面/缩略图/预览图 + manifest.json）",
   "执行 templio upload，把物料包上传到服务端导入接口",
-  "回到「模板库」，筛选状态=已导入，复核标题/分类，并点「网盘」补齐分享链接/提取码",
-  "配置好网盘链接后点「上架」，小程序即可展示并复制下载短链"
+  "回到「模板库」，筛选状态=已导入；可点「AI」让 DeepSeek 生成标题/分类/标签/简介，确认后应用",
+  "点「网盘」补齐分享链接/提取码（自动生成短链），最后点「上架」"
 ];
 
 export default function ImportPage() {

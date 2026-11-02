@@ -1,4 +1,4 @@
-import type { AdminTemplate, Facets, Stats, TemplateList, TemplateStatus } from "./types";
+import type { AdminTemplate, AiAnalysis, Facets, Stats, TemplateList, TemplateStatus } from "./types";
 
 const TOKEN_KEY = "templio_admin_token";
 
@@ -113,5 +113,24 @@ export const api = {
 
   removeNetdisk(id: string) {
     return request<{ removed: boolean }>(`/admin/templates/${id}/netdisk`, { method: "DELETE" });
+  },
+
+  annotateAi(id: string) {
+    return request<{
+      analysis: AiAnalysis;
+      matchedCategory: { key: string; name: string } | null;
+      status: string;
+    }>(`/admin/ai/templates/${id}`, { method: "POST" });
+  },
+
+  applyAi(id: string) {
+    return request<{
+      applied: boolean;
+      id: string;
+      title: string;
+      categoryKey: string | null;
+      tags: string[];
+      status: string;
+    }>(`/admin/ai/templates/${id}/apply`, { method: "POST" });
   }
 };
