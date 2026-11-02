@@ -34,6 +34,11 @@ Page({
     this.loadDownloads();
   },
 
+  onPullDownRefresh() {
+    this.loadDownloads();
+    setTimeout(() => wx.stopPullDownRefresh(), 800);
+  },
+
   loadDownloads() {
     const app = getApp();
     this.setData({ loading: true });
@@ -67,5 +72,9 @@ Page({
 
   onShareAppMessage() {
     return { title: "模板宝 · 下载记录", path: "/pages/downloads/downloads" };
+  },
+
+  onShareTimeline() {
+    return { title: "模板宝 · 下载记录" };
   }
 });

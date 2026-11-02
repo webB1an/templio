@@ -36,6 +36,11 @@ Page({
     this.syncFavorites();
   },
 
+  onPullDownRefresh() {
+    this.syncFavorites();
+    setTimeout(() => wx.stopPullDownRefresh(), 800);
+  },
+
   syncFavorites() {
     const app = getApp();
     if (!app || !app.ensureLogin) return;
@@ -87,5 +92,9 @@ Page({
 
   onShareAppMessage() {
     return { title: "模板宝 · 模板库", path: "/pages/index/index" };
+  },
+
+  onShareTimeline() {
+    return { title: "模板宝 · PPT/Word 模板库" };
   }
 });

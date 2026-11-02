@@ -2,6 +2,8 @@ const { TEMPLATES } = require("../../data/mock");
 const { getNavMetrics } = require("../../utils/layout");
 const { fetchTemplates } = require("../../utils/api");
 
+const PAGE_SIZE = 10;
+
 /** URL query 里可能是 encodeURIComponent 后的中文，安全解码 */
 function safeDecode(value) {
   if (!value) return "";
@@ -18,6 +20,9 @@ Page({
     templates: TEMPLATES,
     keyword: "",
     categoryKey: "",
+    page: 0,
+    hasMore: false,
+    loading: false,
     navTop: 20,
     navHeight: 44,
     menuRight: 96,
@@ -39,8 +44,50 @@ Page({
       keyword,
       categoryKey
     });
-    this.applyFilter();
-    this.loadRemote();
+    this.loadTemplates(true);
+  },
+
+  onPullDownRefresh() {
+    this.loadTemplates(true).finally(() => wx.stopPullDownRefresh());
+  },
+
+  onReachBottom() {
+    this.loadMore();
+  },
+
+  loadTemplates(reset) {
+    if (!reset && (this.data.loading || !this.data.hasMore)) return Promise.resolve();
+    const pageIndex = reset ? 0 : this.data.page;
+    this.setData({ loading: true });
+    return fetchTemplates({
+      q: this.data.keyword || undefined,
+      category: this.data.categoryKey || undefined,
+      limit: PAGE_SIZE,
+      offset: pageIndex * PAGE_SIZE
+    })
+      .then((data) => {
+        const list = (data && data.items) || [];
+        const total = (data && data.total) || 0;
+        this.setData({
+          templates: reset ? list : this.data.templates.concat(list),
+          page: pageIndex + 1,
+          hasMore: (pageIndex + 1) * PAGE_SIZE < total,
+          loading: false
+        });
+      })
+      .catch(() => {
+        if (reset) {
+          this.applyFilter();
+          this.setData({ loading: false, page: 1, hasMore: false });
+        } else {
+          this.setData({ loading: false, hasMore: false });
+        }
+      });
+  },
+
+  loadMore() {
+    if (this.data.loading || !this.data.hasMore) return;
+    this.loadTemplates(false);
   },
 
   applyFilter() {
@@ -57,18 +104,6 @@ Page({
     this.setData({ templates: list });
   },
 
-  loadRemote() {
-    fetchTemplates({
-      q: this.data.keyword || undefined,
-      category: this.data.categoryKey || undefined
-    })
-      .then((data) => {
-        const list = Array.isArray(data) ? data : data && data.items;
-        if (list && list.length) this.setData({ templates: list });
-      })
-      .catch(() => {});
-  },
-
   goBack() {
     if (getCurrentPages().length > 1) wx.navigateBack();
     else wx.switchTab({ url: "/pages/index/index" });
@@ -80,5 +115,9 @@ Page({
 
   onShareAppMessage() {
     return { title: "模板宝 · 模板库", path: "/pages/index/index" };
+  },
+
+  onShareTimeline() {
+    return { title: "模板宝 · 模板库" };
   }
 });

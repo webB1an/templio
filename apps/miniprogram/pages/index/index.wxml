@@ -60,6 +60,10 @@
     </view>
   </view>
 
+  <view class="list-tip" wx:if="{{loading}}">加载中...</view>
+  <view class="list-tip" wx:if="{{!loading && templates.length === 0}}">暂无模板</view>
+  <view class="list-tip" wx:if="{{!loading && !hasMore && templates.length}}">没有更多了</view>
+
   <view class="footer-tip">模板宝 · 模板仅供学习交流，版权归原作者</view>
   <view class="tabbar-pad"></view>
 </view>

@@ -132,5 +132,13 @@ Page({
       title: item.title || "模板宝 模板",
       path: `/pages/detail/detail?id=${item.id || "demo-01"}`
     };
+  },
+
+  onShareTimeline() {
+    const item = this.data.item || {};
+    return {
+      title: item.title || "模板宝 模板",
+      query: `id=${item.id || "demo-01"}`
+    };
   }
 });

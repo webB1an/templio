@@ -125,5 +125,9 @@ Page({
 
   onShareAppMessage() {
     return { title: "模板宝 · 模板搜索", path: "/pages/search/search" };
+  },
+
+  onShareTimeline() {
+    return { title: "模板宝 · 模板搜索" };
   }
 });

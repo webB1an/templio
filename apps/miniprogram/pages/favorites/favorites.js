@@ -37,6 +37,11 @@ Page({
       });
   },
 
+  onPullDownRefresh() {
+    this.loadFavorites();
+    setTimeout(() => wx.stopPullDownRefresh(), 800);
+  },
+
   goBack() {
     if (getCurrentPages().length > 1) wx.navigateBack();
     else wx.switchTab({ url: "/pages/index/index" });
@@ -64,5 +69,9 @@ Page({
 
   onShareAppMessage() {
     return { title: "模板宝 · 我的收藏", path: "/pages/favorites/favorites" };
+  },
+
+  onShareTimeline() {
+    return { title: "模板宝 · 我的收藏" };
   }
 });

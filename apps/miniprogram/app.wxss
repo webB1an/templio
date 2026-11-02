@@ -362,3 +362,10 @@ page {
 .tabbar-pad {
   height: 180rpx;
 }
+
+.list-tip {
+  margin: 28rpx 0 8rpx;
+  text-align: center;
+  font-size: 23rpx;
+  color: var(--ink-3);
+}

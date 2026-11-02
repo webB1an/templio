@@ -42,5 +42,8 @@
     </view>
   </view>
 
+  <view class="list-tip" wx:if="{{loading}}">加载中...</view>
+  <view class="list-tip" wx:if="{{!loading && !hasMore && templates.length}}">没有更多了</view>
+
   <view class="tabbar-pad"></view>
 </view>
