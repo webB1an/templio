@@ -18,10 +18,14 @@
 
 | 页面 | 接口 | 状态 |
 | --- | --- | --- |
-| 首页/列表 | `GET /api/templates` | 服务端待实现，先用 mock |
-| 详情 | `GET /api/templates/:id` | 服务端待实现，先用 mock |
+| 首页/列表 | `GET /api/templates` | ✅ 已接入（失败回退 mock） |
+| 详情 | `GET /api/templates/:id` | ✅ 已接入 |
+| 分类 | `GET /api/templates/facets` | ✅ 已接入 |
+| 搜索 | `GET /api/templates?q=` | ✅ 已接入 |
 | 登录 | `POST /api/user/login` | 待实现 |
-| 收藏 | `GET/POST /api/user/favorites` | 待实现 |
+| 收藏 | `GET/POST /api/user/favorites` | 待实现（当前收藏存本地） |
+
+> 当前 seed 数据的网盘链接是占位地址；详情页展示的 `shortLink` 已指向 `/r/demoXX`，会被服务端 302 到对应网盘地址。
 
 ## 设计说明
 

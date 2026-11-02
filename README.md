@@ -6,7 +6,7 @@ PPT / Word 模板库小程序：微信小程序（用户端）+ Web 管理端 + 
 
 > 产品展示名：**模板宝**；仓库名、包名、域名仍保留 `templio` 技术标识（不影响 CI/CD 与已配置的域名）。
 >
-> 当前阶段：**P0 打样**。服务端已上线并通过健康检查；小程序 P0 演示已初始化；管理端待开发。
+> 当前阶段：**P0 打样**。服务端与模板公开接口已上线；小程序搜索/列表/详情已接入真实接口；管理端待开发。
 > 线上 API：<https://templio.wdbzk.com/health>
 >
 > 规划文档见 `docs/`，部署与 CI/CD 见 `docs/04-ci-cd.md`。
@@ -67,6 +67,15 @@ npm run status -- fixtures/packages
 | `fixtures` | 生成合成 PPT/Word 测试模板（开发用） |
 
 渲染管线特性：SHA-256 幂等（同文件跳过）、`.ledger.jsonl` 断点账本、LibreOffice 独立 profile 并发、字体名抽取告警、图片体积预算内自动降质。
+
+## 公开 API
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/templates` | 模板列表（`q` / `category` / `tag` / `limit` / `offset`） |
+| GET | `/api/templates/facets` | 分类与标签聚合 |
+| GET | `/api/templates/:id` | 模板详情（含相关推荐） |
+| GET | `/r/:code` | 网盘短链 302 跳转 |
 
 ## 小程序
 

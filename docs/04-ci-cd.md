@@ -135,7 +135,7 @@ git push origin main
 
 后续可扩展为 `releases/<sha>` + `current` 软链的原子发布。
 
-### 3.5 线上验收（2026-11-01）
+### 3.5 线上验收（2026-11-02）
 
 | 项 | 结果 |
 | --- | --- |
@@ -143,9 +143,35 @@ git push origin main
 | API 根路由 | `GET https://templio.wdbzk.com/api` → `{"service":"templio-api","status":"ok"}` |
 | HTTP → HTTPS | 301 跳转正常 |
 | TLS 证书 | Let's Encrypt（acme.sh 自动续期，到期 2027-01-30） |
-| 数据库 | MySQL 8 `模板宝`，Prisma 迁移已应用（14 张表） |
+| 数据库 | MySQL 8 `templio`，Prisma 迁移已应用（14 张表） |
 | PM2 | `templio-api` online，内存约 105MB，0 次重启 |
 | 开机自启 | `pm2-root.service` enabled / active |
+| 模板列表 | `GET /api/templates?limit=2` → 8 条演示模板，含 `shortLink` / `passcode` |
+| 模板详情 | `GET /api/templates/:id` → 含 `related` 相关推荐 |
+| 分类聚合 | `GET /api/templates/facets` → 7 个分类与标签 |
+| 短链跳转 | `GET /r/demo01` → 302 `https://pan.baidu.com/s/1demo01` |
+| 演示数据 | `seed done: 7 categories, 8 templates` |
+
+### 3.6 公开 API（已上线）
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/templates` | 模板列表；支持 `q` / `category`（slug）/ `tag` / `limit` / `offset` |
+| GET | `/api/templates/facets` | 分类与标签聚合（小程序分类 chips 使用） |
+| GET | `/api/templates/:id` | 模板详情（含 `related` 相关推荐） |
+| GET | `/r/:code` | 网盘短链跳转（302），Nginx 重写到 `/api/r/:code` |
+
+返回字段与小程序页面 DTO 对齐：`id/title/category/categoryKey/format/pageCount/sizeText/tags/tone/summary/shortLink/passcode`。
+
+### 3.7 演示数据（seed）
+
+```bash
+cd /www/wwwroot/templio/apps/api
+set -a; . ./.env; set +a
+node prisma/seed.cjs
+```
+
+幂等：按 `sourceHash` / `category.slug` / `tag.name` / `shortLink.code` upsert。seed 中的网盘链接为占位地址（`pan.baidu.com/s/1demoXX`），接入真实模板后由管理端替换。
 
 ---
 
@@ -167,7 +193,8 @@ git push origin main
 
 1. 微信小程序：AppID / AppSecret 已在服务器 `.env` 配置；还需要公众平台下载的「代码上传密钥」才能让 CI 上传体验版
 2. 百度网盘 / 夸克网盘官方 Skill 安装与账号授权
-3. Web 管理端（`apps/admin`）开发；小程序 P0 演示已初始化（见 `apps/miniprogram`），待接模板接口 / 登录 / 收藏
+3. Web 管理端（`apps/admin`）：登录、模板导入、AI 复核、上下架
+4. 小程序登录 / 收藏接口（当前收藏仅本地存储）
 
 ---
 
