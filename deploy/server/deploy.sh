@@ -26,20 +26,25 @@ if [ ! -d node_modules/@nestjs/core ]; then
 fi
 
 # 加载 .env（Prisma 迁移与健康检查需要）
+# 注意：.env 里可能残留上次部署的 GIT_SHA/APP_VERSION，先保存本次 workflow 传入的值
+RELEASE_SHA="${GIT_SHA:-}"
+RELEASE_VERSION="${APP_VERSION:-}"
 set -a
 # shellcheck disable=SC1091
 . apps/api/.env
 set +a
+GIT_SHA="$RELEASE_SHA"
+APP_VERSION="${RELEASE_VERSION:-${APP_VERSION:-0.1.0}}"
 
 # 记录本次部署的 commit，供 /health 返回（dotenv 启动时读取）
 if [ -n "${GIT_SHA:-}" ]; then
   ENV_TMP="$(mktemp)"
-  grep -v '^GIT_SHA=' apps/api/.env > "$ENV_TMP" || true
-  printf '\n# 由 deploy.sh 自动写入\nGIT_SHA=%s\n' "$GIT_SHA" >> "$ENV_TMP"
+  grep -v -e '^GIT_SHA=' -e '^APP_VERSION=' apps/api/.env > "$ENV_TMP" || true
+  printf '\n# 由 deploy.sh 自动写入\nGIT_SHA=%s\nAPP_VERSION=%s\n' "$GIT_SHA" "$APP_VERSION" >> "$ENV_TMP"
   cat "$ENV_TMP" > apps/api/.env
   rm -f "$ENV_TMP"
-  export GIT_SHA
-  echo "-- release commit: ${GIT_SHA}"
+  export GIT_SHA APP_VERSION
+  echo "-- release commit: ${GIT_SHA} (version ${APP_VERSION})"
 fi
 
 echo "-- Prisma generate (server native target)"
