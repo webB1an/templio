@@ -11,6 +11,7 @@ export interface UploadCommandOptions {
   token?: string;
   limit?: number;
   dryRun: boolean;
+  withSource: boolean;
 }
 
 interface PackageItem {
@@ -34,7 +35,9 @@ export async function runUpload(options: UploadCommandOptions): Promise<number> 
   }
 
   const limited = options.limit && options.limit > 0 ? packages.slice(0, options.limit) : packages;
-  console.log(`Templio 上传：${limited.length}/${packages.length} 个物料包 → ${api}`);
+  console.log(
+    `Templio 上传：${limited.length}/${packages.length} 个物料包 → ${api}${options.withSource ? "（含源文件）" : ""}`
+  );
 
   if (options.dryRun) {
     for (const item of limited) console.log(`  · ${item.name}`);
@@ -49,7 +52,7 @@ export async function runUpload(options: UploadCommandOptions): Promise<number> 
 
   for (const item of limited) {
     try {
-      const result = await uploadPackage(api, token, item.dir);
+      const result = await uploadPackage(api, token, item.dir, options.withSource);
       if (result.status === "duplicate") {
         duplicated += 1;
         console.log(`  ↷ ${item.name} 已存在（${result.title || result.id}）`);
@@ -108,6 +111,7 @@ async function uploadPackage(
   api: string,
   token: string,
   packageDir: string,
+  withSource: boolean,
 ): Promise<{ status: string; id: string; title?: string | null }> {
   const manifest = parseManifest(JSON.parse(await readFile(join(packageDir, "manifest.json"), "utf8")));
   const text = JSON.parse(await readFile(join(packageDir, manifest.textFile), "utf8")) as unknown;
@@ -125,6 +129,13 @@ async function uploadPackage(
   await appendImage(manifest.images.thumb, "thumb", "thumb.webp");
   for (let index = 0; index < manifest.images.previews.length; index += 1) {
     await appendImage(manifest.images.previews[index]!, "previews", `preview-${index + 1}.webp`);
+  }
+
+  if (withSource) {
+    const sourcePath = join(packageDir, manifest.sourceFile);
+    const buffer = await readFile(sourcePath);
+    const filename = sourcePath.split(/[\\/]/).pop() || "source";
+    form.append("source", new Blob([new Uint8Array(buffer)], { type: "application/octet-stream" }), filename);
   }
 
   const response = await fetch(`${api}/api/admin/import/package`, {

@@ -75,6 +75,7 @@ program
   )
   .option("--token <token>", "管理员登录 token（可选）", process.env.TEMPLIO_ADMIN_TOKEN)
   .option("--limit <n>", "最多上传数量")
+  .option("--with-source", "同时上传源文件（暂存服务器，网盘同步后删除）", false)
   .option("--dry-run", "只列出待上传物料包", false)
   .action(
     async (
@@ -85,6 +86,7 @@ program
         password?: string;
         token?: string;
         limit?: string;
+        withSource: boolean;
         dryRun: boolean;
       },
     ) => {
@@ -96,6 +98,7 @@ program
         token: options.token,
         limit: options.limit ? positiveInt(options.limit, 0) || undefined : undefined,
         dryRun: Boolean(options.dryRun),
+        withSource: Boolean(options.withSource),
       });
       process.exitCode = code;
     },
