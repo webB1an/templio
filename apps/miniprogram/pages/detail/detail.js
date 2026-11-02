@@ -118,13 +118,13 @@ Page({
   reportTemplate() {
     wx.showModal({
       title: "举报模板",
-      content: "如发现侵权、违规或无法下载的内容，请发送邮件至 feedback@wdbzk.com，并附上模板名称。",
+      content: "如发现侵权、违规或无法下载的内容，请发送邮件至 475008394@qq.com，并附上模板名称与侵权证据。",
       confirmText: "复制邮箱",
       cancelText: "关闭",
       success: (result) => {
         if (!result.confirm) return;
         wx.setClipboardData({
-          data: "feedback@wdbzk.com",
+          data: "475008394@qq.com",
           success() {
             wx.showToast({ title: "邮箱已复制", icon: "none" });
           }
