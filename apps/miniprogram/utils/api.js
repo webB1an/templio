@@ -70,6 +70,13 @@ function fetchFacets() {
   return request("/templates/facets");
 }
 
+function recordClick(templateId, kind) {
+  return request(`/templates/${templateId}/click`, {
+    method: "POST",
+    data: { kind: kind || "view" }
+  });
+}
+
 /* ---------------- 用户 / 登录 ---------------- */
 
 function loginWithCode(code) {
@@ -84,6 +91,10 @@ function fetchMe() {
 
 function fetchFavorites() {
   return request("/user/favorites");
+}
+
+function fetchDownloads() {
+  return request("/user/downloads");
 }
 
 function fetchFavoriteStatus(templateId) {
@@ -106,7 +117,9 @@ module.exports = {
   fetchTemplateDetail,
   fetchFacets,
   fetchFavorites,
+  fetchDownloads,
   fetchFavoriteStatus,
   addFavorite,
-  removeFavorite
+  removeFavorite,
+  recordClick
 };

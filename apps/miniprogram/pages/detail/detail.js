@@ -4,7 +4,8 @@ const {
   fetchTemplateDetail,
   fetchFavoriteStatus,
   addFavorite,
-  removeFavorite
+  removeFavorite,
+  recordClick
 } = require("../../utils/api");
 
 Page({
@@ -35,6 +36,7 @@ Page({
     });
 
     this.loadFavoriteState(id);
+    this.recordView(id);
 
     fetchTemplateDetail(id)
       .then((data) => {
@@ -44,11 +46,18 @@ Page({
             related: Array.isArray(data.related) && data.related.length ? data.related : related
           });
           this.loadFavoriteState(data.id);
+          this.recordView(data.id);
         }
       })
       .catch(() => {
         // 接口未就绪时使用 mock
       });
+  },
+
+  recordView(id) {
+    if (!id || this.viewRecordedFor === id) return;
+    this.viewRecordedFor = id;
+    recordClick(id, "view").catch(() => {});
   },
 
   loadFavoriteState(id) {
@@ -83,6 +92,7 @@ Page({
         wx.showToast({ title: "已复制，请打开网盘 App 保存", icon: "none" });
       }
     });
+    recordClick(item.id, "copy").catch(() => {});
   },
 
   previewImage(event) {

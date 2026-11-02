@@ -23,7 +23,7 @@
       <text class="stat-label">收藏</text>
     </view>
     <view class="stat">
-      <text class="stat-num">0</text>
+      <text class="stat-num">{{downloadCount}}</text>
       <text class="stat-label">下载</text>
     </view>
     <view class="stat">

@@ -1,0 +1,44 @@
+<view class="bg-orb orb-a"></view>
+<view class="bg-orb orb-b"></view>
+
+<view class="nav" style="padding-top: {{navTop}}px;">
+  <view class="nav-inner glass glass-pill" style="margin-right: {{menuRight}}px;">
+    <view class="nav-back" bindtap="goBack">‹</view>
+    <text class="brand">下载记录</text>
+    <text class="brand-sub">{{items.length}} 个</text>
+  </view>
+</view>
+
+<view class="page" style="padding-top: {{contentTop}}px;">
+  <view wx:if="{{loading}}" class="downloads-tip">加载中...</view>
+
+  <block wx:elif="{{items.length}}">
+    <view class="downloads-list">
+      <view
+        wx:for="{{items}}"
+        wx:key="id"
+        class="download-row glass"
+        data-id="{{item.id}}"
+        bindtap="openDetail"
+      >
+        <view class="download-cover tone-{{item.tone}}">
+          <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load />
+          <text class="download-format">{{item.format}}</text>
+        </view>
+        <view class="download-main">
+          <text class="download-title">{{item.title}}</text>
+          <text class="download-meta">{{item.category}} · {{item.pageCount}} 页</text>
+          <text class="download-time">复制于 {{item.downloadedText}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <view wx:else class="downloads-empty glass">
+    <text class="downloads-empty-title">还没有下载记录</text>
+    <text class="downloads-empty-sub">在详情页复制下载链接后，记录会出现在这里</text>
+    <button class="downloads-empty-btn" bindtap="goHome">去逛逛</button>
+  </view>
+
+  <view class="tabbar-pad"></view>
+</view>

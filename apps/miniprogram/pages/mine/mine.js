@@ -1,5 +1,5 @@
 const { getNavMetrics } = require("../../utils/layout");
-const { fetchFavorites } = require("../../utils/api");
+const { fetchFavorites, fetchDownloads } = require("../../utils/api");
 
 Page({
   data: {
@@ -8,8 +8,9 @@ Page({
     menuRight: 96,
     contentTop: 96,
     userName: "微信用户",
-    userSub: "微信静默登录 · 收藏云端同步",
-    favCount: 0
+    userSub: "微信静默登录 · 收藏/下载记录云端同步",
+    favCount: 0,
+    downloadCount: 0
   },
 
   onLoad() {
@@ -40,12 +41,14 @@ Page({
     if (!app || !app.ensureLogin) return;
     app
       .ensureLogin()
-      .then(() => fetchFavorites())
-      .then((data) => {
-        const items = (data && data.items) || [];
+      .then(() => Promise.all([fetchFavorites(), fetchDownloads()]))
+      .then(([favData, downloadData]) => {
+        const favorites = (favData && favData.items) || [];
+        const downloads = (downloadData && downloadData.items) || [];
         this.setData({
-          favCount: items.length,
-          userSub: "微信静默登录 · 收藏云端同步"
+          favCount: favorites.length,
+          downloadCount: downloads.length,
+          userSub: "微信静默登录 · 收藏/下载记录云端同步"
         });
       })
       .catch(() => {
@@ -57,6 +60,10 @@ Page({
     const key = event.currentTarget.dataset.key;
     if (key === "favorites") {
       wx.navigateTo({ url: "/pages/favorites/favorites" });
+      return;
+    }
+    if (key === "downloads") {
+      wx.navigateTo({ url: "/pages/downloads/downloads" });
       return;
     }
     if (key === "about") {
