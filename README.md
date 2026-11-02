@@ -96,7 +96,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - 导入后模板状态为 `imported`，在管理端「模板库」复核：可点「AI」让 DeepSeek 生成标题/分类/标签/简介并一键应用，再点「网盘」补齐分享链接/提取码（自动生成短链），最后「上架」
 - 封面/缩略图/预览图保存到 `storage/public/templates/<hash8>/`，由 `/assets/` 直出
 - `--with-source` 可把源文件暂存到 `storage/private/sources/<hash8>/`；管理端「网盘」弹窗可下载/删除/同步，确认源文件已上传网盘后务必删除服务器源文件
-- 配置 `NETDISK_SYNC_COMMAND` 后可在管理端点「同步到网盘」自动上传并回写链接、清理源文件
+- 管理端「网盘账号」可在线绑定百度（Cookie）/夸克（授权码）多账号并设置默认账号，同步默认使用默认账号
 
 ## 用户登录与收藏
 
