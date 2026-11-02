@@ -46,8 +46,13 @@ MYSQL_PWD="$DB_PASS" mysqldump \
 
 mv "${DB_FILE}.tmp" "$DB_FILE"
 gzip -t "$DB_FILE"
+TABLE_COUNT="$(zcat "$DB_FILE" | grep -c '^CREATE TABLE' || true)"
+if [ "${TABLE_COUNT:-0}" -lt 10 ]; then
+  echo "[backup] $(date -Iseconds) ✘ 备份内容异常：仅 ${TABLE_COUNT} 张表"
+  exit 1
+fi
 DB_SIZE="$(du -h "$DB_FILE" | cut -f1)"
-echo "[backup] $(date -Iseconds) 数据库备份完成 ${DB_SIZE}"
+echo "[backup] $(date -Iseconds) 数据库备份完成 ${DB_SIZE}（${TABLE_COUNT} 张表）"
 
 if [ -d "${APP_ROOT}/storage/public" ]; then
   STORAGE_FILE="${STORAGE_BACKUP_DIR}/storage-${STAMP}.tar.gz"
