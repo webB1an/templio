@@ -332,6 +332,8 @@ export class AdminTemplatesService {
     pageCount: number | null;
     fileSize: bigint | null;
     originalName: string | null;
+    viewCount: number;
+    copyCount: number;
     publishedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
@@ -370,6 +372,8 @@ export class AdminTemplatesService {
       fileSize: row.fileSize ? Number(row.fileSize) : 0,
       category: row.category ? { id: row.category.id, name: row.category.name, key: row.category.slug } : null,
       tags: row.tags.map((item) => item.tag.name),
+      viewCount: row.viewCount,
+      copyCount: row.copyCount,
       coverUrl: coverFile ? `${appOrigin}/assets/${coverFile.objectKey}` : null,
       shortCode,
       shortLink: shortCode ? `${appOrigin}/r/${shortCode}` : null,

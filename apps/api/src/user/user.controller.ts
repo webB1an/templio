@@ -40,6 +40,12 @@ export class UserController {
     return this.users.listFavorites(request.user!.sub);
   }
 
+  @Get("downloads")
+  @UseGuards(UserAuthGuard)
+  listDownloads(@Req() request: UserRequest) {
+    return this.users.listDownloads(request.user!.sub);
+  }
+
   @Get("favorites/:templateId")
   @UseGuards(UserAuthGuard)
   favoriteStatus(@Req() request: UserRequest, @Param("templateId") templateId: string) {

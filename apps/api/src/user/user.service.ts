@@ -62,6 +62,40 @@ export class UserService {
     return { favorited: Boolean(record) };
   }
 
+  async listDownloads(userId: string): Promise<{ items: unknown[]; total: number }> {
+    const rows = await this.prisma.templateClick.findMany({
+      where: { userId, kind: "copy", template: { status: "published" } },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      include: {
+        template: {
+          include: {
+            category: true,
+            files: { orderBy: { seq: "asc" } },
+            tags: { include: { tag: true }, orderBy: { sort: "asc" } },
+            netdiskLinks: {
+              where: { isActive: true },
+              orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+              include: { shortLinks: true },
+            },
+          },
+        },
+      },
+    });
+
+    const seen = new Set<string>();
+    const items: unknown[] = [];
+    for (const row of rows) {
+      if (seen.has(row.templateId)) continue;
+      seen.add(row.templateId);
+      items.push({
+        ...this.publicTemplates.toDto(row.template),
+        downloadedAt: row.createdAt.toISOString(),
+      });
+    }
+    return { items, total: items.length };
+  }
+
   async addFavorite(
     userId: string,
     templateId: string,
