@@ -110,6 +110,7 @@ jobs:
           fi
           if [ -d packages/shared/dist ]; then
             rsync $RSYNC_OPTS --delete -e "$RSYNC_SSH" packages/shared/dist/ "$TARGET/packages/shared/dist/"
+            rsync $RSYNC_OPTS --delete -e "$RSYNC_SSH" packages/shared/dist-cjs/ "$TARGET/packages/shared/dist-cjs/"
             rsync $RSYNC_OPTS -e "$RSYNC_SSH" packages/shared/package.json "$TARGET/packages/shared/"
           fi
           rsync $RSYNC_OPTS -e "$RSYNC_SSH" package.json package-lock.json "$TARGET/"
