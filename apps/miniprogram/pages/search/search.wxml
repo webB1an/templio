@@ -87,6 +87,9 @@
         </view>
       </view>
     </view>
+
+    <view class="list-tip" wx:if="{{loading}}">加载中...</view>
+    <view class="list-tip" wx:if="{{!loading && !hasMore && results.length}}">没有更多了</view>
   </block>
 
   <view class="tabbar-pad"></view>

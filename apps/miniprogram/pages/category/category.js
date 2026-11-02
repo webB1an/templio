@@ -36,8 +36,15 @@ Page({
       menuRight: metrics.menuRight,
       contentTop: metrics.statusBarHeight + metrics.navHeight + 28
     });
+    this.loadCategories();
+  },
 
-    fetchFacets()
+  onPullDownRefresh() {
+    this.loadCategories().finally(() => wx.stopPullDownRefresh());
+  },
+
+  loadCategories() {
+    return fetchFacets()
       .then((data) => {
         const remote = data && data.categories;
         if (!Array.isArray(remote) || remote.length === 0) return;

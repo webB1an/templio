@@ -4,6 +4,7 @@ const { fetchTemplates } = require("../../utils/api");
 
 const HOT_KEYWORDS = ["答辩 PPT", "商务汇报", "简历", "合同", "教学课件", "工作总结"];
 const HISTORY_KEY = "searchHistory";
+const PAGE_SIZE = 10;
 
 Page({
   data: {
@@ -14,6 +15,9 @@ Page({
     autoFocus: true,
     hotKeywords: HOT_KEYWORDS,
     history: [],
+    page: 0,
+    hasMore: false,
+    loading: false,
     navTop: 20,
     navHeight: 44,
     menuRight: 96,
@@ -30,6 +34,19 @@ Page({
       contentTop: metrics.statusBarHeight + metrics.navHeight + 28,
       history: Array.isArray(history) ? history : []
     });
+  },
+
+  onPullDownRefresh() {
+    if (this.data.keyword) {
+      this.runSearch(this.data.keyword, false, true);
+    } else {
+      wx.stopPullDownRefresh();
+    }
+  },
+
+  onReachBottom() {
+    if (!this.data.keyword || this.data.loading || !this.data.hasMore) return;
+    this.loadRemotePage(false);
   },
 
   onInput(event) {
@@ -50,6 +67,9 @@ Page({
       keyword: "",
       results: [],
       hasSearched: false,
+      page: 0,
+      hasMore: false,
+      loading: false,
       autoFocus: true
     });
   },
@@ -93,7 +113,10 @@ Page({
     this.setData({
       keyword,
       results,
-      hasSearched: keyword.length > 0
+      hasSearched: keyword.length > 0,
+      page: 0,
+      hasMore: false,
+      loading: false
     });
 
     if (saveHistory && keyword) {
@@ -105,17 +128,35 @@ Page({
       this.setData({ history });
     }
 
-    if (saveHistory && keyword) this.loadRemote(keyword);
+    if (saveHistory && keyword) this.loadRemotePage(true);
   },
 
-  loadRemote(keyword) {
-    fetchTemplates({ q: keyword })
+  loadRemotePage(reset) {
+    if (!this.data.keyword) return Promise.resolve();
+    const pageIndex = reset ? 0 : this.data.page;
+    if (!reset && (this.data.loading || !this.data.hasMore)) return Promise.resolve();
+
+    this.setData({ loading: true });
+    return fetchTemplates({
+      q: this.data.keyword,
+      limit: PAGE_SIZE,
+      offset: pageIndex * PAGE_SIZE
+    })
       .then((data) => {
-        const list = Array.isArray(data) ? data : data && data.items;
-        if (list && list.length) this.setData({ results: list });
+        const list = (data && data.items) || [];
+        const total = (data && data.total) || 0;
+        this.setData({
+          results: reset ? list : this.data.results.concat(list),
+          page: pageIndex + 1,
+          hasMore: (pageIndex + 1) * PAGE_SIZE < total,
+          loading: false
+        });
       })
       .catch(() => {
-        // 接口未就绪时使用 mock 结果
+        this.setData({ loading: false, hasMore: false });
+      })
+      .finally(() => {
+        if (reset) wx.stopPullDownRefresh();
       });
   },
 
