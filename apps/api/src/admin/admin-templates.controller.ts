@@ -1,4 +1,18 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
+import { createReadStream } from "node:fs";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Res,
+  StreamableFile,
+  UseGuards,
+} from "@nestjs/common";
 import { AdminAuthGuard } from "./auth.guard";
 import { AdminTemplatesService } from "./admin-templates.service";
 
@@ -49,5 +63,24 @@ export class AdminTemplatesController {
   @Delete("templates/:id/netdisk")
   removeNetdisk(@Param("id") id: string) {
     return this.templates.removeNetdisk(id);
+  }
+
+  @Get("templates/:id/source")
+  async downloadSource(
+    @Param("id") id: string,
+    @Res({ passthrough: true }) res: { set: (headers: Record<string, string>) => void },
+  ) {
+    const file = await this.templates.getSourceFile(id);
+    res.set({
+      "Content-Type": "application/octet-stream",
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(file.filename)}`,
+      "Content-Length": String(file.size),
+    });
+    return new StreamableFile(createReadStream(file.path));
+  }
+
+  @Delete("templates/:id/source")
+  removeSource(@Param("id") id: string) {
+    return this.templates.removeSourceFile(id);
   }
 }

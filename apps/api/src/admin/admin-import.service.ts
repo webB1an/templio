@@ -22,7 +22,7 @@ export class AdminImportService {
     files: UploadedFiles,
     manifestRaw?: string,
     textRaw?: string,
-  ): Promise<{ status: string; id: string; title: string | null }> {
+  ): Promise<{ status: string; id: string; title: string | null; sourceFile?: string | null }> {
     if (!manifestRaw) throw new BadRequestException("缺少 manifest.json");
 
     let manifest: ReturnType<typeof parseManifest>;
@@ -87,6 +87,34 @@ export class AdminImportService {
       await saveImage(previews[index]!, `preview-${String(index + 1).padStart(2, "0")}.webp`, "preview", index);
     }
 
+    // 可选：源文件先暂存到服务器私有目录，等同步网盘后再删除
+    const source = files.source?.[0];
+    let sourceInfo: { filename: string; size: number } | null = null;
+    if (source) {
+      if (Math.abs(Number(manifest.sourceBytes) - source.size) > 1) {
+        throw new BadRequestException("源文件大小与 manifest.sourceBytes 不一致");
+      }
+      const safeName = sanitizeFilename(source.originalname || basename(manifest.sourceFile));
+      const extension = safeName.includes(".") ? safeName.split(".").pop()!.toLowerCase() : "";
+      if (extension !== manifest.format) {
+        throw new BadRequestException(`源文件扩展名应为 .${manifest.format}`);
+      }
+
+      const sourceKey = `sources/${hash}/${safeName}`;
+      const sourceDir = join(storageRoot, "private", "sources", hash);
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(join(storageRoot, "private", sourceKey), source.buffer);
+
+      fileCreates.push({
+        role: "source",
+        objectKey: sourceKey,
+        mime: source.mimetype || "application/octet-stream",
+        size: BigInt(source.size || source.buffer.length),
+        seq: 0,
+      });
+      sourceInfo = { filename: safeName, size: source.size || source.buffer.length };
+    }
+
     const title = (manifest.titleGuess || text.title || basename(manifest.sourceFile)).slice(0, 200);
     const template = await this.prisma.template.create({
       data: {
@@ -104,6 +132,14 @@ export class AdminImportService {
       },
     });
 
-    return { status: "imported", id: template.id, title: template.title };
+    return { status: "imported", id: template.id, title: template.title, sourceFile: sourceInfo?.filename || null };
   }
+}
+
+function sanitizeFilename(name: string): string {
+  const cleaned = basename(name || "")
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned.slice(0, 120) || "source";
 }

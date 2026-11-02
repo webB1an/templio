@@ -29,8 +29,9 @@ export class AdminImportController {
         { name: "cover", maxCount: 1 },
         { name: "thumb", maxCount: 1 },
         { name: "previews", maxCount: 8 },
+        { name: "source", maxCount: 1 },
       ],
-      { limits: { fileSize: 20 * 1024 * 1024, files: 10 } },
+      { limits: { fileSize: 80 * 1024 * 1024, files: 11 } },
     ),
   )
   importPackage(

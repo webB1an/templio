@@ -1,5 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import { randomBytes } from "node:crypto";
+import { stat, unlink } from "node:fs/promises";
+import { basename, join } from "node:path";
 import { Prisma, StorageProvider, TemplateStatus } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -365,6 +367,38 @@ export class AdminTemplatesService {
     return { removed: result.count > 0 };
   }
 
+  async getSourceFile(id: string): Promise<{ path: string; filename: string; size: number }> {
+    const file = await this.prisma.templateFile.findFirst({
+      where: { templateId: id, role: "source" },
+    });
+    if (!file) throw new NotFoundException("该模板还没有上传源文件");
+
+    const storageRoot = process.env.STORAGE_ROOT || join(process.cwd(), "storage");
+    const absolutePath = join(storageRoot, "private", file.objectKey);
+    try {
+      const info = await stat(absolutePath);
+      return { path: absolutePath, filename: basename(file.objectKey), size: info.size };
+    } catch {
+      throw new NotFoundException("源文件不存在或已被清理");
+    }
+  }
+
+  async removeSourceFile(id: string): Promise<{ removed: boolean }> {
+    const template = await this.prisma.template.findUnique({ where: { id } });
+    if (!template) throw new NotFoundException("模板不存在");
+    const files = await this.prisma.templateFile.findMany({
+      where: { templateId: id, role: "source" },
+    });
+    if (!files.length) return { removed: false };
+
+    const storageRoot = process.env.STORAGE_ROOT || join(process.cwd(), "storage");
+    for (const file of files) {
+      await unlink(join(storageRoot, "private", file.objectKey)).catch(() => undefined);
+      await this.prisma.templateFile.delete({ where: { id: file.id } });
+    }
+    return { removed: true };
+  }
+
   private async findAdminDto(id: string): Promise<unknown> {
     const row = await this.prisma.template.findUnique({
       where: { id },
@@ -409,7 +443,7 @@ export class AdminTemplatesService {
     updatedAt: Date;
     category: { id: string; name: string; slug: string } | null;
     tags: Array<{ tag: { name: string } }>;
-    files: Array<{ role: string; objectKey: string }>;
+    files: Array<{ role: string; objectKey: string; size?: bigint | null; mime?: string | null }>;
     aiAnalysis?: {
       title: string | null;
       categoryKey: string | null;
@@ -430,6 +464,7 @@ export class AdminTemplatesService {
   }) {
     const primary = row.netdiskLinks[0];
     const coverFile = row.files.find((file) => file.role === "cover");
+    const sourceFile = row.files.find((file) => file.role === "source");
     const appOrigin = (process.env.APP_ORIGIN || "https://templio.wdbzk.com").replace(/\/$/, "");
     const shortCode = primary?.shortLinks?.[0]?.code || null;
     return {
@@ -451,6 +486,13 @@ export class AdminTemplatesService {
       provider: primary?.provider || null,
       passcode: primary?.passcode || null,
       hasNetdisk: Boolean(primary?.url),
+      source: sourceFile
+        ? {
+            filename: basename(sourceFile.objectKey),
+            size: Number(sourceFile.size || 0),
+            sizeText: humanSize(Number(sourceFile.size || 0)),
+          }
+        : null,
       ai: row.aiAnalysis
         ? {
             title: row.aiAnalysis.title,
@@ -476,4 +518,12 @@ function clamp(value: string | undefined, fallback: number, min: number, max: nu
   const parsed = Number.parseInt(value || "", 10);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(max, Math.max(min, parsed));
+}
+
+function humanSize(bytes: number): string {
+  if (!bytes || bytes <= 0) return "-";
+  const units = ["B", "KB", "MB", "GB"];
+  const index = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
+  const value = bytes / 1024 ** index;
+  return `${value >= 10 || index === 0 ? Math.round(value) : value.toFixed(1)} ${units[index]}`;
 }
