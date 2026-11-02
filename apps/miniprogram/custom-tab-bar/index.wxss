@@ -28,7 +28,12 @@
 }
 
 .tab-active {
-  color: #1c1c1e;
+  color: #0a84ff;
+}
+
+.tab-active .tab-text {
+  color: #0a84ff;
+  font-weight: 600;
 }
 
 .tab-active::before {
