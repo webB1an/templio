@@ -119,6 +119,20 @@ export const api = {
     });
   },
 
+  startStorageAuth(id: string) {
+    return request<{ authUrl?: string; message?: string } | StorageAccount>(
+      `/admin/storage-accounts/${id}/auth/start`,
+      { method: "POST" }
+    );
+  },
+
+  finishStorageAuth(id: string, code: string) {
+    return request<StorageAccount>(`/admin/storage-accounts/${id}/auth/finish`, {
+      method: "POST",
+      body: { code }
+    });
+  },
+
   startQuarkAuth(id: string) {
     return request<{ authUrl?: string; message?: string } | StorageAccount>(
       `/admin/storage-accounts/${id}/quark-auth/start`,

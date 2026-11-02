@@ -142,10 +142,33 @@ export class StorageAccountService {
     if (!cookie || !/BAIDUID=/i.test(cookie)) {
       throw new BadRequestException("Cookie 无效：需包含 BAIDUID（从浏览器 pan.baidu.com 请求头复制）");
     }
+    if (!/BDUSS=/i.test(cookie) || !/STOKEN=/i.test(cookie)) {
+      throw new BadRequestException("Cookie 缺少 BDUSS/STOKEN，请复制完整 Cookie（含 BAIDUID、BDUSS、STOKEN）");
+    }
     mkdirSync(account.profileDir, { recursive: true });
     if (!account.configPath) throw new BadRequestException("账号配置异常：缺少 cookies 路径");
     writeFileSync(account.configPath, `${cookie}\n`, { mode: 0o600 });
     return this.probeAccount(id);
+  }
+
+  /** 统一授权入口：百度返回登录页链接 + Cookie 输入；夸克返回 OAuth 链接 + 授权码输入 */
+  async startAuth(id: string) {
+    const account = await this.requireAccount(id);
+    if (account.provider === "baidu") {
+      return {
+        authUrl: "https://pan.baidu.com/",
+        message:
+          "打开百度网盘登录页，登录后按 F12 → Network → 任意请求 → 复制完整 Cookie（含 BAIDUID、BDUSS、STOKEN），再粘贴到下方。",
+      };
+    }
+    return this.startQuarkAuth(id);
+  }
+
+  async finishAuth(id: string, codeRaw: unknown) {
+    const account = await this.requireAccount(id);
+    return account.provider === "baidu"
+      ? this.saveBaiduCookie(id, codeRaw)
+      : this.finishQuarkAuth(id, codeRaw);
   }
 
   async probeAccount(id: string) {

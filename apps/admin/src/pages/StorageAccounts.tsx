@@ -32,6 +32,8 @@ export default function StorageAccounts() {
   const [createOpen, setCreateOpen] = useState(false);
   const [authTarget, setAuthTarget] = useState<StorageAccount | null>(null);
   const [authUrl, setAuthUrl] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
   const [authCode, setAuthCode] = useState("");
   const [cookieText, setCookieText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -96,37 +98,53 @@ export default function StorageAccounts() {
   const openAuth = async (account: StorageAccount) => {
     setAuthTarget(account);
     setAuthUrl("");
+    setAuthMessage("");
     setAuthCode("");
     setCookieText("");
-    if (account.provider === "quark") {
-      setBusy(true);
-      try {
-        const result = await api.startQuarkAuth(account.id);
-        if ("authUrl" in result && result.authUrl) setAuthUrl(result.authUrl);
-        else {
-          message.success("账号已授权");
-          setAuthTarget(null);
-          load();
-        }
-      } catch (error) {
-        message.error((error as Error).message);
-      } finally {
-        setBusy(false);
+    setAuthLoading(true);
+    try {
+      const result = await api.startStorageAuth(account.id);
+      if ("authUrl" in result && result.authUrl) {
+        setAuthUrl(result.authUrl);
+        setAuthMessage(result.message || "");
+      } else {
+        message.success("账号已授权");
+        setAuthTarget(null);
+        load();
       }
+    } catch (error) {
+      message.error((error as Error).message);
+      setAuthMessage((error as Error).message);
+      setAuthUrl(account.provider === "baidu" ? "https://pan.baidu.com/" : "");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const copyAuthUrl = async () => {
+    if (!authUrl) return;
+    try {
+      await navigator.clipboard.writeText(authUrl);
+      message.success("授权链接已复制");
+    } catch {
+      message.warning("复制失败，请手动选中链接复制");
     }
   };
 
   const finishAuth = async () => {
     if (!authTarget) return;
+    const value = authTarget.provider === "baidu" ? cookieText.trim() : authCode.trim();
+    if (!value) {
+      message.warning(authTarget.provider === "baidu" ? "请粘贴百度 Cookie" : "请粘贴夸克授权码");
+      return;
+    }
     setBusy(true);
     try {
-      if (authTarget.provider === "baidu") {
-        await api.saveBaiduCookie(authTarget.id, cookieText.trim());
-      } else {
-        await api.finishQuarkAuth(authTarget.id, authCode.trim());
-      }
+      await api.finishStorageAuth(authTarget.id, value);
       message.success("授权完成");
       setAuthTarget(null);
+      setAuthUrl("");
+      setAuthMessage("");
       load();
     } catch (error) {
       message.error((error as Error).message);
@@ -253,7 +271,7 @@ export default function StorageAccounts() {
         type="info"
         showIcon
         message="在线绑定百度 / 夸克网盘账号"
-        description="百度：从浏览器 pan.baidu.com 请求头复制含 BAIDUID 的 Cookie；夸克：通过 Skill 授权码登录。每种网盘第一个账号自动设为默认，上传同步默认使用默认账号。"
+        description="点击「授权」会生成跳转链接：百度登录后复制完整 Cookie 粘贴回来；夸克登录后复制授权码粘贴回来。每种网盘第一个账号自动设为默认，上传同步默认使用默认账号。"
         style={{ marginBottom: 16 }}
       />
 
@@ -321,42 +339,48 @@ export default function StorageAccounts() {
         okText="完成授权"
         cancelText="取消"
         confirmLoading={busy}
+        width={620}
         onOk={() => void finishAuth()}
-        onCancel={() => setAuthTarget(null)}
+        onCancel={() => {
+          setAuthTarget(null);
+          setAuthUrl("");
+          setAuthMessage("");
+        }}
       >
-        {authTarget?.provider === "quark" ? (
-          <div>
-            {authUrl ? (
-              <Alert
-                type="info"
-                showIcon
-                message="打开授权链接，登录后把授权码粘贴到下方"
-                description={<Typography.Text copyable>{authUrl}</Typography.Text>}
-                style={{ marginBottom: 12 }}
-              />
-            ) : null}
-            <Input.TextArea
-              rows={3}
-              value={authCode}
-              onChange={(event) => setAuthCode(event.target.value)}
-              placeholder="粘贴夸克授权码或完整回调 URL"
-            />
-          </div>
+        <Alert
+          type="info"
+          showIcon
+          message={authMessage || (authLoading ? "正在生成授权链接..." : "点击下方按钮打开授权链接")}
+          style={{ marginBottom: 12 }}
+        />
+        <Space className="toolbar" wrap style={{ marginBottom: 12 }}>
+          <Button
+            type="primary"
+            disabled={!authUrl || authLoading}
+            onClick={() => window.open(authUrl, "_blank", "noopener,noreferrer")}
+          >
+            打开授权链接
+          </Button>
+          <Button disabled={!authUrl || authLoading} onClick={() => void copyAuthUrl()}>
+            复制链接
+          </Button>
+        </Space>
+        <div className="auth-url">{authLoading ? "正在生成授权链接..." : authUrl || "—"}</div>
+
+        {authTarget?.provider === "baidu" ? (
+          <Input.TextArea
+            rows={5}
+            value={cookieText}
+            onChange={(event) => setCookieText(event.target.value)}
+            placeholder="粘贴完整 Cookie：BAIDUID=...; BDUSS=...; STOKEN=..."
+          />
         ) : (
-          <div>
-            <Alert
-              type="info"
-              showIcon
-              message="从浏览器登录 pan.baidu.com，打开开发者工具，复制任意请求的 Cookie（需包含 BAIDUID）"
-              style={{ marginBottom: 12 }}
-            />
-            <Input.TextArea
-              rows={5}
-              value={cookieText}
-              onChange={(event) => setCookieText(event.target.value)}
-              placeholder="BAIDUID=...; BDUSS=...; STOKEN=..."
-            />
-          </div>
+          <Input.TextArea
+            rows={4}
+            value={authCode}
+            onChange={(event) => setAuthCode(event.target.value)}
+            placeholder="粘贴夸克授权码或完整回调 URL"
+          />
         )}
       </Modal>
 

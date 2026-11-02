@@ -344,3 +344,17 @@ body {
   gap: 16px;
   margin-bottom: 16px;
 }
+
+.auth-url {
+  display: block;
+  max-height: 120px;
+  overflow: auto;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: #f6f8fc;
+  color: #475069;
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-all;
+}

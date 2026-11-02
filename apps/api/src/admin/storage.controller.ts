@@ -42,6 +42,16 @@ export class StorageController {
     return this.accounts.saveBaiduCookie(id, body.cookie);
   }
 
+  @Post(":id/auth/start")
+  startAuth(@Param("id") id: string) {
+    return this.accounts.startAuth(id);
+  }
+
+  @Post(":id/auth/finish")
+  finishAuth(@Param("id") id: string, @Body() body: { code?: unknown }) {
+    return this.accounts.finishAuth(id, body.code);
+  }
+
   @Post(":id/quark-auth/start")
   startQuarkAuth(@Param("id") id: string) {
     return this.accounts.startQuarkAuth(id);
