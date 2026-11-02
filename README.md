@@ -9,7 +9,7 @@ PPT / Word 模板库小程序：微信小程序（用户端）+ Web 管理端 + 
 > 当前阶段：**P0 打样**。服务端、模板公开接口、Web 管理端已上线；小程序搜索/列表/详情已接入真实接口。
 > 线上 API：<https://templio.wdbzk.com/health>　管理端：<https://templio.wdbzk.com/admin/>
 >
-> 规划文档见 `docs/`，交付与运营见 [docs/05-交付与运营手册.md](docs/05-交付与运营手册.md)，验收清单见 [docs/06-验收清单.md](docs/06-验收清单.md)，微信上线与隐私指引见 [docs/07-微信上线与隐私指引.md](docs/07-微信上线与隐私指引.md)，部署与 CI/CD 见 `docs/04-ci-cd.md`。
+> 规划文档见 `docs/`，交付与运营见 [docs/05-交付与运营手册.md](docs/05-交付与运营手册.md)，验收清单见 [docs/06-验收清单.md](docs/06-验收清单.md)，微信上线与隐私指引见 [docs/07-微信上线与隐私指引.md](docs/07-微信上线与隐私指引.md)，版本记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 目录
 

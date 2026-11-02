@@ -52,7 +52,7 @@ export async function runUpload(options: UploadCommandOptions): Promise<number> 
 
   for (const item of limited) {
     try {
-      const result = await uploadPackage(api, token, item.dir, options.withSource);
+      const result = await uploadWithRetry(() => uploadPackage(api, token, item.dir, options.withSource));
       if (result.status === "duplicate") {
         duplicated += 1;
         console.log(`  ↷ ${item.name} 已存在（${result.title || result.id}）`);
@@ -73,6 +73,23 @@ export async function runUpload(options: UploadCommandOptions): Promise<number> 
     return 1;
   }
   return 0;
+}
+
+async function uploadWithRetry<T>(action: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await action();
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.log(`  ↻ 上传失败（${attempt}/${attempts}），2 秒后重试：${message}`);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
 async function login(api: string, username: string, password?: string): Promise<string> {

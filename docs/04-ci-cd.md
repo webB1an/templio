@@ -139,7 +139,7 @@ git push origin main
 
 | 项 | 结果 |
 | --- | --- |
-| API 健康检查 | `GET https://templio.wdbzk.com/health` → `{"ok":true,"service":"templio-api","db":"ok"}` |
+| API 健康检查 | `GET https://templio.wdbzk.com/health` → `{"ok":true,"version":"0.1.0","commit":"<sha>","db":"ok"}` |
 | API 根路由 | `GET https://templio.wdbzk.com/api` → `{"service":"templio-api","status":"ok"}` |
 | HTTP → HTTPS | 301 跳转正常 |
 | TLS 证书 | Let's Encrypt（acme.sh 自动续期，到期 2027-01-30） |

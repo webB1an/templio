@@ -61,7 +61,7 @@ async function main() {
     const body = await json("/health");
     expect(body && body.ok === true, "health 返回非 ok");
     expect(body.db === "ok", "数据库不健康");
-    return `db=${body.db}`;
+    return `v${body.version || "?"} @ ${String(body.commit || "dev").slice(0, 7)} · db=${body.db}`;
   });
 
   let firstTemplate = null;
