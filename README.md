@@ -64,6 +64,7 @@ npm run status -- fixtures/packages
 | `doctor` | 检查 LibreOffice / 中文字体 / Node / 图片预算 |
 | `render <srcDir> -o <out>` | 批量渲染：OOXML 抽文字 → LibreOffice 转 PDF → 图片 → 物料包 |
 | `status [distDir]` | 校验物料包 manifest 与文件完整性 |
+| `upload <distDir>` | 上传物料包到服务端导入接口（支持 `--limit` / `--dry-run`） |
 | `fixtures` | 生成合成 PPT/Word 测试模板（开发用） |
 
 渲染管线特性：SHA-256 幂等（同文件跳过）、`.ledger.jsonl` 断点账本、LibreOffice 独立 profile 并发、字体名抽取告警、图片体积预算内自动降质。
@@ -77,12 +78,28 @@ npm run status -- fixtures/packages
 | GET | `/api/templates/:id` | 模板详情（含相关推荐） |
 | GET | `/r/:code` | 网盘短链 302 跳转 |
 
+## 内容导入（桌面 CLI → 服务端）
+
+```bash
+# 1. 渲染物料包（Windows 桌面，需要 LibreOffice）
+templio render D:\templates -o D:\templates-dist
+
+# 2. 上传（密码建议用环境变量，避免出现在命令行历史）
+set TEMPLIO_ADMIN_PASSWORD=服务器 .env 中的 ADMIN_PASSWORD
+templio upload D:\templates-dist --api https://templio.wdbzk.com
+```
+
+- 物料包按源文件 SHA-256 幂等，重复上传会返回 duplicate，不会重复创建
+- 导入后模板状态为 `imported`，在管理端「模板库」复核标题/分类后点「上架」
+- 封面/缩略图/预览图保存到 `storage/public/templates/<hash8>/`，由 `/assets/` 直出
+- 源文件暂不上传（等百度/夸克网盘同步接入后再补），详情页暂无网盘链接
+
 ## 管理端
 
 - 地址：<https://templio.wdbzk.com/admin/>
 - 账号：`admin`，密码在服务器 `/www/wwwroot/templio/apps/api/.env` 的 `ADMIN_PASSWORD`
 - 本地开发：`npm run dev:admin`（Vite 5174，`/api` 代理到线上）
-- 功能：登录、概览统计、模板库（筛选 / 编辑 / 单条上下架 / 批量上下架）
+- 功能：登录、概览统计、模板库（筛选 / 编辑 / 单条上下架 / 批量上下架）、导入说明
 
 ## 小程序
 
@@ -103,7 +120,7 @@ npm run status -- fixtures/packages
 ## CI / CD
 
 - **CI**（`.github/workflows/ci.yml`）：提交信息校验 + typecheck/build + LibreOffice 渲染管线冒烟测试
-- **CD**（`.github/workflows/deploy.yml`）：push 到 `main` 自动构建并部署到服务器（当前服务端应用尚未实现，部署会自动跳过）
+- **CD**（`.github/workflows/deploy.yml`）：push 到 `main` 自动构建并部署（API + 管理端 + PM2 + 数据库迁移 + 健康检查）
 - **服务器初始化**：`APP_ROOT=/www/wwwroot/templio bash deploy/server/bootstrap.sh`
 - 部署细节与 GitHub Secrets 配置见 [docs/04-ci-cd.md](docs/04-ci-cd.md)
 

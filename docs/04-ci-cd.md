@@ -154,6 +154,9 @@ git push origin main
 | 管理端页面 | `https://templio.wdbzk.com/admin/` → 200 HTML，JS/CSS 资源 200 |
 | 管理端登录 | `POST /api/admin/login` → 返回 token；`/api/admin/templates` 可读 |
 | 管理端上下架 | PATCH 状态后公开接口总数 8 → 7 → 8（已验证并恢复） |
+| CLI 导入 | `templio upload` 导入 2 个物料包 → `imported` 2 条 |
+| 导入封面 | 上架后公开接口 total 10；封面 `/assets/templates/<hash8>/cover.webp` → 200 image/webp |
+| 重复导入 | 同一物料包再次上传 → `duplicate`，不重复创建 |
 
 ### 3.6 公开 API（已上线）
 
@@ -164,7 +167,7 @@ git push origin main
 | GET | `/api/templates/:id` | 模板详情（含 `related` 相关推荐） |
 | GET | `/r/:code` | 网盘短链跳转（302），Nginx 重写到 `/api/r/:code` |
 
-返回字段与小程序页面 DTO 对齐：`id/title/category/categoryKey/format/pageCount/sizeText/tags/tone/summary/shortLink/passcode`。
+返回字段与小程序页面 DTO 对齐：`id/title/category/categoryKey/format/pageCount/sizeText/tags/tone/summary/coverUrl/previewUrls/shortLink/passcode`。
 
 ### 3.7 演示数据（seed）
 
@@ -188,7 +191,8 @@ node prisma/seed.cjs
 | --- | --- |
 | 登录 | 账号密码登录，JWT（HMAC-SHA256）12 小时有效 |
 | 概览 | 模板总数、已上架、待处理、已下架；最近更新；分类分布 |
-| 模板库 | 搜索 / 状态 / 分类筛选；分页；行内编辑（标题/简介/分类/状态）；单条上下架；批量上下架 |
+| 模板库 | 搜索 / 状态 / 分类筛选；分页；行内编辑（标题/简介/分类/状态）；单条上下架；批量上下架；封面缩略图 |
+| 导入模板 | CLI 导入链路说明、可复制命令、当前限制说明 |
 
 **相关接口：**
 
@@ -201,8 +205,28 @@ node prisma/seed.cjs
 | PATCH | `/api/admin/templates/:id` | 更新标题/简介/分类/状态 |
 | POST | `/api/admin/templates/bulk` | 批量 `publish` / `offline` |
 | GET | `/api/admin/facets` | 分类与标签 |
+| POST | `/api/admin/import/package` | 物料包导入（multipart：`manifest` / `text` / `cover` / `thumb` / `previews`） |
 
 本地开发：`npm run dev:admin`（Vite 5174，`/api` 代理到 `https://templio.wdbzk.com`）。
+
+### 3.9 内容导入链路（已上线）
+
+```bash
+# Windows 桌面
+templio render D:\templates -o D:\templates-dist
+set TEMPLIO_ADMIN_PASSWORD=<服务器 .env 的 ADMIN_PASSWORD>
+templio upload D:\templates-dist --api https://templio.wdbzk.com
+```
+
+| 环节 | 说明 |
+| --- | --- |
+| 物料包 | `manifest.json` + `text.json` + `images/{cover,thumb,preview-*.webp}` + 源文件 |
+| CLI 上传 | `upload` 命令登录管理端 → 逐包 POST `/api/admin/import/package`（multipart，源文件暂不传） |
+| 服务端 | 校验 shared schema → 按 `sourceHash` 去重 → 图片写入 `storage/public/templates/<hash8>/` → 创建 `Template(status=imported)` + `TemplateFile` + `textContent` |
+| 管理端 | 模板库筛「已导入」→ 编辑标题/分类 → 上架；上架后公开接口返回 `coverUrl` / `previewUrls` |
+| 图片访问 | Nginx `location /assets/ { alias /www/wwwroot/templio/storage/public/; }` |
+
+已验证：导入 2 条 → 上架后公开 total 10，封面 200；重复上传返回 duplicate。
 
 ---
 
@@ -224,9 +248,10 @@ node prisma/seed.cjs
 
 1. 微信小程序：AppID / AppSecret 已在服务器 `.env` 配置；还需要公众平台下载的「代码上传密钥」才能让 CI 上传体验版
 2. 百度网盘 / 夸克网盘官方 Skill 安装与账号授权
-3. 管理端下一阶段：物料包导入、AI 复核队列、真实网盘链接管理（当前管理端只支持编辑/上下架）
-4. 小程序登录 / 收藏接口（当前收藏仅本地存储）
-5. 桌面 CLI「上传物料包」接口与上传流程
+3. 真实网盘链接管理：导入的模板目前没有下载链接，需要在管理端补链接/提取码并生成短链
+4. AI 复核队列（DeepSeek 标注标题/分类/标签）与人工确认
+5. 小程序登录 / 收藏接口（当前收藏仅本地存储）
+6. 源文件上传 → 网盘同步 → 校验后删除服务器源文件
 
 ---
 
@@ -259,3 +284,6 @@ npm run dev:api
 | 服务器安装阶段 `Cannot find module scripts/git-hooks/install.mjs` | 未同步 `scripts/` | rsync 同步 scripts 目录；安装脚本加容错 |
 | 部署时 npm 把 2C2G 服务器拖死 | 服务器上执行两次 `npm ci` | 依赖改为 CI 侧安装并随 rsync 同步 |
 | API 启动报 Prisma query engine 找不到 | CI 与服务器 OpenSSL target 不同 | 部署时在服务器执行 `prisma generate` |
+| API 启动报 `ERR_PACKAGE_PATH_NOT_EXPORTED`，PM2 反复 errored | `@templio/shared` 只有 ESM 输出，API 是 CommonJS | shared 增加 `dist-cjs` 双构建 + `exports.require` + `dist-cjs/package.json {"type":"commonjs"}`，部署同步 `dist-cjs/` |
+| 导入后封面 URL `/assets/public/templates/...` 404 | objectKey 里多带了一层 `public/`（Nginx `/assets/` 已指向 `storage/public`） | objectKey 改为 `templates/<hash8>/...`，并修正历史数据 |
+| PM2 显示 errored 但日志为空 | 应用启动即崩，PM2 日志未落盘 | 手动 `node dist/main.js` 捕获真实报错 |
