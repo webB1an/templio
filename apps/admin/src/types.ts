@@ -18,6 +18,7 @@ export interface AdminTemplate {
   fileSize: number;
   category: { id: string; name: string; key: string } | null;
   tags: string[];
+  coverUrl: string | null;
   shortCode: string | null;
   passcode: string | null;
   hasNetdisk: boolean;

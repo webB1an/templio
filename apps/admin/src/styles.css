@@ -150,3 +150,30 @@ body {
 .toolbar .ant-input-search {
   flex: none;
 }
+
+/* ---------------- 导入说明 ---------------- */
+
+.import-steps {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 2;
+  color: #47506b;
+}
+
+.import-notes {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 2;
+  color: #47506b;
+}
+
+.cmd-block {
+  margin: 16px 0;
+  padding: 16px 18px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-x: auto;
+}

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Button, Layout, Menu, Typography } from "antd";
 import Dashboard from "../pages/Dashboard";
+import ImportPage from "../pages/ImportPage";
 import Templates from "../pages/Templates";
 
 const { Header, Sider, Content } = Layout;
 
-type PageKey = "dashboard" | "templates";
+type PageKey = "dashboard" | "templates" | "import";
 
 export default function Shell({ onLogout }: { onLogout: () => void }) {
   const [page, setPage] = useState<PageKey>("dashboard");
@@ -22,7 +23,8 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
           onClick={(info) => setPage(info.key as PageKey)}
           items={[
             { key: "dashboard", label: "概览" },
-            { key: "templates", label: "模板库" }
+            { key: "templates", label: "模板库" },
+            { key: "import", label: "导入模板" }
           ]}
         />
       </Sider>
@@ -34,8 +36,10 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
         <Content className="content">
           {page === "dashboard" ? (
             <Dashboard onOpenTemplates={() => setPage("templates")} />
-          ) : (
+          ) : page === "templates" ? (
             <Templates />
+          ) : (
+            <ImportPage />
           )}
         </Content>
       </Layout>

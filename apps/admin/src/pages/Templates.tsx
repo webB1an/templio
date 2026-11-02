@@ -122,10 +122,19 @@ export default function Templates() {
       dataIndex: "title",
       ellipsis: true,
       render: (title: string, record) => (
-        <div>
-          <div style={{ fontWeight: 600 }}>{title}</div>
-          <div style={{ color: "#8a90a6", fontSize: 12 }}>
-            {record.format} · {record.pageCount} 页 · {formatSize(record.fileSize)}
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {record.coverUrl ? (
+            <img
+              src={record.coverUrl}
+              alt=""
+              style={{ width: 40, height: 53, objectFit: "cover", borderRadius: 6, flex: "none" }}
+            />
+          ) : null}
+          <div>
+            <div style={{ fontWeight: 600 }}>{title}</div>
+            <div style={{ color: "#8a90a6", fontSize: 12 }}>
+              {record.format} · {record.pageCount} 页 · {formatSize(record.fileSize)}
+            </div>
           </div>
         </div>
       )
