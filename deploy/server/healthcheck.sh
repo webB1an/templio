@@ -64,6 +64,17 @@ else
   echo "[healthcheck] $(date -Iseconds) mem available ${MEM_AVAILABLE}MB" >> "$LOG_FILE"
 fi
 
+LATEST_BACKUP="$(ls -t "${APP_ROOT}"/backups/mysql/templio-*.sql.gz 2>/dev/null | head -1 || true)"
+if [ -z "$LATEST_BACKUP" ]; then
+  alert "未找到数据库备份文件"
+  STATUS=1
+elif [ -n "$(find "$LATEST_BACKUP" -mtime +1 2>/dev/null)" ]; then
+  alert "数据库备份超过 24 小时：$(basename "$LATEST_BACKUP")"
+  STATUS=1
+else
+  echo "[healthcheck] $(date -Iseconds) latest backup $(basename "$LATEST_BACKUP")" >> "$LOG_FILE"
+fi
+
 # 控制日志体积（logrotate 之外再兜底）
 if [ -f "$LOG_FILE" ] && [ "$(wc -l < "$LOG_FILE")" -gt 5000 ]; then
   tail -n 2000 "$LOG_FILE" > "${LOG_FILE}.tmp" && mv "${LOG_FILE}.tmp" "$LOG_FILE"

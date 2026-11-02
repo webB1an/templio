@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import { randomBytes } from "node:crypto";
-import { stat, unlink, rmdir } from "node:fs/promises";
+import { readdir, stat, statfs, unlink, rmdir } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { Prisma, StorageProvider, TemplateStatus } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
@@ -393,6 +393,57 @@ export class AdminTemplatesService {
     return { removed: result.count > 0 };
   }
 
+  async system(): Promise<{
+    node: string;
+    platform: string;
+    uptimeSeconds: number;
+    memory: { rssMb: number; heapUsedMb: number; heapTotalMb: number };
+    disk: { totalGb: number; freeGb: number; usedPercent: number };
+    backups: {
+      mysql: { filename: string; at: string; sizeMb: number; ageHours: number } | null;
+      storage: { filename: string; at: string; sizeMb: number; ageHours: number } | null;
+    };
+    version: string;
+    commit: string;
+  }> {
+    const storageRoot = process.env.STORAGE_ROOT || join(process.cwd(), "storage");
+    const backupRoot = process.env.BACKUP_ROOT || join(dirname(storageRoot), "backups");
+    const memory = process.memoryUsage();
+
+    let disk = { totalGb: 0, freeGb: 0, usedPercent: 0 };
+    try {
+      const fsStat = await statfs(storageRoot);
+      const blockSize = Number(fsStat.bsize);
+      const totalBytes = Number(fsStat.blocks) * blockSize;
+      const freeBytes = Number(fsStat.bfree) * blockSize;
+      disk = {
+        totalGb: round1(totalBytes / 1024 ** 3),
+        freeGb: round1(freeBytes / 1024 ** 3),
+        usedPercent: totalBytes > 0 ? Math.round(((totalBytes - freeBytes) / totalBytes) * 100) : 0,
+      };
+    } catch {
+      // 非 Linux 或路径不可用时忽略
+    }
+
+    return {
+      node: process.version,
+      platform: `${process.platform}/${process.arch}`,
+      uptimeSeconds: Math.round(process.uptime()),
+      memory: {
+        rssMb: round1(memory.rss / 1024 / 1024),
+        heapUsedMb: round1(memory.heapUsed / 1024 / 1024),
+        heapTotalMb: round1(memory.heapTotal / 1024 / 1024),
+      },
+      disk,
+      backups: {
+        mysql: await latestBackup(join(backupRoot, "mysql"), /^templio-.*\.sql\.gz$/),
+        storage: await latestBackup(join(backupRoot, "storage"), /^storage-.*\.tar\.gz$/),
+      },
+      version: process.env.APP_VERSION || "0.1.0",
+      commit: process.env.GIT_SHA || "dev",
+    };
+  }
+
   async exportTemplatesCsv(): Promise<string> {
     const rows = await this.prisma.template.findMany({
       orderBy: { createdAt: "desc" },
@@ -679,4 +730,41 @@ function csvCell(value: unknown): string {
     return `"${text.replace(/"/g, '""')}"`;
   }
   return text;
+}
+
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+async function latestBackup(
+  dir: string,
+  pattern: RegExp,
+): Promise<{ filename: string; at: string; sizeMb: number; ageHours: number } | null> {
+  let entries;
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch {
+    return null;
+  }
+
+  let latest: { file: string; mtime: Date; size: number } | null = null;
+  for (const entry of entries) {
+    if (!entry.isFile() || !pattern.test(entry.name)) continue;
+    try {
+      const info = await stat(join(dir, entry.name));
+      if (!latest || info.mtime > latest.mtime) {
+        latest = { file: entry.name, mtime: info.mtime, size: info.size };
+      }
+    } catch {
+      // ignore
+    }
+  }
+  if (!latest) return null;
+
+  return {
+    filename: latest.file,
+    at: latest.mtime.toISOString(),
+    sizeMb: round1(latest.size / 1024 / 1024),
+    ageHours: round1((Date.now() - latest.mtime.getTime()) / 1000 / 3600),
+  };
 }

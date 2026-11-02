@@ -307,3 +307,32 @@ body {
   font-size: 11px;
   color: #b0b6c8;
 }
+
+/* ---------------- 系统状态 ---------------- */
+
+.system-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px 24px;
+}
+
+.system-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #f6f8fc;
+}
+
+.system-item span {
+  font-size: 12px;
+  color: #8a90a6;
+}
+
+.system-item b {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1b2340;
+  word-break: break-all;
+}

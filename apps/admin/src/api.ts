@@ -4,6 +4,7 @@ import type {
   AiAnalysis,
   Facets,
   Stats,
+  SystemStatus,
   TemplateList,
   TemplateStatus
 } from "./types";
@@ -79,6 +80,10 @@ export const api = {
 
   stats() {
     return request<Stats>("/admin/stats");
+  },
+
+  system() {
+    return request<SystemStatus>("/admin/system");
   },
 
   facets() {

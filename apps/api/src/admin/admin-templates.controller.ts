@@ -25,6 +25,11 @@ export class AdminTemplatesController {
     private readonly netdiskSync: AdminNetdiskSyncService,
   ) {}
 
+  @Get("system")
+  system() {
+    return this.templates.system();
+  }
+
   @Get("stats")
   stats() {
     return this.templates.stats();

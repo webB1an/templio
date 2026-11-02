@@ -178,6 +178,7 @@ git push origin main
 | 存储清理 | 构造 2 个孤儿目录 → dry-run 列出 → `--delete` 删除 → 再次运行 storage 干净 |
 | 模板删除 | DELETE 返回 `{deleted:true}`；DB 记录、公开图片目录、私有源文件目录全部清理；统计回到 13/10/3 |
 | CSV 导出 | `templates.csv` 3136B / UTF-8 BOM / 13 条；`clicks.csv` 表头正常；无 token → 401 |
+| 系统状态 | `/api/admin/system` 返回 Node/运行时长/内存/磁盘/最近备份/version+commit |
 
 ### 3.6 公开 API（已上线）
 

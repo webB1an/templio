@@ -2,8 +2,24 @@ import { useEffect, useState } from "react";
 import { Button, Card, Col, Row, Statistic, Table, Tag } from "antd";
 import type { TableProps } from "antd";
 import { api } from "../api";
-import type { AdminTemplate, Stats, TopTemplate } from "../types";
+import type { AdminTemplate, Stats, SystemStatus, TopTemplate } from "../types";
 import { STATUS_META, formatTime } from "../utils";
+
+function formatUptime(seconds: number): string {
+  if (!seconds) return "-";
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (days > 0) return `${days} 天 ${hours} 小时`;
+  if (hours > 0) return `${hours} 小时 ${minutes} 分`;
+  return `${minutes} 分钟`;
+}
+
+function backupText(backup: SystemStatus["backups"]["mysql"]): string {
+  if (!backup) return "暂无备份";
+  const age = backup.ageHours < 1 ? `${Math.round(backup.ageHours * 60)} 分钟前` : `${backup.ageHours.toFixed(1)} 小时前`;
+  return `${backup.filename} · ${backup.sizeMb}MB · ${age}`;
+}
 
 const recentColumns: NonNullable<TableProps<AdminTemplate>["columns"]> = [
   { title: "模板标题", dataIndex: "title", ellipsis: true },
@@ -50,14 +66,16 @@ const topColumns: NonNullable<TableProps<TopTemplate>["columns"]> = [
 
 export default function Dashboard({ onOpenTemplates }: { onOpenTemplates: () => void }) {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [system, setSystem] = useState<SystemStatus | null>(null);
   const [recent, setRecent] = useState<AdminTemplate[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([api.stats(), api.templates({ limit: 6 })])
-      .then(([statsData, list]) => {
+    Promise.all([api.stats(), api.templates({ limit: 6 }), api.system()])
+      .then(([statsData, list, systemData]) => {
         setStats(statsData);
         setRecent(list.items);
+        setSystem(systemData);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -191,6 +209,49 @@ export default function Dashboard({ onOpenTemplates }: { onOpenTemplates: () => 
           dataSource={recent}
           pagination={false}
         />
+      </Card>
+
+      <Card
+        title="系统状态"
+        className="panel-card"
+        extra={
+          <span style={{ fontSize: 12, color: "#8a90a6" }}>
+            v{system?.version || "-"} @ {String(system?.commit || "dev").slice(0, 7)}
+          </span>
+        }
+      >
+        <div className="system-grid">
+          <div className="system-item">
+            <span>Node</span>
+            <b>{system?.node || "-"} · {system?.platform || "-"}</b>
+          </div>
+          <div className="system-item">
+            <span>运行时长</span>
+            <b>{formatUptime(system?.uptimeSeconds || 0)}</b>
+          </div>
+          <div className="system-item">
+            <span>内存 RSS</span>
+            <b>{system?.memory.rssMb || 0} MB</b>
+          </div>
+          <div className="system-item">
+            <span>磁盘</span>
+            <b>
+              {system?.disk.usedPercent || 0}% 已用 · 剩余 {system?.disk.freeGb || 0}G
+            </b>
+          </div>
+          <div className="system-item">
+            <span>数据库备份</span>
+            <b style={{ color: (system?.backups.mysql?.ageHours || 0) > 26 ? "#dc2626" : undefined }}>
+              {backupText(system?.backups.mysql || null)}
+            </b>
+          </div>
+          <div className="system-item">
+            <span>图片备份</span>
+            <b style={{ color: (system?.backups.storage?.ageHours || 0) > 26 ? "#dc2626" : undefined }}>
+              {backupText(system?.backups.storage || null)}
+            </b>
+          </div>
+        </div>
       </Card>
 
       <Card title="分类分布" className="panel-card">

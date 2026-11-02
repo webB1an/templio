@@ -8,6 +8,24 @@ export type TemplateStatus =
   | "archived"
   | "failed";
 
+export interface BackupInfo {
+  filename: string;
+  at: string;
+  sizeMb: number;
+  ageHours: number;
+}
+
+export interface SystemStatus {
+  node: string;
+  platform: string;
+  uptimeSeconds: number;
+  memory: { rssMb: number; heapUsedMb: number; heapTotalMb: number };
+  disk: { totalGb: number; freeGb: number; usedPercent: number };
+  backups: { mysql: BackupInfo | null; storage: BackupInfo | null };
+  version: string;
+  commit: string;
+}
+
 export interface AdminTask {
   id: string;
   type: string;
