@@ -39,4 +39,8 @@ function fetchTemplateDetail(id) {
   return request(`/templates/${id}`);
 }
 
-module.exports = { request, fetchTemplates, fetchTemplateDetail };
+function fetchFacets() {
+  return request("/templates/facets");
+}
+
+module.exports = { request, fetchTemplates, fetchTemplateDetail, fetchFacets };

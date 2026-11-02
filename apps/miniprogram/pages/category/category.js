@@ -1,5 +1,6 @@
 const { CATEGORIES, TEMPLATES } = require("../../data/mock");
 const { getNavMetrics } = require("../../utils/layout");
+const { fetchFacets } = require("../../utils/api");
 
 const ICONS = {
   business: "◐",
@@ -35,6 +36,21 @@ Page({
       menuRight: metrics.menuRight,
       contentTop: metrics.statusBarHeight + metrics.navHeight + 28
     });
+
+    fetchFacets()
+      .then((data) => {
+        const remote = data && data.categories;
+        if (!Array.isArray(remote) || remote.length === 0) return;
+        this.setData({
+          categories: remote.map((item) => ({
+            key: item.key,
+            name: item.name,
+            icon: ICONS[item.key] || "◇",
+            count: item.count || 0
+          }))
+        });
+      })
+      .catch(() => {});
   },
 
   onShow() {

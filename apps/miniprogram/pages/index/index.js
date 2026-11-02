@@ -1,11 +1,12 @@
 const { CATEGORIES, TEMPLATES } = require("../../data/mock");
 const { getNavMetrics } = require("../../utils/layout");
-const { fetchTemplates } = require("../../utils/api");
+const { fetchTemplates, fetchFacets } = require("../../utils/api");
 
 Page({
   data: {
     categories: CATEGORIES,
     templates: TEMPLATES,
+    allTemplates: TEMPLATES,
     activeCategory: "all",
     navTop: 20,
     navHeight: 44,
@@ -36,20 +37,34 @@ Page({
       .then((data) => {
         const list = Array.isArray(data) ? data : data && data.items;
         if (list && list.length) {
-          this.setData({ templates: list });
+          this.setData({ templates: list, allTemplates: list });
         }
       })
       .catch(() => {
         // 接口未就绪，保留 mock 数据
       });
+
+    fetchFacets()
+      .then((data) => {
+        const categories = data && data.categories;
+        if (Array.isArray(categories) && categories.length) {
+          this.setData({
+            categories: [{ key: "all", name: "全部" }].concat(
+              categories.map((item) => ({ key: item.key, name: item.name }))
+            )
+          });
+        }
+      })
+      .catch(() => {});
   },
 
   onCategory(event) {
     const key = event.currentTarget.dataset.key;
     if (!key || key === this.data.activeCategory) return;
+    const all = this.data.allTemplates || [];
     this.setData({
       activeCategory: key,
-      templates: key === "all" ? TEMPLATES : TEMPLATES.filter((item) => item.categoryKey === key)
+      templates: key === "all" ? all : all.filter((item) => item.categoryKey === key)
     });
   },
 

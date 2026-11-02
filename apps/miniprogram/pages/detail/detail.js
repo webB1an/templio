@@ -32,7 +32,12 @@ Page({
 
     fetchTemplateDetail(id)
       .then((data) => {
-        if (data && data.id) this.setData({ item: data });
+        if (data && data.id) {
+          this.setData({
+            item: data,
+            related: Array.isArray(data.related) && data.related.length ? data.related : related
+          });
+        }
       })
       .catch(() => {
         // 接口未就绪时使用 mock
