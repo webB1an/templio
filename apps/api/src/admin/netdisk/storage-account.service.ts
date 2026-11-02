@@ -237,13 +237,19 @@ export class StorageAccountService {
       { timeoutMs: 60_000 },
     );
     const output = `${result.stdout}\n${result.stderr}`.trim();
-    if (/未登录|登录失效|cookie.*(无效|失效)|BAIDUID.*(无效|缺失)|SESTDATA|errno.?=-6|401|403/i.test(output)) {
-      return { ok: false, message: output || "百度 Cookie 已失效" };
+    if (/BaiduPanAuthError|missing STOKEN|BDUSS|login cookies required|cookie.*(无效|失效)/i.test(output)) {
+      return {
+        ok: false,
+        message: "Cookie 缺少 STOKEN/BDUSS 或已失效，请从浏览器重新复制完整 Cookie",
+      };
+    }
+    if (/未登录|登录失效|SESTDATA|errno.?=-6|401|403/i.test(output)) {
+      return { ok: false, message: output.slice(0, 300) || "百度 Cookie 已失效" };
     }
     if (/不存在|not.?found|errno.?=-9|no such file/i.test(output)) {
       return { ok: true, message: "Cookie 可用（探测路径不存在属正常）" };
     }
-    return { ok: result.ok, message: output || (result.ok ? "bdpan 可用" : "百度网盘探测失败") };
+    return { ok: result.ok, message: output.slice(0, 300) || (result.ok ? "bdpan 可用" : "百度网盘探测失败") };
   }
 
   private async probeQuark(account: ManagedStorageAccount): Promise<{ ok: boolean; message: string; accountName?: string }> {
