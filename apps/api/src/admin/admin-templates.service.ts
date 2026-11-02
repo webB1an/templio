@@ -79,12 +79,59 @@ export class AdminTemplatesService {
     total: number;
     byStatus: Record<string, number>;
     categories: Array<{ key: string; name: string; count: number }>;
+    views: number;
+    copies: number;
+    favorites: number;
+    today: { views: number; copies: number; clicks: number };
+    pendingReview: number;
+    topTemplates: Array<{
+      id: string;
+      title: string;
+      category: string;
+      viewCount: number;
+      copyCount: number;
+      favoriteCount: number;
+      coverUrl: string | null;
+    }>;
   }> {
-    const [total, grouped, categories] = await Promise.all([
-      this.prisma.template.count(),
-      this.prisma.template.groupBy({ by: ["status"], _count: { _all: true } }),
-      this.prisma.category.findMany({ orderBy: [{ sort: "asc" }] }),
-    ]);
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const appOrigin = (process.env.APP_ORIGIN || "https://templio.wdbzk.com").replace(/\/$/, "");
+
+    const [total, grouped, categories, sums, todayGrouped, pendingReview, topRows] =
+      await Promise.all([
+        this.prisma.template.count(),
+        this.prisma.template.groupBy({ by: ["status"], _count: { _all: true } }),
+        this.prisma.category.findMany({ orderBy: [{ sort: "asc" }] }),
+        this.prisma.template.aggregate({
+          _sum: { viewCount: true, copyCount: true, favoriteCount: true },
+        }),
+        this.prisma.templateClick.groupBy({
+          by: ["kind"],
+          where: { createdAt: { gte: startOfDay } },
+          _count: { _all: true },
+        }),
+        this.prisma.template.count({ where: { status: "pending_review" } }),
+        this.prisma.template.findMany({
+          orderBy: [{ copyCount: "desc" }, { viewCount: "desc" }],
+          take: 5,
+          select: {
+            id: true,
+            title: true,
+            originalName: true,
+            viewCount: true,
+            copyCount: true,
+            favoriteCount: true,
+            category: { select: { name: true } },
+            files: {
+              where: { role: "cover" },
+              take: 1,
+              select: { objectKey: true },
+            },
+          },
+        }),
+      ]);
+
     const categoryCounts = await this.prisma.template.groupBy({
       by: ["categoryId"],
       where: { categoryId: { not: null } },
@@ -100,6 +147,11 @@ export class AdminTemplatesService {
       byStatus[item.status] = item._count._all;
     }
 
+    const today: Record<string, number> = {};
+    for (const item of todayGrouped) {
+      today[item.kind] = item._count._all;
+    }
+
     return {
       total,
       byStatus,
@@ -107,6 +159,24 @@ export class AdminTemplatesService {
         key: category.slug,
         name: category.name,
         count: countMap.get(category.id) || 0,
+      })),
+      views: sums._sum.viewCount || 0,
+      copies: sums._sum.copyCount || 0,
+      favorites: sums._sum.favoriteCount || 0,
+      today: {
+        views: today.view || 0,
+        copies: today.copy || 0,
+        clicks: (today.view || 0) + (today.copy || 0),
+      },
+      pendingReview,
+      topTemplates: topRows.map((row) => ({
+        id: row.id,
+        title: row.title || row.originalName || "未命名模板",
+        category: row.category?.name || "未分类",
+        viewCount: row.viewCount,
+        copyCount: row.copyCount,
+        favoriteCount: row.favoriteCount,
+        coverUrl: row.files[0] ? `${appOrigin}/assets/${row.files[0].objectKey}` : null,
       })),
     };
   }

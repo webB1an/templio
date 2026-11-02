@@ -225,6 +225,58 @@ export class AdminAiService {
     return { total: targets.length, succeeded, failed, items };
   }
 
+  async autoApply(body: { minConfidence?: unknown; limit?: unknown }): Promise<{
+    applied: number;
+    failed: number;
+    items: Array<{ id: string; title: string; ok: boolean; message?: string }>;
+  }> {
+    const parsedConfidence = Number.parseFloat(String(body.minConfidence ?? "0.9"));
+    const minConfidence = Number.isFinite(parsedConfidence)
+      ? Math.min(1, Math.max(0, parsedConfidence))
+      : 0.9;
+    const parsedLimit = Number.parseInt(String(body.limit ?? ""), 10);
+    const limit = Number.isFinite(parsedLimit) ? Math.min(20, Math.max(1, parsedLimit)) : 20;
+
+    const rows = await this.prisma.aiAnalysis.findMany({
+      where: {
+        needsReview: true,
+        safe: true,
+        confidence: { gte: minConfidence },
+        template: { status: { in: ["pending_review", "imported", "draft", "ai_processing"] } },
+      },
+      orderBy: [{ confidence: "desc" }, { createdAt: "asc" }],
+      take: limit,
+      include: { template: { select: { id: true, title: true, originalName: true } } },
+    });
+
+    const items: Array<{ id: string; title: string; ok: boolean; message?: string }> = [];
+    let applied = 0;
+    let failed = 0;
+
+    for (const row of rows) {
+      const label = row.template.title || row.template.originalName || row.templateId;
+      try {
+        await this.apply(row.templateId);
+        await this.prisma.aiAnalysis.update({
+          where: { templateId: row.templateId },
+          data: { needsReview: false },
+        });
+        applied += 1;
+        items.push({ id: row.templateId, title: label, ok: true });
+      } catch (error) {
+        failed += 1;
+        items.push({
+          id: row.templateId,
+          title: label,
+          ok: false,
+          message: (error as Error).message || "自动应用失败",
+        });
+      }
+    }
+
+    return { applied, failed, items };
+  }
+
   private toDto(row: {
     id: string;
     title: string | null;

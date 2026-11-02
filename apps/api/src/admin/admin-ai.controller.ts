@@ -21,4 +21,9 @@ export class AdminAiController {
   batch(@Body() body: { ids?: unknown; limit?: unknown }) {
     return this.ai.annotateBatch(body);
   }
+
+  @Post("auto-apply")
+  autoApply(@Body() body: { minConfidence?: unknown; limit?: unknown }) {
+    return this.ai.autoApply(body);
+  }
 }
