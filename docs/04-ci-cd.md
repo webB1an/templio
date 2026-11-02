@@ -168,6 +168,8 @@ git push origin main
 | 用户收藏 | 测试 token：`/user/me` 200、未登录 401、收藏增/查/删、favoriteCount 1→0 |
 | 浏览/复制计数 | 匿名 view → 201、登录 copy → 201；`/user/downloads` 返回 1 条；无 token 401 |
 | 管理端计数 | 管理端模板列表 `viewCount=1 / copyCount=1`；测试后清理归零 |
+| 数据看板 | `/api/admin/stats` 返回 total=13 / published=10 / pendingReview=3 / 总浏览 1935 / 今日互动 / 热门模板 5 条 |
+| AI 自动应用 | `/api/admin/ai/auto-apply`（≥0.9）→ 3/3 应用，`needsReview=false`，3 条仍待人工上架 |
 
 ### 3.6 公开 API（已上线）
 
@@ -201,11 +203,12 @@ node prisma/seed.cjs
 | 页面 | 能力 |
 | --- | --- |
 | 登录 | 账号密码登录，JWT（HMAC-SHA256）12 小时有效 |
-| 概览 | 模板总数、已上架、待处理、已下架；最近更新；分类分布 |
+| 概览 | 模板总数、已上架、待复核、已下架；总浏览/下载/收藏、今日互动；热门模板 Top5；最近更新；分类分布 |
 | 模板库 | 搜索 / 状态 / 分类筛选；分页；行内编辑（标题/简介/分类/状态）；单条上下架；批量上下架；封面缩略图 |
 | 网盘配置 | 模板行「网盘」弹窗：选百度/夸克 → 填分享链接/提取码 → 自动生成短链，可复制/移除 |
 | AI 标注 | 模板行「AI」弹窗：DeepSeek 读取 `textContent` 生成标题/分类/标签/简介，显示置信度，可「重新标注」/「应用建议」 |
 | AI 批量标注 | 工具栏「AI 批量标注」：一次最多 5 个，自动挑选「已导入/草稿且未标注」的模板，成功后转「待复核」 |
+| AI 自动应用 | 工具栏「AI 自动应用」：置信度 ≥90% 且 safe 的建议批量写回模板（最多 20 条），仍保留待复核状态，需人工上架 |
 | 待复核队列 | 工具栏「待复核」快捷筛选；列表新增 AI 列展示建议标题/分类/置信度 |
 | 导入模板 | CLI 导入链路说明、可复制命令、当前限制说明 |
 
@@ -226,6 +229,7 @@ node prisma/seed.cjs
 | POST | `/api/admin/ai/templates/:id` | DeepSeek 标注（生成 AiAnalysis） |
 | POST | `/api/admin/ai/templates/:id/apply` | 应用 AI 建议（标题/分类/标签/简介） |
 | POST | `/api/admin/ai/batch` | 批量标注（一次最多 5 个） |
+| POST | `/api/admin/ai/auto-apply` | 自动应用 ≥ 阈值的 AI 建议（默认 0.9） |
 
 本地开发：`npm run dev:admin`（Vite 5174，`/api` 代理到 `https://templio.wdbzk.com`）。
 
@@ -294,7 +298,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 
 - fake code 调登录 → 401 `微信登录失败（40029: invalid code）`，说明 AppID/Secret 与微信接口已通
 - 测试用户 token：`/user/me` 200、无 token 401、收藏增/查/删、模板 favoriteCount 1→0
-- 小程序静态检查 7 个页面通过；真实登录需在开发者工具/真机用 `wx.login` 的 code，无感完成
+- 小程序静态检查 8 个页面通过；真实登录需在开发者工具/真机用 `wx.login` 的 code，无感完成
 
 ### 3.12 浏览/下载统计与下载记录（已上线）
 
@@ -314,6 +318,30 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - 下载记录 `total=1`、无 token → 401
 - 管理端 `viewCount=1 / copyCount=1`
 - 测试数据清理后计数归零
+
+### 3.13 数据看板与 AI 自动应用（已上线）
+
+**数据看板：**
+
+- `GET /api/admin/stats` 扩展：总浏览/下载/收藏、今日互动（view/copy）、待复核数、热门模板 Top5
+- 管理端概览页：
+  - 第一行：模板总数 / 已上架 / 待复核 / 已下架
+  - 第二行：总浏览 / 总下载 / 总收藏 / 今日互动
+  - 热门模板表（封面 + 浏览/下载/收藏）
+  - 最近更新、分类分布
+
+**AI 自动应用：**
+
+- `POST /api/admin/ai/auto-apply` `{minConfidence:0.9, limit:20}`
+- 挑选 `needsReview=true`、`safe=true`、`confidence ≥ 阈值`、模板处于 `pending_review/imported/draft/ai_processing` 的 AI 结果
+- 批量写回标题/分类/标签/简介，应用后 `needsReview=false`
+- 状态保持 `pending_review`，仍需人工点「上架」
+- 模板库工具栏「AI 自动应用」按钮
+
+**已验证：**
+
+- `/api/admin/stats` → total 13 / published 10 / pendingReview 3 / 总浏览 1935 / 热门模板 5 条
+- `/api/admin/ai/auto-apply`（≥0.9）→ 3/3 应用成功；3 条待复核 AI 建议 `needsReview=false`，标题更新为 AI 建议
 
 ---
 
@@ -335,8 +363,8 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 
 1. 微信小程序：AppID / AppSecret 已在服务器 `.env` 配置；还需要公众平台下载的「代码上传密钥」才能让 CI 上传体验版
 2. 百度网盘 / 夸克网盘官方 Skill 安装与账号授权（目前网盘链接需在管理端手动填写）
-3. AI 高置信度自动应用 / 自动上架（当前仍需人工点「应用建议」）
-4. 源文件上传 → 网盘同步 → 校验后删除服务器源文件
+3. 源文件上传 → 网盘同步 → 校验后删除服务器源文件
+4. 数据趋势图/周报与自动上架阈值配置（当前只有 Top5 与今日汇总）
 
 ---
 
