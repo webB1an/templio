@@ -1,4 +1,4 @@
-import { Controller, Param, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Param, Post, UseGuards } from "@nestjs/common";
 import { AdminAuthGuard } from "./auth.guard";
 import { AdminAiService } from "./admin-ai.service";
 
@@ -15,5 +15,10 @@ export class AdminAiController {
   @Post("templates/:id/apply")
   apply(@Param("id") id: string) {
     return this.ai.apply(id);
+  }
+
+  @Post("batch")
+  batch(@Body() body: { ids?: unknown; limit?: unknown }) {
+    return this.ai.annotateBatch(body);
   }
 }

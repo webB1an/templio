@@ -162,6 +162,69 @@ export class AdminAiService {
     };
   }
 
+  async annotateBatch(body: { ids?: unknown; limit?: unknown }): Promise<{
+    total: number;
+    succeeded: number;
+    failed: number;
+    items: Array<{
+      id: string;
+      title: string;
+      ok: boolean;
+      message?: string;
+      analysis?: AnalysisDto;
+    }>;
+  }> {
+    const ids = Array.isArray(body.ids)
+      ? body.ids.filter((item): item is string => typeof item === "string").slice(0, 5)
+      : [];
+    const rawLimit = Number.parseInt(String(body.limit ?? ""), 10);
+    const limit = Number.isFinite(rawLimit) ? Math.min(5, Math.max(1, rawLimit)) : 3;
+
+    const targets = ids.length
+      ? await this.prisma.template.findMany({
+          where: { id: { in: ids } },
+          select: { id: true, title: true, originalName: true },
+        })
+      : await this.prisma.template.findMany({
+          where: {
+            status: { in: ["imported", "draft"] },
+            aiAnalysis: { is: null },
+          },
+          orderBy: { createdAt: "asc" },
+          take: limit,
+          select: { id: true, title: true, originalName: true },
+        });
+
+    const items: Array<{
+      id: string;
+      title: string;
+      ok: boolean;
+      message?: string;
+      analysis?: AnalysisDto;
+    }> = [];
+    let succeeded = 0;
+    let failed = 0;
+
+    for (const target of targets) {
+      const label = target.title || target.originalName || target.id;
+      try {
+        const result = await this.annotate(target.id);
+        succeeded += 1;
+        items.push({ id: target.id, title: label, ok: true, analysis: result.analysis });
+      } catch (error) {
+        failed += 1;
+        items.push({
+          id: target.id,
+          title: label,
+          ok: false,
+          message: (error as Error).message || "标注失败",
+        });
+      }
+    }
+
+    return { total: targets.length, succeeded, failed, items };
+  }
+
   private toDto(row: {
     id: string;
     title: string | null;
