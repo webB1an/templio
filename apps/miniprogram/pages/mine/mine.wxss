@@ -19,14 +19,9 @@
   width: 104rpx;
   height: 104rpx;
   flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   border-radius: 50%;
-  font-size: 42rpx;
-  font-weight: 700;
-  color: #ffffff;
-  background: linear-gradient(135deg, #0a84ff 0%, #6aa9ff 100%);
+  background: #eaf2ff;
   box-shadow: 0 12rpx 28rpx rgba(10, 132, 255, 0.26);
 }
 
