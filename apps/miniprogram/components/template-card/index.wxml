@@ -3,11 +3,11 @@
     <image wx:if="{{imageUrl}}" class="tcard-img" src="{{imageUrl}}" mode="aspectFill" lazy-load />
     <view wx:else class="tcard-fallback">
       <view class="tcard-fallback-panel"></view>
-      <text class="tcard-fallback-format">{{item.formatLabel}}</text>
+      <text class="tcard-fallback-format">{{formatLabel}}</text>
     </view>
-    <view wx:if="{{item.viewCountText}}" class="tcard-views">
+    <view wx:if="{{viewCountText}}" class="tcard-views">
       <text class="tcard-eye">◉</text>
-      <text>{{item.viewCountText}}</text>
+      <text>{{viewCountText}}</text>
     </view>
     <view wx:if="{{removable}}" class="tcard-remove" catchtap="onRemove">移除</view>
   </view>
@@ -16,7 +16,7 @@
     <view class="tcard-author">
       <view class="tcard-avatar">T</view>
       <text class="tcard-author-name">模板宝</text>
-      <text class="tcard-type">{{item.formatLabel}}</text>
+      <text class="tcard-type">{{formatLabel}}</text>
     </view>
     <text class="tcard-title">{{item.title}}</text>
     <view class="tcard-meta">
