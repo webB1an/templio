@@ -36,6 +36,12 @@ export class UserController {
     return this.users.me(request.user!.sub);
   }
 
+  @Delete("me")
+  @UseGuards(UserAuthGuard)
+  deleteAccount(@Req() request: UserRequest) {
+    return this.users.deleteAccount(request.user!.sub);
+  }
+
   @Get("favorites")
   @UseGuards(UserAuthGuard)
   listFavorites(@Req() request: UserRequest) {

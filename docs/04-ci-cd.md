@@ -301,6 +301,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 | GET | `/api/user/favorites/:templateId` | 是否已收藏 |
 | POST | `/api/user/favorites` | 收藏（favoriteCount +1） |
 | DELETE | `/api/user/favorites/:templateId` | 取消收藏（favoriteCount -1） |
+| DELETE | `/api/user/me` | 注销账号：删除收藏/下载/浏览个人数据 |
 
 **小程序改动：**
 

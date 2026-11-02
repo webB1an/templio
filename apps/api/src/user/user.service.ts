@@ -96,6 +96,32 @@ export class UserService {
     return { items, total: items.length };
   }
 
+  async deleteAccount(userId: string): Promise<{ deleted: boolean }> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException("用户不存在");
+
+    const favorites = await this.prisma.userFavorite.findMany({
+      where: { userId },
+      select: { templateId: true },
+    });
+
+    await this.prisma.$transaction([
+      ...favorites.map((favorite) =>
+        this.prisma.template.updateMany({
+          where: { id: favorite.templateId, favoriteCount: { gt: 0 } },
+          data: { favoriteCount: { decrement: 1 } },
+        })
+      ),
+      this.prisma.templateClick.updateMany({
+        where: { userId },
+        data: { userId: null },
+      }),
+      this.prisma.user.delete({ where: { id: userId } }),
+    ]);
+
+    return { deleted: true };
+  }
+
   async addFavorite(
     userId: string,
     templateId: string,

@@ -87,6 +87,10 @@ function fetchMe() {
   return request("/user/me");
 }
 
+function deleteAccount() {
+  return request("/user/me", { method: "DELETE" });
+}
+
 /* ---------------- 收藏 ---------------- */
 
 function fetchFavorites() {
@@ -113,6 +117,7 @@ module.exports = {
   request,
   loginWithCode,
   fetchMe,
+  deleteAccount,
   fetchTemplates,
   fetchTemplateDetail,
   fetchFacets,

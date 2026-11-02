@@ -127,6 +127,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - **微信静默登录**：进入小程序自动 `wx.login`，无需用户点击授权；token 失效自动重登
 - **云端收藏**：详情页收藏/取消同步服务端，「我的」→ 我的收藏可查看
 - **下载记录**：详情页复制下载链接后记录到服务端，「我的」→ 下载记录可查看
+- **账号注销**：「我的」→ 注销账号可删除个人收藏/下载/浏览记录
 - 生产接口域名：`https://templio.wdbzk.com`（需在微信公众平台配置 request 合法域名）
 - 静态检查：`npm run check:miniprogram`（页面四件套 / JSON / JS 语法 / WXML 标签闭合）
 - 详细说明：`apps/miniprogram/README.md`

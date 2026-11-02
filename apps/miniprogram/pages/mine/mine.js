@@ -1,5 +1,5 @@
 const { getNavMetrics } = require("../../utils/layout");
-const { fetchFavorites, fetchDownloads } = require("../../utils/api");
+const { fetchFavorites, fetchDownloads, deleteAccount } = require("../../utils/api");
 
 Page({
   data: {
@@ -10,7 +10,14 @@ Page({
     userName: "微信用户",
     userSub: "微信静默登录 · 收藏/下载记录云端同步",
     favCount: 0,
-    downloadCount: 0
+    downloadCount: 0,
+    menu: [
+      { key: "favorites", icon: "♡", label: "我的收藏", tip: "已收藏模板" },
+      { key: "downloads", icon: "↓", label: "下载记录", tip: "最近获取" },
+      { key: "about", icon: "ⓘ", label: "关于模板宝", tip: "v0.1.0" },
+      { key: "feedback", icon: "✉", label: "意见反馈", tip: "帮助改进" },
+      { key: "deleteAccount", icon: "⚠", label: "注销账号", tip: "删除个人数据" }
+    ]
   },
 
   onLoad() {
@@ -61,6 +68,26 @@ Page({
       });
   },
 
+  confirmDeleteAccount() {
+    const app = getApp();
+    const ready = app && app.ensureLogin ? app.ensureLogin() : Promise.resolve();
+    ready
+      .then(() => deleteAccount())
+      .then(() => {
+        if (app && app.logout) app.logout();
+        wx.removeStorageSync("favIds");
+        this.setData({
+          favCount: 0,
+          downloadCount: 0,
+          userSub: "账号已注销，重新进入会自动创建新账号"
+        });
+        wx.showToast({ title: "个人数据已删除", icon: "none" });
+      })
+      .catch((error) => {
+        wx.showToast({ title: (error && error.message) || "注销失败", icon: "none" });
+      });
+  },
+
   onMenu(event) {
     const key = event.currentTarget.dataset.key;
     if (key === "favorites") {
@@ -69,6 +96,18 @@ Page({
     }
     if (key === "downloads") {
       wx.navigateTo({ url: "/pages/downloads/downloads" });
+      return;
+    }
+    if (key === "deleteAccount") {
+      wx.showModal({
+        title: "注销账号",
+        content: "将删除收藏、下载记录、浏览记录等个人数据，且不可恢复。确定继续？",
+        confirmText: "注销",
+        confirmColor: "#d93025",
+        success: (result) => {
+          if (result.confirm) this.confirmDeleteAccount();
+        }
+      });
       return;
     }
     if (key === "about") {
