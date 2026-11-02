@@ -228,3 +228,82 @@ body {
   font-size: 12px;
   color: #8a90a6;
 }
+
+/* ---------------- 近 7 天趋势 ---------------- */
+
+.trend-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #8a90a6;
+}
+
+.trend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-left: 6px;
+}
+
+.trend-dot-views {
+  background: #2f6be4;
+}
+
+.trend-dot-copies {
+  background: #16a34a;
+}
+
+.trend-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 180px;
+  padding: 8px 4px 0;
+}
+
+.trend-day {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+}
+
+.trend-bars {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  min-height: 0;
+}
+
+.trend-bar {
+  width: 12px;
+  border-radius: 3px 3px 0 0;
+  min-height: 3px;
+  transition: height 0.2s ease;
+}
+
+.trend-bar-views {
+  background: #2f6be4;
+}
+
+.trend-bar-copies {
+  background: #16a34a;
+}
+
+.trend-date {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8a90a6;
+}
+
+.trend-num {
+  font-size: 11px;
+  color: #b0b6c8;
+}

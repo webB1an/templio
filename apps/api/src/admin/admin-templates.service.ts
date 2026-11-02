@@ -86,6 +86,7 @@ export class AdminTemplatesService {
     favorites: number;
     today: { views: number; copies: number; clicks: number };
     pendingReview: number;
+    trend: Array<{ date: string; views: number; copies: number }>;
     topTemplates: Array<{
       id: string;
       title: string;
@@ -98,9 +99,11 @@ export class AdminTemplatesService {
   }> {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
+    const trendStart = new Date(startOfDay);
+    trendStart.setDate(trendStart.getDate() - 6);
     const appOrigin = (process.env.APP_ORIGIN || "https://templio.wdbzk.com").replace(/\/$/, "");
 
-    const [total, grouped, categories, sums, todayGrouped, pendingReview, topRows] =
+    const [total, grouped, categories, sums, todayGrouped, pendingReview, topRows, trendClicks] =
       await Promise.all([
         this.prisma.template.count(),
         this.prisma.template.groupBy({ by: ["status"], _count: { _all: true } }),
@@ -132,6 +135,10 @@ export class AdminTemplatesService {
             },
           },
         }),
+        this.prisma.templateClick.findMany({
+          where: { createdAt: { gte: trendStart } },
+          select: { kind: true, createdAt: true },
+        }),
       ]);
 
     const categoryCounts = await this.prisma.template.groupBy({
@@ -154,6 +161,20 @@ export class AdminTemplatesService {
       today[item.kind] = item._count._all;
     }
 
+    const trendMap = new Map<string, { views: number; copies: number }>();
+    for (let offset = 0; offset < 7; offset += 1) {
+      const day = new Date(trendStart);
+      day.setDate(trendStart.getDate() + offset);
+      trendMap.set(formatDateKey(day), { views: 0, copies: 0 });
+    }
+    for (const click of trendClicks) {
+      const key = formatDateKey(click.createdAt);
+      const bucket = trendMap.get(key);
+      if (!bucket) continue;
+      if (click.kind === "copy") bucket.copies += 1;
+      else bucket.views += 1;
+    }
+
     return {
       total,
       byStatus,
@@ -171,6 +192,11 @@ export class AdminTemplatesService {
         clicks: (today.view || 0) + (today.copy || 0),
       },
       pendingReview,
+      trend: Array.from(trendMap.entries()).map(([date, value]) => ({
+        date,
+        views: value.views,
+        copies: value.copies,
+      })),
       topTemplates: topRows.map((row) => ({
         id: row.id,
         title: row.title || row.originalName || "未命名模板",
@@ -528,4 +554,10 @@ function humanSize(bytes: number): string {
   const index = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
   const value = bytes / 1024 ** index;
   return `${value >= 10 || index === 0 ? Math.round(value) : value.toFixed(1)} ${units[index]}`;
+}
+
+function formatDateKey(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
 }

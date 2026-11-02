@@ -81,6 +81,7 @@ export interface Stats {
   favorites: number;
   today: { views: number; copies: number; clicks: number };
   pendingReview: number;
+  trend: Array<{ date: string; views: number; copies: number }>;
   topTemplates: TopTemplate[];
 }
 

@@ -64,6 +64,10 @@ export default function Dashboard({ onOpenTemplates }: { onOpenTemplates: () => 
 
   const published = stats?.byStatus.published || 0;
   const archived = stats?.byStatus.archived || 0;
+  const maxTrend = Math.max(
+    1,
+    ...(stats?.trend || []).flatMap((day) => [day.views, day.copies])
+  );
 
   return (
     <div>
@@ -124,6 +128,40 @@ export default function Dashboard({ onOpenTemplates }: { onOpenTemplates: () => 
           </Card>
         </Col>
       </Row>
+
+      <Card
+        title="近 7 天浏览 / 下载"
+        className="panel-card"
+        extra={
+          <span className="trend-legend">
+            <i className="trend-dot trend-dot-views" /> 浏览
+            <i className="trend-dot trend-dot-copies" /> 下载
+          </span>
+        }
+      >
+        <div className="trend-chart">
+          {(stats?.trend || []).map((day) => (
+            <div className="trend-day" key={day.date}>
+              <div className="trend-bars">
+                <div
+                  className="trend-bar trend-bar-views"
+                  style={{ height: `${Math.max(3, (day.views / maxTrend) * 100)}%` }}
+                  title={`浏览 ${day.views}`}
+                />
+                <div
+                  className="trend-bar trend-bar-copies"
+                  style={{ height: `${Math.max(3, (day.copies / maxTrend) * 100)}%` }}
+                  title={`下载 ${day.copies}`}
+                />
+              </div>
+              <div className="trend-date">{day.date.slice(5)}</div>
+              <div className="trend-num">
+                {day.views}/{day.copies}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       <Card
         title="热门模板"
