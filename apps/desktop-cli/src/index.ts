@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { runDoctor } from "./commands/doctor.js";
 import { runRender } from "./commands/render.js";
 import { runStatus } from "./commands/status.js";
+import { runUpload } from "./commands/upload.js";
 
 const VERSION = "0.1.0";
 
@@ -60,6 +61,45 @@ program
   .action(async (distDir: string) => {
     process.exitCode = await runStatus(distDir);
   });
+
+program
+  .command("upload")
+  .description("上传物料包到服务端（管理端导入接口）")
+  .argument("<distDir>", "物料包目录（templio render 的输出）")
+  .option("--api <url>", "服务端地址", process.env.TEMPLIO_API || "https://templio.wdbzk.com")
+  .option("--username <name>", "管理员账号", process.env.TEMPLIO_ADMIN_USERNAME || "admin")
+  .option(
+    "--password <password>",
+    "管理员密码（建议用 TEMPLIO_ADMIN_PASSWORD 环境变量）",
+    process.env.TEMPLIO_ADMIN_PASSWORD,
+  )
+  .option("--token <token>", "管理员登录 token（可选）", process.env.TEMPLIO_ADMIN_TOKEN)
+  .option("--limit <n>", "最多上传数量")
+  .option("--dry-run", "只列出待上传物料包", false)
+  .action(
+    async (
+      distDir: string,
+      options: {
+        api: string;
+        username: string;
+        password?: string;
+        token?: string;
+        limit?: string;
+        dryRun: boolean;
+      },
+    ) => {
+      const code = await runUpload({
+        distDir,
+        api: options.api,
+        username: options.username,
+        password: options.password,
+        token: options.token,
+        limit: options.limit ? positiveInt(options.limit, 0) || undefined : undefined,
+        dryRun: Boolean(options.dryRun),
+      });
+      process.exitCode = code;
+    },
+  );
 
 program
   .command("fixtures")
