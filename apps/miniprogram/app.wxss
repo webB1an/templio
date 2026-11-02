@@ -41,7 +41,6 @@ page {
 
 .page {
   position: relative;
-  z-index: 1;
   min-height: 100vh;
   padding: 0 32rpx 260rpx;
   box-sizing: border-box;
