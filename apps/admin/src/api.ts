@@ -112,13 +112,6 @@ export const api = {
     return request<{ deleted: boolean }>(`/admin/storage-accounts/${id}`, { method: "DELETE" });
   },
 
-  saveBaiduCookie(id: string, cookie: string) {
-    return request<StorageAccount>(`/admin/storage-accounts/${id}/baidu-cookie`, {
-      method: "POST",
-      body: { cookie }
-    });
-  },
-
   startStorageAuth(id: string) {
     return request<{ authUrl?: string; message?: string } | StorageAccount>(
       `/admin/storage-accounts/${id}/auth/start`,

@@ -116,7 +116,7 @@ export class QuarkStorageService {
   }
 }
 
-/** 百度网盘：bdpan（pip 版，Cookie 认证）上传 + 分享 */
+/** 百度网盘：官方 bdpan CLI（OAuth 授权）上传 + 分享 */
 @Injectable()
 export class BaiduStorageService {
   constructor(private readonly accounts: StorageAccountService) {}
@@ -126,36 +126,74 @@ export class BaiduStorageService {
     account: ManagedStorageAccount,
     remoteDir?: string,
   ): Promise<{ url: string; passcode?: string; remotePath: string }> {
-    if (!account.configPath) throw new BadRequestException("百度账号缺少 cookies 配置");
     const remotePath = this.uploadPath(filePath, remoteDir);
     const size = statSync(filePath).size;
     const timeoutMs = Math.max(600_000, Math.ceil(size / 40_000) * 1500);
 
     const upload = await runCli(
       this.accounts.bdpan(),
-      [...this.accounts.baiduArgs(account), "upload", filePath, "--remote-path", remotePath, "--overwrite"],
+      [...this.accounts.baiduArgs(account), "upload", filePath, remotePath, "--overwrite", "--json"],
       { timeoutMs },
     );
-    if (!upload.ok) throw new Error(upload.stderr || upload.stdout || "百度网盘上传失败");
+    if (!upload.ok) throw new Error(lastLine(upload.stderr || upload.stdout) || "百度网盘上传失败");
 
     const period = (process.env.BAIDU_SHARE_PERIOD_DAYS || "0").trim();
     const share = await runCli(
       this.accounts.bdpan(),
-      [...this.accounts.baiduArgs(account), "share", remotePath, "--period-days", period],
+      [...this.accounts.baiduArgs(account), "share", remotePath, "--period", period, "--json"],
       { timeoutMs: 120_000 },
     );
     const output = `${share.stdout}\n${share.stderr}`;
-    if (!share.ok) throw new Error(output || "百度网盘分享失败");
-    const url = output.match(/https:\/\/pan\.baidu\.com\/[^\s"']+/i)?.[0];
-    if (!url) throw new Error(`无法解析百度分享结果：${output.slice(0, 200)}`);
-    const passcode = output.match(/(?:密码|提取码|pwd)[:：=]\s*([a-zA-Z0-9]{4})/i)?.[1];
-    return { url, passcode, remotePath };
+    if (!share.ok) throw new Error(lastLine(output) || "百度网盘分享失败");
+
+    const parsed = parseBaiduShare(output);
+    if (!parsed.url) throw new Error(`无法解析百度分享结果：${output.slice(0, 200)}`);
+    return { url: parsed.url, passcode: parsed.passcode, remotePath };
   }
 
   uploadPath(filePath: string, remoteDir?: string): string {
-    const rawBase = (process.env.BAIDU_REMOTE_BASE || "/apps/bdpan/templio").replace(/\/+$/, "");
+    const rawBase = (process.env.BAIDU_REMOTE_BASE || "templio")
+      .replace(/^\/?apps\/bdpan\/?/, "")
+      .replace(/\/+$/, "");
     return [rawBase, remoteDir, sanitizeRemoteName(basename(filePath))].filter(Boolean).join("/");
   }
+}
+
+function parseBaiduShare(output: string): { url?: string; passcode?: string } {
+  const lines = String(output || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  for (const line of lines.reverse()) {
+    const start = line.indexOf("{");
+    const end = line.lastIndexOf("}");
+    if (start < 0 || end <= start) continue;
+    try {
+      const body = JSON.parse(line.slice(start, end + 1)) as {
+        link?: string;
+        url?: string;
+        pwd?: string;
+        password?: string;
+      };
+      const url = body.link || body.url;
+      if (url) return { url, passcode: body.pwd || body.password };
+    } catch {
+      // 继续尝试其他行
+    }
+  }
+  const url = output.match(/https:\/\/pan\.baidu\.com\/s\/[^\s"']+/i)?.[0];
+  const passcode = output.match(/(?:提取码|密码|pwd)[:：=]\s*([a-zA-Z0-9]{4})/i)?.[1];
+  return { url, passcode };
+}
+
+function lastLine(value: string): string {
+  return (
+    String(value || "")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .at(-1) || ""
+  );
 }
 
 /** 上传分享协调器：优先显式 provider，否则夸克默认 → 百度默认 */

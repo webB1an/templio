@@ -35,7 +35,6 @@ export default function StorageAccounts() {
   const [authMessage, setAuthMessage] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authCode, setAuthCode] = useState("");
-  const [cookieText, setCookieText] = useState("");
   const [busy, setBusy] = useState(false);
   const [renameTarget, setRenameTarget] = useState<StorageAccount | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -100,7 +99,6 @@ export default function StorageAccounts() {
     setAuthUrl("");
     setAuthMessage("");
     setAuthCode("");
-    setCookieText("");
     setAuthLoading(true);
     try {
       const result = await api.startStorageAuth(account.id);
@@ -133,9 +131,9 @@ export default function StorageAccounts() {
 
   const finishAuth = async () => {
     if (!authTarget) return;
-    const value = authTarget.provider === "baidu" ? cookieText.trim() : authCode.trim();
+    const value = authCode.trim();
     if (!value) {
-      message.warning(authTarget.provider === "baidu" ? "请粘贴百度 Cookie" : "请粘贴夸克授权码");
+      message.warning("请粘贴授权码");
       return;
     }
     setBusy(true);
@@ -276,7 +274,7 @@ export default function StorageAccounts() {
         type="info"
         showIcon
         message="在线绑定百度 / 夸克网盘账号"
-        description="点击「授权」会生成跳转链接：百度登录后复制完整 Cookie 粘贴回来；夸克登录后复制授权码粘贴回来。每种网盘第一个账号自动设为默认，上传同步默认使用默认账号。"
+        description="点击「授权」弹窗会生成跳转链接：百度与夸克均打开链接完成登录，把页面显示的授权码粘贴回来即可。每种网盘第一个账号自动设为默认，上传同步默认使用默认账号。"
         style={{ marginBottom: 16 }}
       />
 
@@ -372,21 +370,16 @@ export default function StorageAccounts() {
         </Space>
         <div className="auth-url">{authLoading ? "正在生成授权链接..." : authUrl || "—"}</div>
 
-        {authTarget?.provider === "baidu" ? (
-          <Input.TextArea
-            rows={5}
-            value={cookieText}
-            onChange={(event) => setCookieText(event.target.value)}
-            placeholder="粘贴完整 Cookie：BAIDUID=...; BDUSS=...; STOKEN=..."
-          />
-        ) : (
-          <Input.TextArea
-            rows={4}
-            value={authCode}
-            onChange={(event) => setAuthCode(event.target.value)}
-            placeholder="粘贴夸克授权码或完整回调 URL"
-          />
-        )}
+        <Input.TextArea
+          rows={4}
+          value={authCode}
+          onChange={(event) => setAuthCode(event.target.value)}
+          placeholder={
+            authTarget?.provider === "baidu"
+              ? "粘贴浏览器显示的 32 位百度授权码，或完整回调 URL"
+              : "粘贴夸克授权码或完整回调 URL"
+          }
+        />
       </Modal>
 
       <Modal

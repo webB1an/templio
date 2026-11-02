@@ -29,7 +29,7 @@ CI 会在部署时自动构建并同步到服务器 `/www/wwwroot/templio/apps/a
 | --- | --- |
 | 登录 | 账号密码 → `POST /api/admin/login`，JWT 存 localStorage |
 | 概览 | 模板总数/已上架/待复核/已下架；总浏览/下载/收藏/今日互动；热门模板 Top5；7 天趋势；系统状态（Node/内存/磁盘/备份/版本） |
-| 网盘账号 | 点击「授权」弹窗展示跳转链接（百度登录页 / 夸克 OAuth），支持打开/复制链接；百度粘贴 Cookie、夸克粘贴授权码；多账号、默认账号、探活、改名、删除 |
+| 网盘账号 | 点击「授权」弹窗展示跳转链接（百度/夸克 OAuth），支持打开/复制链接；粘贴授权码完成授权；多账号、默认账号、探活、改名、删除 |
 | 模板库 | 搜索 / 状态 / 分类筛选，分页；编辑标题/简介/分类/状态；单条与批量上下架；删除模板；封面缩略图；网盘链接/提取码配置与短链复制；源文件下载/删除/一键同步；AI 单条/批量标注与应用建议；待复核快捷筛选与 AI 列；模板/点击 CSV 导出 |
 | 导入模板 | CLI 导入链路说明、可复制命令、当前限制说明 |
 
@@ -56,9 +56,8 @@ CI 会在部署时自动构建并同步到服务器 `/www/wwwroot/templio/apps/a
 | POST | `/api/admin/storage-accounts/:id/default` | 设为默认 |
 | POST | `/api/admin/storage-accounts/:id/probe` | 探活 |
 | DELETE | `/api/admin/storage-accounts/:id` | 删除账号 |
-| POST | `/api/admin/storage-accounts/:id/baidu-cookie` | 百度 Cookie 授权 |
-| POST | `/api/admin/storage-accounts/:id/quark-auth/start` | 夸克授权开始 |
-| POST | `/api/admin/storage-accounts/:id/quark-auth/finish` | 夸克授权完成 |
+| POST | `/api/admin/storage-accounts/:id/auth/start` | 生成百度/夸克授权链接 |
+| POST | `/api/admin/storage-accounts/:id/auth/finish` | 提交授权码完成授权 |
 | POST | `/api/admin/ai/templates/:id` | DeepSeek 标注 |
 | POST | `/api/admin/ai/templates/:id/apply` | 应用 AI 建议 |
 | POST | `/api/admin/ai/batch` | 批量标注（最多 5 个） |

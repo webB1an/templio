@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { mkdir, rm } from "node:fs/promises";
 import { join, resolve, sep } from "node:path";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -53,7 +53,7 @@ export class StorageAccountService {
     const id = `sa_${randomBytes(6).toString("hex")}`;
     const profileDir = resolve(this.root(), provider, id);
     mkdirSync(profileDir, { recursive: true });
-    const configPath = provider === "baidu" ? join(profileDir, "cookies.txt") : null;
+    const configPath = provider === "baidu" ? join(profileDir, "bdpan.json") : null;
 
     const count = await this.prisma.storageAccount.count({ where: { provider, isActive: true } });
     const shouldBeDefault = Boolean(input.isDefault) || count === 0;
@@ -134,41 +134,50 @@ export class StorageAccountService {
     return this.toManaged(account);
   }
 
-  async saveBaiduCookie(id: string, cookieRaw: unknown) {
-    const account = await this.requireAccount(id, "baidu");
-    const cookie = String(cookieRaw || "")
-      .trim()
-      .replace(/^Cookie:\s*/i, "");
-    if (!cookie || !/BAIDUID=/i.test(cookie)) {
-      throw new BadRequestException("Cookie 无效：需包含 BAIDUID（从浏览器 pan.baidu.com 请求头复制）");
-    }
-    if (!/BDUSS=/i.test(cookie) || !/STOKEN=/i.test(cookie)) {
-      throw new BadRequestException("Cookie 缺少 BDUSS/STOKEN，请复制完整 Cookie（含 BAIDUID、BDUSS、STOKEN）");
-    }
-    mkdirSync(account.profileDir, { recursive: true });
-    if (!account.configPath) throw new BadRequestException("账号配置异常：缺少 cookies 路径");
-    writeFileSync(account.configPath, `${cookie}\n`, { mode: 0o600 });
-    return this.probeAccount(id);
-  }
-
-  /** 统一授权入口：百度返回登录页链接 + Cookie 输入；夸克返回 OAuth 链接 + 授权码输入 */
+  /** 统一授权入口：百度/夸克均返回 OAuth 跳转链接，授权后粘贴授权码 */
   async startAuth(id: string) {
     const account = await this.requireAccount(id);
-    if (account.provider === "baidu") {
-      return {
-        authUrl: "https://pan.baidu.com/",
-        message:
-          "打开百度网盘登录页，登录后按 F12 → Network → 任意请求 → 复制完整 Cookie（含 BAIDUID、BDUSS、STOKEN），再粘贴到下方。",
-      };
-    }
-    return this.startQuarkAuth(id);
+    return account.provider === "baidu" ? this.startBaiduAuth(id) : this.startQuarkAuth(id);
   }
 
   async finishAuth(id: string, codeRaw: unknown) {
     const account = await this.requireAccount(id);
     return account.provider === "baidu"
-      ? this.saveBaiduCookie(id, codeRaw)
+      ? this.finishBaiduAuth(id, codeRaw)
       : this.finishQuarkAuth(id, codeRaw);
+  }
+
+  async startBaiduAuth(id: string) {
+    const account = await this.requireAccount(id, "baidu");
+    mkdirSync(account.profileDir, { recursive: true });
+    const result = await runCli(
+      this.bdpan(),
+      [...this.baiduArgs(account), "login", "--accept-disclaimer", "--get-auth-url"],
+      { timeoutMs: 30_000 },
+    );
+    const output = `${result.stdout}\n${result.stderr}`.trim();
+    const authUrl = extractUrl(output);
+    if (!authUrl) throw new BadRequestException(shortOutput(output || "百度授权链接生成失败"));
+    return {
+      authUrl,
+      message: "打开授权链接，完成授权后把浏览器显示的 32 位授权码粘贴到下方。",
+    };
+  }
+
+  async finishBaiduAuth(id: string, codeRaw: unknown) {
+    const account = await this.requireAccount(id, "baidu");
+    const code = normalizeAuthCode(codeRaw);
+    if (!code) throw new BadRequestException("授权码不能为空");
+    mkdirSync(account.profileDir, { recursive: true });
+    const result = await runCli(
+      this.bdpan(),
+      [...this.baiduArgs(account), "login", "--accept-disclaimer", "--set-code-stdin"],
+      { stdin: `${code}\n`, timeoutMs: 60_000 },
+    );
+    if (!result.ok) {
+      throw new BadRequestException(shortOutput(lastLine(result.stderr || result.stdout) || "百度授权失败"));
+    }
+    return this.probeAccount(id);
   }
 
   async probeAccount(id: string) {
@@ -216,7 +225,7 @@ export class StorageAccountService {
   }
 
   baiduArgs(account?: ManagedStorageAccount | null): string[] {
-    return account?.configPath ? ["--cookie-file", account.configPath] : [];
+    return account?.configPath ? ["--config-path", account.configPath, "--no-check-update"] : [];
   }
 
   quarkAccountEnv(account: ManagedStorageAccount): NodeJS.ProcessEnv {
@@ -250,29 +259,17 @@ export class StorageAccountService {
   }
 
   private async probeBaidu(account: ManagedStorageAccount): Promise<{ ok: boolean; message: string; accountName?: string }> {
-    if (!account.configPath || !existsSync(account.configPath)) {
-      return { ok: false, message: "尚未配置 Cookie，请粘贴百度网盘 Cookie" };
-    }
-    // bdpan 无 whoami：用一次不存在的分享路径探测登录态；区分“文件不存在”和“未登录”
-    const result = await runCli(
-      this.bdpan(),
-      [...this.baiduArgs(account), "share", "/apps/bdpan/__templio_probe__", "--period-days", "0"],
-      { timeoutMs: 60_000 },
-    );
+    const result = await runCli(this.bdpan(), [...this.baiduArgs(account), "whoami"], { timeoutMs: 30_000 });
     const output = `${result.stdout}\n${result.stderr}`.trim();
-    if (/BaiduPanAuthError|missing STOKEN|BDUSS|login cookies required|cookie.*(无效|失效)/i.test(output)) {
-      return {
-        ok: false,
-        message: "Cookie 缺少 STOKEN/BDUSS 或已失效，请从浏览器重新复制完整 Cookie",
-      };
+    const ok = result.ok && /已登录/.test(output);
+    if (!ok && /未登录|未授权|token.*(过期|失效)/i.test(output)) {
+      return { ok: false, message: "百度网盘未登录或授权已过期，请重新授权" };
     }
-    if (/未登录|登录失效|SESTDATA|errno.?=-6|401|403/i.test(output)) {
-      return { ok: false, message: output.slice(0, 300) || "百度 Cookie 已失效" };
-    }
-    if (/不存在|not.?found|errno.?=-9|no such file/i.test(output)) {
-      return { ok: true, message: "Cookie 可用（探测路径不存在属正常）" };
-    }
-    return { ok: result.ok, message: output.slice(0, 300) || (result.ok ? "bdpan 可用" : "百度网盘探测失败") };
+    const accountName = output
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find((line) => line && !/认证状态|已登录|用户名|Token|请执行|登录状态/i.test(line));
+    return { ok, message: lastLine(output) || (ok ? "已登录" : "百度网盘探测失败"), accountName };
   }
 
   private async probeQuark(account: ManagedStorageAccount): Promise<{ ok: boolean; message: string; accountName?: string }> {
@@ -336,5 +333,34 @@ export class StorageAccountService {
     if (target !== root && target.startsWith(`${root}${sep}`)) {
       await rm(target, { recursive: true, force: true }).catch(() => undefined);
     }
+  }
+}
+
+function lastLine(value: string): string {
+  return (
+    value
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .at(-1) || ""
+  );
+}
+
+/** 支持直接粘贴授权码、完整回调 URL 或含 code 的文本 */
+function normalizeAuthCode(value: unknown): string {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  try {
+    const url = new URL(text);
+    const hashCode = url.hash.match(/(?:^|[?&#])(?:code|auth_code)=([^&]+)/i)?.[1];
+    return (
+      url.searchParams.get("code") ||
+      url.searchParams.get("auth_code") ||
+      (hashCode ? decodeURIComponent(hashCode) : "") ||
+      text
+    );
+  } catch {
+    const match = text.match(/(?:^|[?&#\s])(?:code|auth_code)=([^&#\s]+)/i);
+    return match ? decodeURIComponent(match[1]) : text;
   }
 }

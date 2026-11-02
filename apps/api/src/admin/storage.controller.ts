@@ -37,11 +37,6 @@ export class StorageController {
     return this.accounts.deleteAccount(id);
   }
 
-  @Post(":id/baidu-cookie")
-  saveBaiduCookie(@Param("id") id: string, @Body() body: { cookie?: unknown }) {
-    return this.accounts.saveBaiduCookie(id, body.cookie);
-  }
-
   @Post(":id/auth/start")
   startAuth(@Param("id") id: string) {
     return this.accounts.startAuth(id);
