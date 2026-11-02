@@ -30,6 +30,7 @@ Page({
       ? TEMPLATES.filter((template) => template.id !== mockItem.id).slice(0, 4)
       : [];
 
+    this.templateId = id;
     this.setData({
       item: mockItem,
       related,
@@ -43,23 +44,37 @@ Page({
 
     this.loadFavoriteState(id);
     this.recordView(id);
+    this.loadDetail(id);
+  },
 
-    fetchTemplateDetail(id)
+  loadDetail(id) {
+    if (!id) {
+      this.setData({ loading: false, loadError: true });
+      return Promise.resolve();
+    }
+    this.setData({ loading: true, loadError: false });
+    return fetchTemplateDetail(id)
       .then((data) => {
         if (data && data.id) {
           this.setData({
             item: data,
-            related: Array.isArray(data.related) && data.related.length ? data.related : related,
+            related: Array.isArray(data.related) && data.related.length ? data.related : this.data.related,
             loading: false,
             loadError: false
           });
           this.loadFavoriteState(data.id);
           this.recordView(data.id);
+        } else {
+          this.setData({ loading: false, loadError: !this.data.item });
         }
       })
       .catch(() => {
-        if (!this.data.item) this.setData({ loading: false, loadError: true });
+        this.setData({ loading: false, loadError: !this.data.item });
       });
+  },
+
+  retryLoad() {
+    this.loadDetail(this.templateId);
   },
 
   recordView(id) {
@@ -98,6 +113,17 @@ Page({
       }
     });
     recordClick(item.id, "copy").catch(() => {});
+  },
+
+  copyPasscode() {
+    const passcode = this.data.item && this.data.item.passcode;
+    if (!passcode) return;
+    wx.setClipboardData({
+      data: passcode,
+      success() {
+        wx.showToast({ title: "提取码已复制", icon: "none" });
+      }
+    });
   },
 
   previewImage(event) {

@@ -1,6 +1,9 @@
 <view wx:if="{{!item}}" class="detail-state">
   <text class="detail-state-text">{{loadError ? "模板不存在或加载失败" : "加载中…"}}</text>
-  <button wx:if="{{loadError}}" class="btn-outline detail-state-btn" bindtap="goBack">返回</button>
+  <view wx:if="{{loadError}}" class="detail-state-actions">
+    <button class="btn-outline detail-state-btn" bindtap="retryLoad">重试</button>
+    <button class="btn-outline detail-state-btn" bindtap="goBack">返回</button>
+  </view>
 </view>
 
 <view wx:else class="detail-page">
@@ -8,7 +11,7 @@
     <view class="nav-back detail-back" bindtap="goBack">‹</view>
   </view>
 
-  <view class="detail-hero tone-{{item.tone}}">
+  <view class="detail-hero tone-{{item.tone}}" bindtap="previewImage">
     <image wx:if="{{item.coverUrl}}" class="hero-img" src="{{item.coverUrl}}" mode="aspectFill" binderror="onCoverError" />
     <text class="hero-format">{{item.format}}</text>
     <view wx:if="{{!item.coverUrl}}" class="hero-fallback">
@@ -37,52 +40,31 @@
       <text class="summary">{{item.summary}}</text>
     </view>
 
-    <scroll-view wx:if="{{item.previewUrls && item.previewUrls.length}}" class="preview-strip" scroll-x enhanced show-scrollbar="{{false}}">
-      <image
-        wx:for="{{item.previewUrls}}"
-        wx:key="*this"
-        class="preview-thumb"
-        src="{{item}}"
-        mode="aspectFill"
-        lazy-load
-        bindtap="previewImage"
-        data-src="{{item}}"
-      />
-    </scroll-view>
-
-    <view class="get-block">
-      <view class="get-head">
-        <text class="get-label">获取模板</text>
-        <text class="get-hint">复制后打开网盘 App 保存</text>
+    <view wx:if="{{item.previewUrls && item.previewUrls.length}}" class="preview-section">
+      <view class="preview-head">
+        <text class="section-title">模板预览</text>
+        <text class="preview-count">共 {{item.previewUrls.length}} 页</text>
       </view>
 
-      <view class="link-box">
-        <text class="link-text">{{item.shortLink}}</text>
-        <text wx:if="{{item.passcode}}" class="passcode">提取码 {{item.passcode}}</text>
-      </view>
+      <scroll-view class="preview-strip" scroll-x enhanced show-scrollbar="{{false}}">
+        <view
+          wx:for="{{item.previewUrls}}"
+          wx:key="*this"
+          class="preview-item"
+          data-src="{{item}}"
+          bindtap="previewImage"
+        >
+          <image class="preview-thumb" src="{{item}}" mode="aspectFill" lazy-load />
+          <text class="preview-page">{{index + 1}}</text>
+        </view>
+      </scroll-view>
 
-      <view class="get-actions">
-        <button class="btn-dark copy-btn" bindtap="copyLink">复制链接</button>
-        <button class="btn-outline fav-btn {{fav ? 'fav-on' : ''}}" bindtap="toggleFav">
-          {{fav ? "已收藏" : "收藏"}}
-        </button>
-      </view>
+      <text class="preview-hint">左右滑动 · 点击缩略图查看大图</text>
     </view>
 
-    <view class="steps-block">
-      <text class="steps-title">使用说明</text>
-      <view class="step-row">
-        <text class="step-no">01</text>
-        <text class="step-text">复制链接和提取码</text>
-      </view>
-      <view class="step-row">
-        <text class="step-no">02</text>
-        <text class="step-text">打开百度 / 夸克网盘 App，保存到我的网盘</text>
-      </view>
-      <view class="step-row">
-        <text class="step-no">03</text>
-        <text class="step-text">在电脑上登录网盘下载，用 Office / WPS 打开编辑</text>
-      </view>
+    <view wx:else class="preview-empty">
+      <text class="preview-empty-title">暂无页面预览</text>
+      <text class="preview-empty-text">当前模板还没有上传页面缩略图，可先参考封面</text>
     </view>
 
     <view wx:if="{{related.length}}" class="section-head">
@@ -96,6 +78,26 @@
     </view>
 
     <view class="footer-tip">模板仅供学习交流使用，版权归原作者所有</view>
-    <view class="tabbar-pad"></view>
+  </view>
+
+  <view class="action-bar">
+    <view wx:if="{{item.passcode}}" class="passcode-line" bindtap="copyPasscode">
+      <text>提取码 {{item.passcode}}</text>
+      <text class="passcode-copy">点击复制</text>
+    </view>
+
+    <view class="action-row">
+      <view class="action-item" bindtap="toggleFav">
+        <text class="action-icon {{fav ? 'fav-active' : ''}}">{{fav ? "♥" : "♡"}}</text>
+        <text class="action-label">{{fav ? "已收藏" : "收藏"}}</text>
+      </view>
+
+      <button class="action-item share-action" open-type="share">
+        <text class="action-icon">↗</text>
+        <text class="action-label">分享</text>
+      </button>
+
+      <view class="action-primary {{item.shortLink ? '' : 'action-disabled'}}" bindtap="copyLink">{{item.shortLink ? "复制链接" : "暂无链接"}}</view>
+    </view>
   </view>
 </view>
