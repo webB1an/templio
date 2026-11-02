@@ -8,6 +8,21 @@ export type TemplateStatus =
   | "archived"
   | "failed";
 
+export type NetdiskProvider = "baidu" | "quark";
+
+export interface StorageAccount {
+  id: string;
+  provider: NetdiskProvider;
+  label: string;
+  accountName: string | null;
+  isDefault: boolean;
+  isActive: boolean;
+  lastProbeOk: boolean | null;
+  lastProbeMessage: string | null;
+  lastProbeAt: string | null;
+  createdAt: string;
+}
+
 export interface BackupInfo {
   filename: string;
   at: string;

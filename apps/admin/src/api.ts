@@ -3,7 +3,9 @@ import type {
   AdminTemplate,
   AiAnalysis,
   Facets,
+  NetdiskProvider,
   Stats,
+  StorageAccount,
   SystemStatus,
   TemplateList,
   TemplateStatus
@@ -84,6 +86,51 @@ export const api = {
 
   system() {
     return request<SystemStatus>("/admin/system");
+  },
+
+  storageAccounts() {
+    return request<StorageAccount[]>("/admin/storage-accounts");
+  },
+
+  createStorageAccount(body: { provider: NetdiskProvider; label: string; isDefault?: boolean }) {
+    return request<StorageAccount>("/admin/storage-accounts", { method: "POST", body });
+  },
+
+  updateStorageAccount(id: string, body: { label: string }) {
+    return request<StorageAccount>(`/admin/storage-accounts/${id}`, { method: "PATCH", body });
+  },
+
+  setDefaultStorageAccount(id: string) {
+    return request<StorageAccount>(`/admin/storage-accounts/${id}/default`, { method: "POST" });
+  },
+
+  probeStorageAccount(id: string) {
+    return request<StorageAccount>(`/admin/storage-accounts/${id}/probe`, { method: "POST" });
+  },
+
+  deleteStorageAccount(id: string) {
+    return request<{ deleted: boolean }>(`/admin/storage-accounts/${id}`, { method: "DELETE" });
+  },
+
+  saveBaiduCookie(id: string, cookie: string) {
+    return request<StorageAccount>(`/admin/storage-accounts/${id}/baidu-cookie`, {
+      method: "POST",
+      body: { cookie }
+    });
+  },
+
+  startQuarkAuth(id: string) {
+    return request<{ authUrl?: string; message?: string } | StorageAccount>(
+      `/admin/storage-accounts/${id}/quark-auth/start`,
+      { method: "POST" }
+    );
+  },
+
+  finishQuarkAuth(id: string, code: string) {
+    return request<StorageAccount>(`/admin/storage-accounts/${id}/quark-auth/finish`, {
+      method: "POST",
+      body: { code }
+    });
   },
 
   facets() {

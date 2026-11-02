@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Button, Layout, Menu, Typography } from "antd";
 import Dashboard from "../pages/Dashboard";
 import ImportPage from "../pages/ImportPage";
+import StorageAccounts from "../pages/StorageAccounts";
 import Templates from "../pages/Templates";
 
 const { Header, Sider, Content } = Layout;
 
-type PageKey = "dashboard" | "templates" | "import";
+type PageKey = "dashboard" | "templates" | "storage" | "import";
 
 export default function Shell({ onLogout }: { onLogout: () => void }) {
   const [page, setPage] = useState<PageKey>("dashboard");
@@ -24,6 +25,7 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
           items={[
             { key: "dashboard", label: "概览" },
             { key: "templates", label: "模板库" },
+            { key: "storage", label: "网盘账号" },
             { key: "import", label: "导入模板" }
           ]}
         />
@@ -38,6 +40,8 @@ export default function Shell({ onLogout }: { onLogout: () => void }) {
             <Dashboard onOpenTemplates={() => setPage("templates")} />
           ) : page === "templates" ? (
             <Templates />
+          ) : page === "storage" ? (
+            <StorageAccounts />
           ) : (
             <ImportPage />
           )}
