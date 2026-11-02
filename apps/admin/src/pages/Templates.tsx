@@ -40,6 +40,7 @@ export default function Templates() {
   const [saving, setSaving] = useState(false);
   const [netdiskEditing, setNetdiskEditing] = useState<AdminTemplate | null>(null);
   const [netdiskSaving, setNetdiskSaving] = useState(false);
+  const [sourceDownloading, setSourceDownloading] = useState(false);
   const [aiEditing, setAiEditing] = useState<AdminTemplate | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiApplying, setAiApplying] = useState(false);
@@ -122,6 +123,49 @@ export default function Templates() {
     } catch (error) {
       message.error((error as Error).message);
     }
+  };
+
+  const downloadSource = async () => {
+    if (!netdiskEditing?.source) return;
+    setSourceDownloading(true);
+    try {
+      const { blob, filename } = await api.downloadSource(netdiskEditing.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      message.success("已开始下载源文件");
+    } catch (error) {
+      message.error((error as Error).message);
+    } finally {
+      setSourceDownloading(false);
+    }
+  };
+
+  const removeSource = () => {
+    if (!netdiskEditing?.source) return;
+    const target = netdiskEditing;
+    Modal.confirm({
+      title: "删除服务器源文件？",
+      content: "请确认源文件已上传到网盘；删除后需要重新上传才能再次同步。",
+      okText: "确认删除",
+      okType: "danger",
+      cancelText: "取消",
+      onOk: async () => {
+        try {
+          await api.removeSource(target.id);
+          message.success("已删除服务器源文件");
+          setNetdiskEditing(null);
+          await load();
+        } catch (error) {
+          message.error((error as Error).message);
+        }
+      }
+    });
   };
 
   const runAi = async (record: AdminTemplate) => {
@@ -475,6 +519,28 @@ export default function Templates() {
             </Typography.Text>
           </div>
         ) : null}
+
+        <div className="source-box">
+          <div className="source-box-title">服务器源文件</div>
+          {netdiskEditing?.source ? (
+            <div className="source-box-row">
+              <span>
+                {netdiskEditing.source.filename} · {netdiskEditing.source.sizeText}
+              </span>
+              <Space size={6}>
+                <Button size="small" loading={sourceDownloading} onClick={() => void downloadSource()}>
+                  下载
+                </Button>
+                <Button size="small" danger onClick={() => removeSource()}>
+                  删除
+                </Button>
+              </Space>
+            </div>
+          ) : (
+            <div className="source-box-empty">未上传源文件（CLI 加 --with-source 可上传暂存）</div>
+          )}
+        </div>
+
         <Form<NetdiskValues> form={netdiskForm} layout="vertical">
           <Form.Item name="provider" label="网盘类型" rules={[{ required: true }]}>
             <Select

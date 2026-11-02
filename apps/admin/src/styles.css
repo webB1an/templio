@@ -199,3 +199,32 @@ body {
   width: 72px;
   color: #8a90a6;
 }
+
+/* ---------------- 源文件 ---------------- */
+
+.source-box {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f6f8fc;
+}
+
+.source-box-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.source-box-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: #47506b;
+}
+
+.source-box-empty {
+  font-size: 12px;
+  color: #8a90a6;
+}

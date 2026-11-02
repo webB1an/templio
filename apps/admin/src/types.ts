@@ -36,6 +36,7 @@ export interface AdminTemplate {
   shortLink: string | null;
   netdiskUrl: string | null;
   provider: string | null;
+  source: { filename: string; size: number; sizeText: string } | null;
   passcode: string | null;
   hasNetdisk: boolean;
   ai: AiAnalysis | null;

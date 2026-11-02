@@ -5,7 +5,10 @@ templio render D:\\templates -o D:\\templates-dist
 
 # 2. 上传到服务端（密码建议用环境变量，避免出现在命令行历史）
 set TEMPLIO_ADMIN_PASSWORD=服务器 .env 中的 ADMIN_PASSWORD
-templio upload D:\\templates-dist --api https://templio.wdbzk.com`;
+templio upload D:\\templates-dist --api https://templio.wdbzk.com
+
+# 可选：同时把源文件暂存到服务器，方便后续同步网盘
+templio upload D:\\templates-dist --api https://templio.wdbzk.com --with-source`;
 
 const STEPS = [
   "桌面端执行 templio render，把 PPT / Word 渲染成标准物料包（封面/缩略图/预览图 + manifest.json）",
@@ -45,7 +48,7 @@ export default function ImportPage() {
         <ul className="import-notes">
           <li>物料包唯一键是源文件 SHA-256，重复上传会被服务端识别为 duplicate，不会重复创建。</li>
           <li>封面/缩略图/预览图保存到服务器 <code>storage/public/templates/&lt;hash8&gt;/</code>，由 Nginx <code>/assets/</code> 直出。</li>
-          <li>源文件暂不上传（后续接百度/夸克网盘同步后再补），因此管理端暂不展示源文件下载。</li>
+          <li>加 <code>--with-source</code> 会把源文件暂存到 <code>storage/private/sources/&lt;hash8&gt;/</code>；在「网盘」弹窗可下载/删除，确认已上传网盘后务必删除服务器源文件。</li>
           <li>AI 自动生成标题/分类是下一步；当前导入标题来自 manifest 的 titleGuess。</li>
         </ul>
       </Card>

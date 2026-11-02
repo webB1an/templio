@@ -115,6 +115,25 @@ export const api = {
     return request<{ removed: boolean }>(`/admin/templates/${id}/netdisk`, { method: "DELETE" });
   },
 
+  async downloadSource(id: string): Promise<{ blob: Blob; filename: string }> {
+    const response = await fetch(`/api/admin/templates/${id}/source`, {
+      headers: { authorization: `Bearer ${getToken()}` }
+    });
+    if (!response.ok) {
+      throw new Error(`源文件下载失败（HTTP ${response.status}）`);
+    }
+    const disposition = response.headers.get("content-disposition") || "";
+    const match = disposition.match(/filename\*=UTF-8''([^;]+)/);
+    return {
+      blob: await response.blob(),
+      filename: match ? decodeURIComponent(match[1]) : `source-${id}`
+    };
+  },
+
+  removeSource(id: string) {
+    return request<{ removed: boolean }>(`/admin/templates/${id}/source`, { method: "DELETE" });
+  },
+
   annotateAi(id: string) {
     return request<{
       analysis: AiAnalysis;
