@@ -71,7 +71,7 @@ export class AdminImportService {
       seq: number,
     ) => {
       const objectKey = `${relativeDir}/${name}`;
-      await writeFile(join(storageRoot, objectKey), file.buffer);
+      await writeFile(join(storageRoot, "public", objectKey), file.buffer);
       fileCreates.push({
         role,
         objectKey,
