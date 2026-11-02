@@ -2,7 +2,7 @@
   <view class="nav-inner" style="margin-right: {{menuRight}}px;">
     <view class="nav-back" bindtap="onCancel">‹</view>
     <view class="search-field">
-      <text class="search-icon">⌕</text>
+      <image class="search-icon" src="/assets/icons/search.png" mode="aspectFit" />
       <input
         class="search-input"
         value="{{inputValue}}"
@@ -20,19 +20,23 @@
 
 <view class="page search-page" style="padding-top: {{contentTop}}px;">
   <block wx:if="{{!hasSearched}}">
-    <text class="block-title">热门搜索</text>
-    <view class="keyword-list">
+    <view class="search-intro">
+      <text class="search-intro-title">搜索模板</text>
+      <text class="search-intro-sub">输入场景、格式或关键词，快速找到可用模板</text>
+    </view>
+
+    <view class="block-head">
+      <text class="block-title">热门搜索</text>
+    </view>
+    <view class="keyword-chips">
       <view
         wx:for="{{hotKeywords}}"
         wx:key="*this"
-        class="keyword-row"
+        class="keyword-chip"
         data-keyword="{{item}}"
         bindtap="onHotTap"
-        hover-class="keyword-hover"
-      >
-        <text class="keyword-text">{{item}}</text>
-        <text class="keyword-arrow">→</text>
-      </view>
+        hover-class="keyword-chip-hover"
+      >{{item}}</view>
     </view>
 
     <block wx:if="{{history.length}}">
@@ -40,24 +44,33 @@
         <text class="block-title">搜索历史</text>
         <text class="block-clear" bindtap="onClearHistory">清空</text>
       </view>
-      <view class="keyword-list">
+      <view class="keyword-chips">
         <view
           wx:for="{{history}}"
           wx:key="*this"
-          class="keyword-row"
+          class="keyword-chip history-chip"
           data-keyword="{{item}}"
           bindtap="onHistoryTap"
-          hover-class="keyword-hover"
-        >
-          <text class="keyword-text">{{item}}</text>
-          <text class="keyword-arrow">→</text>
-        </view>
+          hover-class="keyword-chip-hover"
+        >{{item}}</view>
       </view>
     </block>
 
     <view wx:if="{{!history.length}}" class="search-tip">
       输入关键词开始搜索，例如「答辩」「简历」「合同」
     </view>
+
+    <block wx:if="{{recommend.length}}">
+      <view class="section-head">
+        <text class="section-title">推荐模板</text>
+        <text class="section-more" bindtap="goHome">去首页 ›</text>
+      </view>
+      <view class="grid">
+        <view class="grid-item" wx:for="{{recommend}}" wx:key="id">
+          <template-card item="{{item}}" bind:open="onOpenCard" />
+        </view>
+      </view>
+    </block>
   </block>
 
   <block wx:else>

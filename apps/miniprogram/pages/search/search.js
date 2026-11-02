@@ -15,6 +15,7 @@ Page({
     autoFocus: true,
     hotKeywords: HOT_KEYWORDS,
     history: [],
+    recommend: [],
     page: 0,
     hasMore: false,
     loading: false,
@@ -34,6 +35,19 @@ Page({
       contentTop: metrics.statusBarHeight + metrics.navHeight + 28,
       history: Array.isArray(history) ? history : []
     });
+    this.loadRecommended();
+  },
+
+  loadRecommended() {
+    fetchTemplates({ limit: 4 })
+      .then((data) => {
+        this.setData({ recommend: (data && data.items) || [] });
+      })
+      .catch(() => {});
+  },
+
+  goHome() {
+    wx.switchTab({ url: "/pages/index/index" });
   },
 
   onPullDownRefresh() {

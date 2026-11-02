@@ -196,9 +196,10 @@ page {
 }
 
 .search-icon {
+  width: 36rpx;
+  height: 36rpx;
   margin-right: 14rpx;
-  font-size: 30rpx;
-  color: var(--ink-3);
+  flex: none;
 }
 
 .search-text {

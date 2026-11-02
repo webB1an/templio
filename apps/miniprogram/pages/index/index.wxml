@@ -14,7 +14,7 @@
   </view>
 
   <view class="search" bindtap="goSearch">
-    <text class="search-icon">⌕</text>
+    <image class="search-icon" src="/assets/icons/search.png" mode="aspectFit" />
     <text class="search-text">搜索模板、场景或风格</text>
   </view>
 
