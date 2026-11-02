@@ -52,12 +52,14 @@ export class PublicTemplatesService {
   }): Promise<{ items: PublicTemplateDto[]; total: number }> {
     const limit = clampNumber(query.limit, 20, 1, 50);
     const offset = clampNumber(query.offset, 0, 0, 10000);
-    const keyword = (query.q || "").trim();
+    const keyword = queryText(query.q);
+    const category = queryText(query.category);
+    const tag = queryText(query.tag);
 
     const where: Prisma.TemplateWhereInput = {
       status: "published",
-      ...(query.category ? { category: { slug: query.category } } : {}),
-      ...(query.tag ? { tags: { some: { tag: { name: query.tag } } } } : {}),
+      ...(category ? { category: { slug: category } } : {}),
+      ...(tag ? { tags: { some: { tag: { name: tag } } } } : {}),
       ...(keyword
         ? {
             OR: [
@@ -196,6 +198,12 @@ function clampNumber(value: string | undefined, fallback: number, min: number, m
   const parsed = Number.parseInt(value || "", 10);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(max, Math.max(min, parsed));
+}
+
+/** 忽略空值/字面量 undefined/null，避免客户端序列化异常导致筛选为空 */
+function queryText(value: unknown): string {
+  const text = typeof value === "string" ? value.trim() : "";
+  return /^(undefined|null)$/i.test(text) ? "" : text;
 }
 
 function formatBytes(value: bigint | null): string {

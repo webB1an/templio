@@ -8,16 +8,30 @@ function getBase() {
   return (app && app.globalData && app.globalData.apiBase) || "https://templio.wdbzk.com/api";
 }
 
+/** GET 参数去掉 undefined/null/空字符串，避免把 "undefined" 传给服务端 */
+function cleanQuery(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return data;
+  const result = {};
+  Object.keys(data).forEach((key) => {
+    const value = data[key];
+    if (value === undefined || value === null) return;
+    if (typeof value === "string" && value.trim() === "") return;
+    result[key] = value;
+  });
+  return result;
+}
+
 function request(path, options, retried) {
   const opts = options || {};
   const withAuth = opts.auth !== false;
   const token = withAuth ? wx.getStorageSync("userToken") || "" : "";
+  const method = opts.method || "GET";
 
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${getBase()}${path}`,
-      method: opts.method || "GET",
-      data: opts.data,
+      method,
+      data: method === "GET" ? cleanQuery(opts.data) : opts.data,
       timeout: opts.timeout || 15000,
       header: Object.assign(
         { "content-type": "application/json" },
