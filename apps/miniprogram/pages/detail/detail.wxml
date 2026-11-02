@@ -7,6 +7,7 @@
   </view>
 
   <view class="detail-hero tone-{{item.tone}}">
+    <image wx:if="{{item.coverUrl}}" class="hero-img" src="{{item.coverUrl}}" mode="aspectFill" />
     <text class="hero-format">{{item.format}}</text>
     <text class="hero-text">{{item.title}}</text>
   </view>
@@ -28,6 +29,19 @@
 
       <text class="summary">{{item.summary}}</text>
     </view>
+
+    <scroll-view wx:if="{{item.previewUrls && item.previewUrls.length}}" class="preview-strip" scroll-x enhanced show-scrollbar="{{false}}">
+      <image
+        wx:for="{{item.previewUrls}}"
+        wx:key="*this"
+        class="preview-thumb"
+        src="{{item}}"
+        mode="aspectFill"
+        lazy-load
+        bindtap="previewImage"
+        data-src="{{item}}"
+      />
+    </scroll-view>
 
     <view class="get-card glass">
       <view class="get-head">

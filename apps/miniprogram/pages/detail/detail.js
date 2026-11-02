@@ -66,6 +66,13 @@ Page({
     });
   },
 
+  previewImage(event) {
+    const urls = (this.data.item && this.data.item.previewUrls) || [];
+    if (!urls.length) return;
+    const current = event && event.currentTarget ? event.currentTarget.dataset.src : urls[0];
+    wx.previewImage({ current: current || urls[0], urls });
+  },
+
   toggleFav() {
     const item = this.data.item;
     if (!item) return;

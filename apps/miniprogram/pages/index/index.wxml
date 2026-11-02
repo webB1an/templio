@@ -46,6 +46,7 @@
       hover-class="card-hover"
     >
       <view class="cover tone-{{item.tone}}">
+        <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load />
         <text class="cover-format">{{item.format}}</text>
         <text class="cover-title">{{item.title}}</text>
       </view>
