@@ -24,13 +24,14 @@ App({
    * - force=true 忽略本地 token 重新登录（用于 token 过期）
    */
   ensureLogin(force) {
+    // 已有登录请求在进行时复用它，避免多个 401 同时触发多次 wx.login
+    if (this.loginPromise) return this.loginPromise;
     const cachedToken = wx.getStorageSync("userToken") || "";
     if (!force && cachedToken) {
       this.globalData.token = cachedToken;
       this.globalData.user = wx.getStorageSync("userInfo") || null;
       return Promise.resolve({ token: cachedToken, user: this.globalData.user });
     }
-    if (!force && this.loginPromise) return this.loginPromise;
 
     this.loginPromise = new Promise((resolve, reject) => {
       wx.login({

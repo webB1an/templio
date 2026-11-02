@@ -84,6 +84,7 @@ Page({
   },
 
   loadFavoriteState(id) {
+    if (!id) return;
     const app = getApp();
     if (!app || !app.ensureLogin) return;
     app
@@ -150,6 +151,12 @@ Page({
   },
 
   onCoverError() {
+    const item = this.data.item || {};
+    if (item.previewUrls && item.previewUrls.length) {
+      // 预览图加载失败时退回封面图，避免主视觉空白
+      this.setData({ "item.previewUrls": [] });
+      return;
+    }
     this.setData({ "item.coverUrl": "" });
   },
 
