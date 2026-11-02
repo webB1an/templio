@@ -248,7 +248,8 @@ export default function Templates() {
           <div>
             <div style={{ fontWeight: 600 }}>{title}</div>
             <div style={{ color: "#8a90a6", fontSize: 12 }}>
-              {record.format} · {record.pageCount} 页 · {formatSize(record.fileSize)}
+              {record.format} · {record.pageCount} 页 · {formatSize(record.fileSize)} ·{" "}
+              {record.viewCount} 浏览 · {record.copyCount} 下载
             </div>
           </div>
         </div>

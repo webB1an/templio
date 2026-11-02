@@ -27,6 +27,8 @@ export interface AdminTemplate {
   format: string;
   pageCount: number;
   fileSize: number;
+  viewCount: number;
+  copyCount: number;
   category: { id: string; name: string; key: string } | null;
   tags: string[];
   coverUrl: string | null;
