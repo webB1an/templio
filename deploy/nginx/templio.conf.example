@@ -71,9 +71,9 @@ server {
         proxy_read_timeout 300s;
     }
 
-    # 网盘短链跳转
+    # 网盘短链跳转（网关重写到 /api/r/，由 NestJS 处理）
     location /r/ {
-        proxy_pass http://127.0.0.1:4000;
+        proxy_pass http://127.0.0.1:4000/api/r/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
     }
