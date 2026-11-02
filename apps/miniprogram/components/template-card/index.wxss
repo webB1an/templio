@@ -26,9 +26,9 @@
 
 .tcard-img {
   position: absolute;
-  left: 0;
+  left: -6%;
   top: 0;
-  width: 100%;
+  width: 112%;
   height: 100%;
 }
 
