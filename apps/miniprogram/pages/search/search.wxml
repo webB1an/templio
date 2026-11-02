@@ -71,26 +71,8 @@
     </view>
 
     <view class="grid">
-      <view
-        wx:for="{{results}}"
-        wx:key="id"
-        class="card"
-        data-id="{{item.id}}"
-        bindtap="openDetail"
-        hover-class="card-hover"
-      >
-        <view class="cover tone-{{item.tone}}">
-          <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load binderror="onCoverError" data-index="{{index}}" />
-          <text class="cover-format">{{item.format}}</text>
-          <text wx:if="{{!item.coverUrl}}" class="cover-title">{{item.title}}</text>
-        </view>
-        <view class="card-body">
-          <text class="card-title">{{item.title}}</text>
-          <view class="card-meta">
-            <text>{{item.category}}</text>
-            <text>{{item.pageCount}} 页</text>
-          </view>
-        </view>
+      <view class="grid-item" wx:for="{{results}}" wx:key="id">
+        <template-card item="{{item}}" bind:open="onOpenCard" />
       </view>
     </view>
 

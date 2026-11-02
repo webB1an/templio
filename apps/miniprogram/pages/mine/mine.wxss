@@ -1,9 +1,12 @@
 .account-card {
   margin-top: 8rpx;
-  background: var(--surface);
-  border: 1rpx solid var(--line);
-  border-radius: var(--radius);
   overflow: hidden;
+  border-radius: 32rpx;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(32rpx) saturate(180%);
+  backdrop-filter: blur(32rpx) saturate(180%);
+  border: 1rpx solid var(--glass-border);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.95), 0 16rpx 38rpx rgba(31, 58, 100, 0.1);
 }
 
 .profile-row {
@@ -13,17 +16,18 @@
 }
 
 .avatar {
-  width: 94rpx;
-  height: 94rpx;
+  width: 96rpx;
+  height: 96rpx;
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14rpx;
+  border-radius: 50%;
   font-size: 40rpx;
   font-weight: 700;
   color: #ffffff;
-  background: var(--accent);
+  background: linear-gradient(135deg, #0a84ff 0%, #6aa9ff 100%);
+  box-shadow: 0 10rpx 24rpx rgba(10, 132, 255, 0.26);
 }
 
 .profile-main {
@@ -78,17 +82,20 @@
 
 .section-label {
   display: block;
-  margin: 42rpx 0 16rpx 4rpx;
+  margin: 40rpx 4rpx 16rpx;
   font-size: 20rpx;
   letter-spacing: 2rpx;
   color: var(--ink-3);
 }
 
 .menu {
-  background: var(--surface);
-  border: 1rpx solid var(--line);
-  border-radius: var(--radius);
   overflow: hidden;
+  border-radius: 30rpx;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(30rpx) saturate(180%);
+  backdrop-filter: blur(30rpx) saturate(180%);
+  border: 1rpx solid var(--glass-border);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.9), 0 14rpx 34rpx rgba(31, 58, 100, 0.08);
 }
 
 .menu-row {
@@ -104,7 +111,7 @@
 }
 
 .menu-row-hover {
-  background: #faf8f4;
+  background: rgba(255, 255, 255, 0.32);
 }
 
 .menu-label {

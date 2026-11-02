@@ -37,6 +37,9 @@ export interface PublicTemplateDto {
   shortLink: string | null;
   passcode: string | null;
   publishedAt: string | null;
+  viewCount: number;
+  viewCountText: string;
+  formatLabel: string;
 }
 
 @Injectable()
@@ -190,6 +193,9 @@ export class PublicTemplatesService {
       shortLink: code ? `${appOrigin}/r/${code}` : null,
       passcode: primaryLink?.passcode || null,
       publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+      viewCount: row.viewCount,
+      viewCountText: compactCount(row.viewCount),
+      formatLabel: formatLabel(row.format),
     };
   }
 }
@@ -204,6 +210,21 @@ function clampNumber(value: string | undefined, fallback: number, min: number, m
 function queryText(value: unknown): string {
   const text = typeof value === "string" ? value.trim() : "";
   return /^(undefined|null)$/i.test(text) ? "" : text;
+}
+
+function compactCount(value: number): string {
+  if (!value || value <= 0) return "";
+  if (value >= 10000) return `${(value / 10000).toFixed(1)}w`;
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+  return String(value);
+}
+
+function formatLabel(value: string | null): string {
+  const format = (value || "").toUpperCase();
+  if (format === "PPTX" || format === "PPT") return "PPT";
+  if (format === "DOCX" || format === "DOC") return "Word";
+  if (format === "XLSX" || format === "XLS") return "Excel";
+  return format || "文件";
 }
 
 function formatBytes(value: bigint | null): string {

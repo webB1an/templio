@@ -7,8 +7,7 @@
     <image wx:if="{{item.coverUrl}}" class="hero-img" src="{{item.coverUrl}}" mode="aspectFill" binderror="onCoverError" />
     <text class="hero-format">{{item.format}}</text>
     <view wx:if="{{!item.coverUrl}}" class="hero-fallback">
-      <text class="hero-fallback-format">{{item.format}}</text>
-      <text class="hero-fallback-title">{{item.title}}</text>
+      <text class="hero-fallback-format">{{item.formatLabel || item.format}}</text>
     </view>
   </view>
 
@@ -86,26 +85,8 @@
     </view>
 
     <view class="grid">
-      <view
-        wx:for="{{related}}"
-        wx:key="id"
-        class="card"
-        data-id="{{item.id}}"
-        bindtap="openRelated"
-        hover-class="card-hover"
-      >
-        <view class="cover tone-{{item.tone}}">
-          <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load />
-          <text class="cover-format">{{item.format}}</text>
-          <text wx:if="{{!item.coverUrl}}" class="cover-title">{{item.title}}</text>
-        </view>
-        <view class="card-body">
-          <text class="card-title">{{item.title}}</text>
-          <view class="card-meta">
-            <text>{{item.category}}</text>
-            <text>{{item.pageCount}} 页</text>
-          </view>
-        </view>
+      <view class="grid-item" wx:for="{{related}}" wx:key="id">
+        <template-card item="{{item}}" bind:open="onOpenRelatedCard" />
       </view>
     </view>
 

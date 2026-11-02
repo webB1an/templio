@@ -113,6 +113,12 @@ Page({
     wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.id}` });
   },
 
+  onOpenCard(event) {
+    const id = event.detail && event.detail.id;
+    if (!id) return;
+    wx.navigateTo({ url: `/pages/detail/detail?id=${id}` });
+  },
+
   onCoverError(event) {
     const index = Number(event.currentTarget.dataset.index);
     if (!Number.isInteger(index) || index < 0) return;

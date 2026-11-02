@@ -55,8 +55,15 @@ Page({
     wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.id}` });
   },
 
-  removeFav(event) {
-    const id = event.currentTarget.dataset.id;
+  onOpenCard(event) {
+    const id = event.detail && event.detail.id;
+    if (!id) return;
+    wx.navigateTo({ url: `/pages/detail/detail?id=${id}` });
+  },
+
+  onRemoveCard(event) {
+    const id = event.detail && event.detail.id;
+    if (!id) return;
     removeFavorite(id)
       .then(() => {
         this.setData({ items: this.data.items.filter((item) => item.id !== id) });

@@ -130,6 +130,12 @@ Page({
     wx.redirectTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.id}` });
   },
 
+  onOpenRelatedCard(event) {
+    const id = event.detail && event.detail.id;
+    if (!id) return;
+    wx.redirectTo({ url: `/pages/detail/detail?id=${id}` });
+  },
+
   onShareAppMessage() {
     const item = this.data.item || {};
     return {

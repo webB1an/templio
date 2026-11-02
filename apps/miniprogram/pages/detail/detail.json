@@ -1,4 +1,7 @@
 {
-  "usingComponents": {},
-  "navigationStyle": "custom"
+  "usingComponents": {
+    "template-card": "/components/template-card/index"
+  },
+  "navigationStyle": "custom",
+  "backgroundTextStyle": "dark"
 }

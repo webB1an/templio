@@ -1,9 +1,9 @@
 .list-head {
-  padding: 12rpx 0 30rpx;
+  padding: 12rpx 4rpx 30rpx;
 }
 
 .list-title {
-  font-size: 44rpx;
+  font-size: 46rpx;
 }
 
 .list-count {
@@ -14,12 +14,5 @@
 }
 
 .list-grid {
-  margin-top: 10rpx;
-}
-
-.empty {
-  margin-top: 40rpx;
-  background: var(--surface);
-  border: 1rpx solid var(--line);
-  border-radius: var(--radius);
+  margin-top: 8rpx;
 }

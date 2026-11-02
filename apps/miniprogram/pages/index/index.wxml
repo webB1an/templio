@@ -5,7 +5,7 @@
   </view>
 </view>
 
-<view class="page" style="padding-top: {{contentTop}}px;">
+<view class="page home-page" style="padding-top: {{contentTop}}px;">
   <view class="hero">
     <text class="hero-title">选一份好用的模板</text>
     <text class="hero-sub">PPT / Word · 商务、答辩、求职与教学</text>
@@ -16,42 +16,14 @@
     <text class="search-text">搜索模板、场景或风格</text>
   </view>
 
-  <scroll-view class="chips" scroll-x enhanced show-scrollbar="{{false}}">
-    <view
-      wx:for="{{categories}}"
-      wx:key="key"
-      class="chip {{activeCategory === item.key ? 'chip-active' : ''}}"
-      data-key="{{item.key}}"
-      bindtap="onCategory"
-    >{{item.name}}</view>
-  </scroll-view>
-
   <view class="section-head">
-    <text class="section-title">精选模板</text>
+    <text class="section-title">最近更新</text>
     <text class="section-more" bindtap="goList">查看全部 ›</text>
   </view>
 
   <view class="grid">
-    <view
-      wx:for="{{templates}}"
-      wx:key="id"
-      class="card"
-      data-id="{{item.id}}"
-      bindtap="openDetail"
-      hover-class="card-hover"
-    >
-      <view class="cover tone-{{item.tone}}">
-        <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load binderror="onCoverError" data-index="{{index}}" />
-        <text class="cover-format">{{item.format}}</text>
-        <text wx:if="{{!item.coverUrl}}" class="cover-title">{{item.title}}</text>
-      </view>
-      <view class="card-body">
-        <text class="card-title">{{item.title}}</text>
-        <view class="card-meta">
-          <text>{{item.category}}</text>
-          <text>{{item.pageCount}} 页</text>
-        </view>
-      </view>
+    <view class="grid-item" wx:for="{{templates}}" wx:key="id">
+      <template-card item="{{item}}" bind:open="onOpenCard" />
     </view>
   </view>
 
@@ -59,6 +31,15 @@
   <view class="list-tip" wx:if="{{!loading && templates.length === 0}}">暂无模板</view>
   <view class="list-tip" wx:if="{{!loading && !hasMore && templates.length}}">已经到底了</view>
 
-  <view class="footer-tip">模板内容仅供学习与交流，版权归原作者所有</view>
   <view class="tabbar-pad"></view>
 </view>
+
+<scroll-view class="category-dock" scroll-x enhanced show-scrollbar="{{false}}">
+  <view
+    wx:for="{{categories}}"
+    wx:key="key"
+    class="dock-item {{activeCategory === item.key ? 'dock-active' : ''}}"
+    data-key="{{item.key}}"
+    bindtap="onCategory"
+  >{{item.name}}</view>
+</scroll-view>
