@@ -62,6 +62,7 @@ export class AdminTemplatesService {
           category: true,
           files: { orderBy: { seq: "asc" } },
           tags: { include: { tag: true }, orderBy: { sort: "asc" } },
+          aiAnalysis: true,
           netdiskLinks: {
             where: { isActive: true },
             orderBy: [{ isPrimary: "desc" }],
@@ -162,6 +163,7 @@ export class AdminTemplatesService {
         category: true,
         files: { orderBy: { seq: "asc" } },
         tags: { include: { tag: true } },
+        aiAnalysis: true,
         netdiskLinks: { include: { shortLinks: true } },
       },
     });
@@ -300,6 +302,7 @@ export class AdminTemplatesService {
         category: true,
         files: { orderBy: { seq: "asc" } },
         tags: { include: { tag: true } },
+        aiAnalysis: true,
         netdiskLinks: {
           where: { isActive: true },
           orderBy: [{ isPrimary: "desc" }],
@@ -335,6 +338,16 @@ export class AdminTemplatesService {
     category: { id: string; name: string; slug: string } | null;
     tags: Array<{ tag: { name: string } }>;
     files: Array<{ role: string; objectKey: string }>;
+    aiAnalysis?: {
+      title: string | null;
+      categoryKey: string | null;
+      tags: unknown;
+      summary: string | null;
+      confidence: number | null;
+      safe: boolean;
+      needsReview: boolean;
+      model: string | null;
+    } | null;
     netdiskLinks: Array<{
       url: string;
       passcode: string | null;
@@ -364,6 +377,20 @@ export class AdminTemplatesService {
       provider: primary?.provider || null,
       passcode: primary?.passcode || null,
       hasNetdisk: Boolean(primary?.url),
+      ai: row.aiAnalysis
+        ? {
+            title: row.aiAnalysis.title,
+            categoryKey: row.aiAnalysis.categoryKey,
+            tags: Array.isArray(row.aiAnalysis.tags)
+              ? (row.aiAnalysis.tags as unknown[]).filter((item): item is string => typeof item === "string")
+              : [],
+            summary: row.aiAnalysis.summary,
+            confidence: row.aiAnalysis.confidence,
+            safe: row.aiAnalysis.safe,
+            needsReview: row.aiAnalysis.needsReview,
+            model: row.aiAnalysis.model,
+          }
+        : null,
       publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
