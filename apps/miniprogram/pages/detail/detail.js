@@ -14,6 +14,8 @@ Page({
     related: [],
     fav: false,
     favPending: false,
+    loading: true,
+    loadError: false,
     navTop: 20,
     navHeight: 44,
     menuRight: 96,
@@ -22,13 +24,17 @@ Page({
 
   onLoad(options) {
     const metrics = getNavMetrics();
-    const id = options.id || "demo-01";
-    const item = findTemplate(id);
-    const related = TEMPLATES.filter((template) => template.id !== item.id).slice(0, 4);
+    const id = options.id || "";
+    const mockItem = findTemplate(id);
+    const related = mockItem
+      ? TEMPLATES.filter((template) => template.id !== mockItem.id).slice(0, 4)
+      : [];
 
     this.setData({
-      item,
+      item: mockItem,
       related,
+      loading: !mockItem,
+      loadError: false,
       navTop: metrics.statusBarHeight,
       navHeight: metrics.navHeight,
       menuRight: metrics.menuRight,
@@ -43,14 +49,16 @@ Page({
         if (data && data.id) {
           this.setData({
             item: data,
-            related: Array.isArray(data.related) && data.related.length ? data.related : related
+            related: Array.isArray(data.related) && data.related.length ? data.related : related,
+            loading: false,
+            loadError: false
           });
           this.loadFavoriteState(data.id);
           this.recordView(data.id);
         }
       })
       .catch(() => {
-        // 接口未就绪时使用 mock
+        if (!this.data.item) this.setData({ loading: false, loadError: true });
       });
   },
 

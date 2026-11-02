@@ -12,6 +12,7 @@ Page({
     page: 0,
     hasMore: false,
     loading: false,
+    sticky: false,
     navTop: 20,
     navHeight: 44,
     menuRight: 96,
@@ -30,10 +31,36 @@ Page({
     this.loadTemplates(true);
   },
 
+  onReady() {
+    this.measureTypeBar();
+  },
+
   onShow() {
     if (typeof this.getTabBar === "function" && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 });
     }
+  },
+
+  onPageScroll(event) {
+    if (this.barTop == null) return;
+    const threshold = this.barTop - (this.data.navTop + this.data.navHeight);
+    const sticky = event.scrollTop >= threshold;
+    if (sticky !== this.data.sticky) this.setData({ sticky });
+  },
+
+  measureTypeBar() {
+    const query = wx.createSelectorQuery();
+    query.select("#typeBar").boundingClientRect();
+    query.selectViewport().scrollOffset();
+    query.exec((result) => {
+      const rect = result && result[0];
+      const scroll = result && result[1];
+      if (!rect || !scroll) return;
+      this.barTop = rect.top + scroll.scrollTop;
+      const threshold = this.barTop - (this.data.navTop + this.data.navHeight);
+      const sticky = scroll.scrollTop >= threshold;
+      if (sticky !== this.data.sticky) this.setData({ sticky });
+    });
   },
 
   onPullDownRefresh() {
@@ -104,6 +131,7 @@ Page({
     const key = event.currentTarget.dataset.key;
     if (!key || key === this.data.activeCategory) return;
     this.setData({ activeCategory: key, templates: [], page: 0, hasMore: false });
+    wx.pageScrollTo({ scrollTop: 0, duration: 200 });
     this.loadTemplates(true);
   },
 

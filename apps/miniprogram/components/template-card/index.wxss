@@ -20,7 +20,7 @@
 
 .tcard-cover {
   position: relative;
-  height: 300rpx;
+  height: 230rpx;
   overflow: hidden;
 }
 
@@ -45,36 +45,46 @@
 
 .tcard-fallback-panel {
   position: absolute;
-  left: 42rpx;
-  right: 42rpx;
-  top: 48rpx;
-  bottom: 54rpx;
-  border-radius: 14rpx;
-  background: rgba(255, 255, 255, 0.28);
-  border: 1rpx solid rgba(255, 255, 255, 0.5);
-  transform: rotate(-3deg);
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
 }
 
 .tcard-fallback-panel::before {
   content: "";
   position: absolute;
-  left: 22rpx;
-  top: 26rpx;
-  width: 46%;
+  left: 32rpx;
+  top: 36rpx;
+  width: 38%;
   height: 8rpx;
   border-radius: 4rpx;
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .tcard-fallback-panel::after {
   content: "";
   position: absolute;
-  left: 22rpx;
-  top: 48rpx;
-  width: 66%;
+  left: 32rpx;
+  top: 58rpx;
+  width: 58%;
   height: 6rpx;
   border-radius: 3rpx;
-  background: rgba(255, 255, 255, 0.36);
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.tcard-fallback::after {
+  content: "";
+  position: absolute;
+  right: -60rpx;
+  bottom: -80rpx;
+  width: 220rpx;
+  height: 220rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .tcard-fallback-format {

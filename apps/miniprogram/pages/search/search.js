@@ -38,7 +38,8 @@ Page({
 
   onPullDownRefresh() {
     if (this.data.keyword) {
-      this.runSearch(this.data.keyword, false, true);
+      this.runSearch(this.data.keyword, false);
+      this.loadRemotePage(true);
     } else {
       wx.stopPullDownRefresh();
     }

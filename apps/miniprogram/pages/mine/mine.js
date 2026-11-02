@@ -113,7 +113,7 @@ Page({
     if (key === "about") {
       wx.showModal({
         title: "模板宝",
-        content: "PPT / Word 模板库\nv0.2.0\n模板仅供学习交流",
+        content: "PPT / Word 模板库\nv0.4.0\n模板仅供学习交流",
         showCancel: false
       });
       return;

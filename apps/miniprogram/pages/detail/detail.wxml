@@ -1,4 +1,9 @@
-<view wx:if="{{item}}" class="detail-page">
+<view wx:if="{{!item}}" class="detail-state">
+  <text class="detail-state-text">{{loadError ? "模板不存在或加载失败" : "加载中…"}}</text>
+  <button wx:if="{{loadError}}" class="btn-outline detail-state-btn" bindtap="goBack">返回</button>
+</view>
+
+<view wx:else class="detail-page">
   <view class="detail-nav" style="padding-top: {{navTop}}px;">
     <view class="nav-back detail-back" bindtap="goBack">‹</view>
   </view>

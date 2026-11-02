@@ -138,7 +138,7 @@ const TEMPLATES = [
 ];
 
 function findTemplate(id) {
-  return TEMPLATES.find((item) => item.id === id) || TEMPLATES[0];
+  return TEMPLATES.find((item) => item.id === id) || null;
 }
 
 module.exports = { CATEGORIES, TEMPLATES, findTemplate };
