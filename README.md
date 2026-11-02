@@ -94,6 +94,19 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - 封面/缩略图/预览图保存到 `storage/public/templates/<hash8>/`，由 `/assets/` 直出
 - 源文件暂不上传（等百度/夸克网盘同步接入后再补）
 
+## 用户登录与收藏
+
+小程序**静默登录**：打开即 `wx.login` → 服务端 `jscode2session` 换 openid → 下发 30 天 token，无需授权弹窗。
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/user/login` | 微信 code 换 openid + token |
+| GET | `/api/user/me` | 当前用户 |
+| GET | `/api/user/favorites` | 收藏列表（含封面/短链） |
+| GET | `/api/user/favorites/:templateId` | 是否已收藏 |
+| POST | `/api/user/favorites` | 收藏 |
+| DELETE | `/api/user/favorites/:templateId` | 取消收藏 |
+
 ## 管理端
 
 - 地址：<https://templio.wdbzk.com/admin/>
@@ -105,6 +118,8 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 
 - 目录：`apps/miniprogram`（微信原生 JS + 液态玻璃 UI）
 - 用微信开发者工具直接导入该目录（AppID 已写入 `project.config.json`）
+- **微信静默登录**：进入小程序自动 `wx.login`，无需用户点击授权；token 失效自动重登
+- **云端收藏**：详情页收藏/取消同步服务端，「我的」→ 我的收藏可查看
 - 生产接口域名：`https://templio.wdbzk.com`（需在微信公众平台配置 request 合法域名）
 - 静态检查：`npm run check:miniprogram`（页面四件套 / JSON / JS 语法 / WXML 标签闭合）
 - 详细说明：`apps/miniprogram/README.md`

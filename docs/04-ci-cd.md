@@ -164,6 +164,8 @@ git push origin main
 | AI 应用 | `POST .../apply` → 模板标题/分类/标签写回数据库（published 保持上架） |
 | AI 批量标注 | `POST /api/admin/ai/batch {"limit":3}` → 3/3 成功；3 条转「待复核」，公开总数保持 10 |
 | 新导入封面 | 3 个新导入模板 `/assets/templates/<hash8>/cover.webp` 均生成 |
+| 微信登录 | `POST /api/user/login`（fake code）→ 401「微信登录失败（40029: invalid code）」，证明 AppID/Secret 与微信网络通 |
+| 用户收藏 | 测试 token：`/user/me` 200、未登录 401、收藏增/查/删、favoriteCount 1→0 |
 
 ### 3.6 公开 API（已上线）
 
@@ -257,6 +259,41 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - 单条：技术服务合同模板 → 标题「技术服务合同模板」、分类「合同文书」、标签 3 个、置信度 0.97；应用后数据库同步更新。
 - 批量：3 个已导入模板 → 3/3 成功（经营分析/business、论文答辩/thesis、求职简历/resume），全部转「待复核」，公开总数保持 10。
 
+### 3.11 小程序静默登录与云端收藏（已上线）
+
+**登录流程：**
+
+```
+小程序 onLaunch → wx.login → POST /api/user/login { code }
+→ 服务端 jscode2session（MINIPROGRAM_APPID / WECHAT_APP_SECRET）
+→ 按 openid upsert User → 下发 HMAC token（30 天）
+→ 小程序存本地；所有请求自动带 Authorization
+→ 401 时清 token、静默重登并重试一次
+```
+
+**收藏接口：**
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/user/me` | 当前用户 |
+| GET | `/api/user/favorites` | 收藏列表（公开模板 DTO + favoritedAt） |
+| GET | `/api/user/favorites/:templateId` | 是否已收藏 |
+| POST | `/api/user/favorites` | 收藏（favoriteCount +1） |
+| DELETE | `/api/user/favorites/:templateId` | 取消收藏（favoriteCount -1） |
+
+**小程序改动：**
+
+- `app.js`：静默登录 + `ensureLogin(force)`，token 复用/过期重登
+- `utils/api.js`：请求自动附带 token，401 自动重登重试；新增登录/收藏 API
+- 详情页收藏改为服务端同步；「我的」显示登录状态与收藏数
+- 新增「我的收藏」页（封面卡片、取消收藏、空态）
+
+**已验证：**
+
+- fake code 调登录 → 401 `微信登录失败（40029: invalid code）`，说明 AppID/Secret 与微信接口已通
+- 测试用户 token：`/user/me` 200、无 token 401、收藏增/查/删、模板 favoriteCount 1→0
+- 小程序静态检查 7 个页面通过；真实登录需在开发者工具/真机用 `wx.login` 的 code，无感完成
+
 ---
 
 ## 4. 服务器现状（不含敏感信息）
@@ -278,8 +315,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 1. 微信小程序：AppID / AppSecret 已在服务器 `.env` 配置；还需要公众平台下载的「代码上传密钥」才能让 CI 上传体验版
 2. 百度网盘 / 夸克网盘官方 Skill 安装与账号授权（目前网盘链接需在管理端手动填写）
 3. AI 高置信度自动应用 / 自动上架（当前仍需人工点「应用建议」）
-4. 小程序登录 / 收藏接口（当前收藏仅本地存储）
-5. 源文件上传 → 网盘同步 → 校验后删除服务器源文件
+4. 源文件上传 → 网盘同步 → 校验后删除服务器源文件
 
 ---
 
@@ -315,4 +351,5 @@ npm run dev:api
 | API 启动报 `ERR_PACKAGE_PATH_NOT_EXPORTED`，PM2 反复 errored | `@templio/shared` 只有 ESM 输出，API 是 CommonJS | shared 增加 `dist-cjs` 双构建 + `exports.require` + `dist-cjs/package.json {"type":"commonjs"}`，部署同步 `dist-cjs/` |
 | 导入后封面 URL `/assets/public/templates/...` 404 | objectKey 里多带了一层 `public/`（Nginx `/assets/` 已指向 `storage/public`） | objectKey 改为 `templates/<hash8>/...`，并修正历史数据 |
 | 导入新模板报 500 `ENOENT storage/templates/<hash>/cover.webp` | writeFile 路径漏了 `storage/public` 前缀 | 写入使用 `join(STORAGE_ROOT, "public", objectKey)` |
+| 微信登录报「服务端未配置 AppID/AppSecret」，但 `.env` 里有值 | PM2 带着空值环境启动，dotenv 默认不覆盖已存在的空变量 | `main.ts` 改为 `dotenv.config({ override: true })`，以 `.env` 为准 |
 | PM2 显示 errored 但日志为空 | 应用启动即崩，PM2 日志未落盘 | 手动 `node dist/main.js` 捕获真实报错 |
