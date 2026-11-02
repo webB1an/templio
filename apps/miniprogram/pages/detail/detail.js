@@ -102,6 +102,10 @@ Page({
     wx.previewImage({ current: current || urls[0], urls });
   },
 
+  onCoverError() {
+    this.setData({ "item.coverUrl": "" });
+  },
+
   toggleFav() {
     const item = this.data.item;
     if (!item || !item.id || this.data.favPending) return;

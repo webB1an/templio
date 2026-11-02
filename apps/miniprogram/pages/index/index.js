@@ -107,6 +107,13 @@ Page({
     this.loadTemplates(true);
   },
 
+  /** 封面加载失败时回退到渐变占位 */
+  onCoverError(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if (!Number.isInteger(index) || index < 0) return;
+    this.setData({ [`templates[${index}].coverUrl`]: "" });
+  },
+
   goSearch() {
     wx.navigateTo({ url: "/pages/search/search" });
   },

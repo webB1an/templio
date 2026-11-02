@@ -7,7 +7,7 @@
   </view>
 
   <view class="detail-hero tone-{{item.tone}}">
-    <image wx:if="{{item.coverUrl}}" class="hero-img" src="{{item.coverUrl}}" mode="aspectFill" />
+    <image wx:if="{{item.coverUrl}}" class="hero-img" src="{{item.coverUrl}}" mode="aspectFill" binderror="onCoverError" />
     <text class="hero-format">{{item.format}}</text>
     <text class="hero-text">{{item.title}}</text>
   </view>
