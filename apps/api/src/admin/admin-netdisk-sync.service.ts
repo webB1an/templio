@@ -228,7 +228,8 @@ export class AdminNetdiskSyncService {
         await this.templates.removeSourceFile(templateId);
       }
     } catch (error) {
-      const message = (error as Error).message || "网盘同步失败";
+      const rawMessage = (error as Error).message || "网盘同步失败";
+      const message = friendlySyncMessage(rawMessage);
       await update({
         status: "failed",
         progress: 100,
@@ -237,6 +238,20 @@ export class AdminNetdiskSyncService {
       });
     }
   }
+}
+
+function friendlySyncMessage(message: string): string {
+  if (/BaiduPanAuthError|missing STOKEN|BDUSS|login cookies required/i.test(message)) {
+    return "百度 Cookie 缺少 STOKEN/BDUSS 或已失效，请到「网盘账号」重新粘贴完整 Cookie";
+  }
+  if (/QUARK_SKILL_DIR|未配置夸克 Skill/i.test(message)) {
+    return "未配置夸克 Skill，请在服务器设置 QUARK_SKILL_DIR 后重试";
+  }
+  const lines = message
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return (lines.at(-1) || message).slice(0, 800);
 }
 
 function shellQuote(value: string): string {

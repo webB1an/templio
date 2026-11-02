@@ -8,6 +8,10 @@ dist-cjs/
 *.tsbuildinfo
 coverage/
 
+# 密钥文件（小程序代码上传密钥等）
+*.key
+private.*.key
+
 # 本地环境
 .env
 .env.*
