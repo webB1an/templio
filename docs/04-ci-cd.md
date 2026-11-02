@@ -177,6 +177,7 @@ git push origin main
 | 7 天趋势 | `/api/admin/stats` 返回 7 个 date/views/copies 桶 |
 | 存储清理 | 构造 2 个孤儿目录 → dry-run 列出 → `--delete` 删除 → 再次运行 storage 干净 |
 | 模板删除 | DELETE 返回 `{deleted:true}`；DB 记录、公开图片目录、私有源文件目录全部清理；统计回到 13/10/3 |
+| CSV 导出 | `templates.csv` 3136B / UTF-8 BOM / 13 条；`clicks.csv` 表头正常；无 token → 401 |
 
 ### 3.6 公开 API（已上线）
 
@@ -211,7 +212,7 @@ node prisma/seed.cjs
 | --- | --- |
 | 登录 | 账号密码登录，JWT（HMAC-SHA256）12 小时有效 |
 | 概览 | 模板总数、已上架、待复核、已下架；总浏览/下载/收藏、今日互动；热门模板 Top5；最近更新；分类分布 |
-| 模板库 | 搜索 / 状态 / 分类筛选；分页；行内编辑（标题/简介/分类/状态）；单条上下架；批量上下架；删除；封面缩略图；网盘配置；源文件管理；AI 标注 |
+| 模板库 | 搜索 / 状态 / 分类筛选；分页；行内编辑（标题/简介/分类/状态）；单条上下架；批量上下架；删除；封面缩略图；网盘配置；源文件管理；AI 标注；模板/点击 CSV 导出 |
 | 网盘配置 | 模板行「网盘」弹窗：选百度/夸克 → 填分享链接/提取码 → 自动生成短链，可复制/移除；同时管理服务器源文件（下载/删除/一键同步） |
 | AI 标注 | 模板行「AI」弹窗：DeepSeek 读取 `textContent` 生成标题/分类/标签/简介，显示置信度，可「重新标注」/「应用建议」 |
 | AI 批量标注 | 工具栏「AI 批量标注」：一次最多 5 个，自动挑选「已导入/草稿且未标注」的模板，成功后转「待复核」 |
@@ -241,6 +242,8 @@ node prisma/seed.cjs
 | POST | `/api/admin/ai/templates/:id/apply` | 应用 AI 建议（标题/分类/标签/简介） |
 | POST | `/api/admin/ai/batch` | 批量标注（一次最多 5 个） |
 | POST | `/api/admin/ai/auto-apply` | 自动应用 ≥ 阈值的 AI 建议（默认 0.9） |
+| GET | `/api/admin/export/templates.csv` | 导出模板 CSV |
+| GET | `/api/admin/export/clicks.csv?days=30` | 导出最近 N 天点击 CSV |
 
 本地开发：`npm run dev:admin`（Vite 5174，`/api` 代理到 `https://templio.wdbzk.com`）。
 

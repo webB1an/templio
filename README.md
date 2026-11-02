@@ -118,7 +118,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - 地址：<https://templio.wdbzk.com/admin/>
 - 账号：`admin`，密码在服务器 `/www/wwwroot/templio/apps/api/.env` 的 `ADMIN_PASSWORD`
 - 本地开发：`npm run dev:admin`（Vite 5174，`/api` 代理到线上）
-- 功能：登录、概览数据看板（模板/浏览/下载/收藏/待复核/热门模板/近 7 天趋势）、模板库（筛选 / 编辑 / 单条上下架 / 批量上下架 / 删除 / 网盘链接与短链配置 / 源文件下载与自动同步 / 服务器源文件清理 / AI 单条与批量标注 / AI 自动应用 / 待复核队列）、导入说明
+- 功能：登录、概览数据看板（模板/浏览/下载/收藏/待复核/热门模板/近 7 天趋势）、模板库（筛选 / 编辑 / 单条上下架 / 批量上下架 / 删除 / 网盘链接与短链配置 / 源文件下载与自动同步 / 服务器源文件清理 / AI 单条与批量标注 / AI 自动应用 / 待复核队列 / 模板与点击 CSV 导出）、导入说明
 
 ## 小程序
 
