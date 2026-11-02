@@ -57,8 +57,9 @@ export class AdminImportService {
 
     const hash = shortHash(manifest.sourceHash, 8);
     const storageRoot = process.env.STORAGE_ROOT || join(process.cwd(), "storage");
-    const relativeDir = `public/templates/${hash}`;
-    const absoluteDir = join(storageRoot, relativeDir);
+    // Nginx /assets/ 已指向 storage/public，因此 objectKey 不再包含 public 前缀
+    const relativeDir = `templates/${hash}`;
+    const absoluteDir = join(storageRoot, "public", relativeDir);
     await mkdir(absoluteDir, { recursive: true });
 
     const fileCreates: Prisma.TemplateFileCreateWithoutTemplateInput[] = [];
