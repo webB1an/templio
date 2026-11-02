@@ -10,7 +10,8 @@ templio upload D:\\templates-dist --api https://templio.wdbzk.com`;
 const STEPS = [
   "桌面端执行 templio render，把 PPT / Word 渲染成标准物料包（封面/缩略图/预览图 + manifest.json）",
   "执行 templio upload，把物料包上传到服务端导入接口",
-  "回到「模板库」，筛选状态=已导入，复核标题/分类后点「上架」"
+  "回到「模板库」，筛选状态=已导入，复核标题/分类，并点「网盘」补齐分享链接/提取码",
+  "配置好网盘链接后点「上架」，小程序即可展示并复制下载短链"
 ];
 
 export default function ImportPage() {
@@ -33,7 +34,7 @@ export default function ImportPage() {
         </ol>
 
         <Typography.Paragraph type="secondary" style={{ marginTop: 16 }}>
-          导入后的模板状态为「已导入」，此时还未配置网盘下载链接；复核标题与分类后，在模板库点「上架」即可在公开接口/小程序展示。
+          导入后的模板状态为「已导入」；先在模板库点「网盘」补齐分享链接和提取码（保存后自动生成短链），再点「上架」，小程序详情页即可复制下载链接。
         </Typography.Paragraph>
 
         <pre className="cmd-block">{COMMAND}</pre>

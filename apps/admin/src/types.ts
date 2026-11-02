@@ -20,6 +20,9 @@ export interface AdminTemplate {
   tags: string[];
   coverUrl: string | null;
   shortCode: string | null;
+  shortLink: string | null;
+  netdiskUrl: string | null;
+  provider: string | null;
   passcode: string | null;
   hasNetdisk: boolean;
   publishedAt: string | null;

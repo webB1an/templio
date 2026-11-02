@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Key } from "react";
-import { Button, Form, Input, Modal, Select, Space, Table, Tag, message } from "antd";
+import { Button, Form, Input, Modal, Select, Space, Table, Tag, Typography, message } from "antd";
 import type { TableProps } from "antd";
 import { api } from "../api";
 import type { AdminTemplate, Facets, TemplateStatus } from "../types";
@@ -8,11 +8,22 @@ import { STATUS_META, STATUS_OPTIONS, formatSize, formatTime } from "../utils";
 
 const PAGE_SIZE = 10;
 
+const PROVIDER_LABELS: Record<string, string> = {
+  baidu: "百度网盘",
+  quark: "夸克网盘"
+};
+
 interface EditValues {
   title: string;
   description?: string;
   categoryId?: string;
   status: TemplateStatus;
+}
+
+interface NetdiskValues {
+  provider: "baidu" | "quark";
+  url: string;
+  passcode?: string;
 }
 
 export default function Templates() {
@@ -27,7 +38,10 @@ export default function Templates() {
   const [selected, setSelected] = useState<Key[]>([]);
   const [editing, setEditing] = useState<AdminTemplate | null>(null);
   const [saving, setSaving] = useState(false);
+  const [netdiskEditing, setNetdiskEditing] = useState<AdminTemplate | null>(null);
+  const [netdiskSaving, setNetdiskSaving] = useState(false);
   const [form] = Form.useForm<EditValues>();
+  const [netdiskForm] = Form.useForm<NetdiskValues>();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,6 +72,48 @@ export default function Templates() {
       .then(setFacets)
       .catch(() => undefined);
   }, []);
+
+  const openNetdisk = (record: AdminTemplate) => {
+    setNetdiskEditing(record);
+    netdiskForm.setFieldsValue({
+      provider: record.provider === "quark" ? "quark" : "baidu",
+      url: record.netdiskUrl || "",
+      passcode: record.passcode || ""
+    });
+  };
+
+  const saveNetdisk = async () => {
+    if (!netdiskEditing) return;
+    try {
+      const values = await netdiskForm.validateFields();
+      setNetdiskSaving(true);
+      await api.saveNetdisk(netdiskEditing.id, {
+        provider: values.provider,
+        url: values.url.trim(),
+        passcode: values.passcode?.trim() || undefined
+      });
+      message.success("网盘链接已保存，短链已生成");
+      setNetdiskEditing(null);
+      await load();
+    } catch (error) {
+      if (error && typeof error === "object" && "errorFields" in error) return;
+      message.error((error as Error).message);
+    } finally {
+      setNetdiskSaving(false);
+    }
+  };
+
+  const removeNetdisk = async () => {
+    if (!netdiskEditing) return;
+    try {
+      await api.removeNetdisk(netdiskEditing.id);
+      message.success("已移除网盘链接");
+      setNetdiskEditing(null);
+      await load();
+    } catch (error) {
+      message.error((error as Error).message);
+    }
+  };
 
   const changeStatus = async (record: AdminTemplate, next: TemplateStatus) => {
     try {
@@ -157,12 +213,14 @@ export default function Templates() {
     {
       title: "交付",
       dataIndex: "shortCode",
-      width: 170,
-      render: (code: string | null, record) =>
-        code ? (
+      width: 180,
+      render: (_code: string | null, record) =>
+        record.shortCode ? (
           <div>
-            <Tag color="blue">短链</Tag>
-            <span style={{ color: "#8a90a6", fontSize: 12 }}>{code}</span>
+            <Tag color="blue">{PROVIDER_LABELS[record.provider || ""] || "网盘"}</Tag>
+            <Typography.Text copyable={{ text: record.shortLink || "" }} style={{ fontSize: 12 }}>
+              {record.shortCode}
+            </Typography.Text>
             {record.passcode ? (
               <div style={{ color: "#8a90a6", fontSize: 12 }}>提取码 {record.passcode}</div>
             ) : null}
@@ -185,6 +243,9 @@ export default function Templates() {
         <Space size={4}>
           <Button type="link" size="small" onClick={() => openEdit(record)}>
             编辑
+          </Button>
+          <Button type="link" size="small" onClick={() => openNetdisk(record)}>
+            网盘
           </Button>
           {record.status === "published" ? (
             <Button type="link" size="small" danger onClick={() => changeStatus(record, "archived")}>
@@ -289,6 +350,53 @@ export default function Templates() {
             <Select options={STATUS_OPTIONS} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        open={Boolean(netdiskEditing)}
+        title="配置网盘链接"
+        okText="保存"
+        cancelText="取消"
+        confirmLoading={netdiskSaving}
+        onOk={() => void saveNetdisk()}
+        onCancel={() => setNetdiskEditing(null)}
+      >
+        {netdiskEditing?.shortLink ? (
+          <div style={{ marginBottom: 16, fontSize: 13 }}>
+            <Typography.Text type="secondary">当前短链：</Typography.Text>
+            <Typography.Text copyable={{ text: netdiskEditing.shortLink }}>
+              {netdiskEditing.shortLink}
+            </Typography.Text>
+          </div>
+        ) : null}
+        <Form<NetdiskValues> form={netdiskForm} layout="vertical">
+          <Form.Item name="provider" label="网盘类型" rules={[{ required: true }]}>
+            <Select
+              options={[
+                { value: "baidu", label: "百度网盘" },
+                { value: "quark", label: "夸克网盘" }
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            name="url"
+            label="分享链接"
+            rules={[{ required: true, message: "请输入网盘分享链接" }]}
+          >
+            <Input placeholder="https://pan.baidu.com/s/..." maxLength={1000} />
+          </Form.Item>
+          <Form.Item name="passcode" label="提取码（可选）">
+            <Input placeholder="如 abcd，没有可留空" maxLength={32} />
+          </Form.Item>
+        </Form>
+        {netdiskEditing?.hasNetdisk ? (
+          <Button danger onClick={() => void removeNetdisk()}>
+            移除当前网盘链接
+          </Button>
+        ) : null}
+        <div style={{ marginTop: 12, color: "#8a90a6", fontSize: 12, lineHeight: 1.7 }}>
+          保存后自动生成短链，详情页「复制链接和提取码」会复制短链 + 提取码；短链 302 跳到真实网盘地址。
+        </div>
       </Modal>
     </div>
   );

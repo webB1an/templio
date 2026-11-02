@@ -105,5 +105,13 @@ export const api = {
       method: "POST",
       body: { ids, action }
     });
+  },
+
+  saveNetdisk(id: string, body: { provider: string; url: string; passcode?: string }) {
+    return request<AdminTemplate>(`/admin/templates/${id}/netdisk`, { method: "PUT", body });
+  },
+
+  removeNetdisk(id: string) {
+    return request<{ removed: boolean }>(`/admin/templates/${id}/netdisk`, { method: "DELETE" });
   }
 };
