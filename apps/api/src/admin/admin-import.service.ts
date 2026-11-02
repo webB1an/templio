@@ -1,0 +1,108 @@
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { mkdir, writeFile } from "node:fs/promises";
+import { basename, join } from "node:path";
+import { Prisma } from "@prisma/client";
+import { parseManifest, shortHash, templateTextSchema } from "@templio/shared";
+import { PrismaService } from "../prisma/prisma.service";
+
+interface UploadedImage {
+  buffer: Buffer;
+  originalname: string;
+  mimetype: string;
+  size: number;
+}
+
+type UploadedFiles = Record<string, UploadedImage[] | undefined>;
+
+@Injectable()
+export class AdminImportService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async importPackage(
+    files: UploadedFiles,
+    manifestRaw?: string,
+    textRaw?: string,
+  ): Promise<{ status: string; id: string; title: string | null }> {
+    if (!manifestRaw) throw new BadRequestException("缺少 manifest.json");
+
+    let manifest: ReturnType<typeof parseManifest>;
+    try {
+      manifest = parseManifest(JSON.parse(manifestRaw));
+    } catch (error) {
+      throw new BadRequestException(`manifest 不合法：${(error as Error).message}`);
+    }
+
+    let text: ReturnType<typeof templateTextSchema.parse> = templateTextSchema.parse({});
+    if (textRaw) {
+      try {
+        text = templateTextSchema.parse(JSON.parse(textRaw));
+      } catch (error) {
+        throw new BadRequestException(`text.json 不合法：${(error as Error).message}`);
+      }
+    }
+
+    const existing = await this.prisma.template.findUnique({
+      where: { sourceHash: manifest.sourceHash },
+    });
+    if (existing) {
+      return { status: "duplicate", id: existing.id, title: existing.title };
+    }
+
+    const cover = files.cover?.[0];
+    const thumb = files.thumb?.[0];
+    const previews = files.previews || [];
+    if (!cover || !thumb) {
+      throw new BadRequestException("缺少封面（cover）或缩略图（thumb）");
+    }
+
+    const hash = shortHash(manifest.sourceHash, 8);
+    const storageRoot = process.env.STORAGE_ROOT || join(process.cwd(), "storage");
+    const relativeDir = `public/templates/${hash}`;
+    const absoluteDir = join(storageRoot, relativeDir);
+    await mkdir(absoluteDir, { recursive: true });
+
+    const fileCreates: Prisma.TemplateFileCreateWithoutTemplateInput[] = [];
+
+    const saveImage = async (
+      file: UploadedImage,
+      name: string,
+      role: "cover" | "thumb" | "preview",
+      seq: number,
+    ) => {
+      const objectKey = `${relativeDir}/${name}`;
+      await writeFile(join(storageRoot, objectKey), file.buffer);
+      fileCreates.push({
+        role,
+        objectKey,
+        mime: file.mimetype || "image/webp",
+        size: BigInt(file.size || file.buffer.length),
+        seq,
+      });
+    };
+
+    await saveImage(cover, "cover.webp", "cover", 0);
+    await saveImage(thumb, "thumb.webp", "thumb", 0);
+    for (let index = 0; index < previews.length; index += 1) {
+      await saveImage(previews[index]!, `preview-${String(index + 1).padStart(2, "0")}.webp`, "preview", index);
+    }
+
+    const title = (manifest.titleGuess || text.title || basename(manifest.sourceFile)).slice(0, 200);
+    const template = await this.prisma.template.create({
+      data: {
+        sourceHash: manifest.sourceHash,
+        title,
+        description: text.firstPagesText?.[0]?.slice(0, 500) || null,
+        status: "imported",
+        format: manifest.format,
+        pageCount: manifest.pageCount,
+        fileSize: BigInt(manifest.sourceBytes),
+        originalName: basename(manifest.sourceFile),
+        batchKey: "cli",
+        textContent: text as unknown as Prisma.InputJsonValue,
+        files: { create: fileCreates },
+      },
+    });
+
+    return { status: "imported", id: template.id, title: template.title };
+  }
+}

@@ -65,6 +65,7 @@ model Template {
   fileSize      BigInt?
   originalName  String?        @db.VarChar(255)
   batchKey      String?        @db.VarChar(64)
+  textContent   Json?
   viewCount     Int            @default(0)
   copyCount     Int            @default(0)
   favoriteCount Int            @default(0)

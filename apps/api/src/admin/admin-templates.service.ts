@@ -59,6 +59,7 @@ export class AdminTemplatesService {
         take: limit,
         include: {
           category: true,
+          files: { orderBy: { seq: "asc" } },
           tags: { include: { tag: true }, orderBy: { sort: "asc" } },
           netdiskLinks: {
             where: { isActive: true },
@@ -158,6 +159,7 @@ export class AdminTemplatesService {
       data,
       include: {
         category: true,
+        files: { orderBy: { seq: "asc" } },
         tags: { include: { tag: true } },
         netdiskLinks: { include: { shortLinks: true } },
       },
@@ -201,9 +203,12 @@ export class AdminTemplatesService {
     updatedAt: Date;
     category: { id: string; name: string; slug: string } | null;
     tags: Array<{ tag: { name: string } }>;
+    files: Array<{ role: string; objectKey: string }>;
     netdiskLinks: Array<{ url: string; passcode: string | null; shortLinks: Array<{ code: string }> }>;
   }) {
     const primary = row.netdiskLinks[0];
+    const coverFile = row.files.find((file) => file.role === "cover");
+    const appOrigin = (process.env.APP_ORIGIN || "https://templio.wdbzk.com").replace(/\/$/, "");
     return {
       id: row.id,
       title: row.title || row.originalName || "未命名模板",
@@ -214,6 +219,7 @@ export class AdminTemplatesService {
       fileSize: row.fileSize ? Number(row.fileSize) : 0,
       category: row.category ? { id: row.category.id, name: row.category.name, key: row.category.slug } : null,
       tags: row.tags.map((item) => item.tag.name),
+      coverUrl: coverFile ? `${appOrigin}/assets/${coverFile.objectKey}` : null,
       shortCode: primary?.shortLinks?.[0]?.code || null,
       passcode: primary?.passcode || null,
       hasNetdisk: Boolean(primary?.url),

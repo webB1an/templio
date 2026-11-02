@@ -17,6 +17,7 @@ type TemplateWithRelations = Prisma.TemplateGetPayload<{
     category: true;
     tags: { include: { tag: true } };
     netdiskLinks: { include: { shortLinks: true } };
+    files: true;
   };
 }>;
 
@@ -31,6 +32,8 @@ export interface PublicTemplateDto {
   tags: string[];
   tone: string;
   summary: string;
+  coverUrl: string | null;
+  previewUrls: string[];
   shortLink: string | null;
   passcode: string | null;
   publishedAt: string | null;
@@ -76,6 +79,7 @@ export class PublicTemplatesService {
         take: limit,
         include: {
           category: true,
+          files: { orderBy: { seq: "asc" } },
           tags: { include: { tag: true }, orderBy: { sort: "asc" } },
           netdiskLinks: {
             where: { isActive: true },
@@ -94,6 +98,7 @@ export class PublicTemplatesService {
       where: { id, status: "published" },
       include: {
         category: true,
+        files: { orderBy: { seq: "asc" } },
         tags: { include: { tag: true }, orderBy: { sort: "asc" } },
         netdiskLinks: {
           where: { isActive: true },
@@ -114,6 +119,7 @@ export class PublicTemplatesService {
       take: 4,
       include: {
         category: true,
+        files: { orderBy: { seq: "asc" } },
         tags: { include: { tag: true }, orderBy: { sort: "asc" } },
         netdiskLinks: {
           where: { isActive: true },
@@ -163,6 +169,8 @@ export class PublicTemplatesService {
     const code = primaryLink?.shortLinks?.[0]?.code;
     const appOrigin = (process.env.APP_ORIGIN || "https://templio.wdbzk.com").replace(/\/$/, "");
     const categoryKey = row.category?.slug || "";
+    const coverFile = row.files.find((file) => file.role === "cover");
+    const previewFiles = row.files.filter((file) => file.role === "preview");
 
     return {
       id: row.id,
@@ -175,6 +183,8 @@ export class PublicTemplatesService {
       tags: row.tags.map((item) => item.tag.name),
       tone: TONE_BY_CATEGORY[categoryKey] || "pink",
       summary: row.description || "",
+      coverUrl: coverFile ? `${appOrigin}/assets/${coverFile.objectKey}` : null,
+      previewUrls: previewFiles.map((file) => `${appOrigin}/assets/${file.objectKey}`),
       shortLink: code ? `${appOrigin}/r/${code}` : null,
       passcode: primaryLink?.passcode || null,
       publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
