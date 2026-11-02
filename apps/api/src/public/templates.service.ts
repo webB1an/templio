@@ -12,7 +12,7 @@ const TONE_BY_CATEGORY: Record<string, string> = {
   report: "indigo",
 };
 
-type TemplateWithRelations = Prisma.TemplateGetPayload<{
+export type TemplateWithRelations = Prisma.TemplateGetPayload<{
   include: {
     category: true;
     tags: { include: { tag: true } };
@@ -164,7 +164,7 @@ export class PublicTemplatesService {
     };
   }
 
-  private toDto(row: TemplateWithRelations): PublicTemplateDto {
+  toDto(row: TemplateWithRelations): PublicTemplateDto {
     const primaryLink = row.netdiskLinks[0];
     const code = primaryLink?.shortLinks?.[0]?.code;
     const appOrigin = (process.env.APP_ORIGIN || "https://templio.wdbzk.com").replace(/\/$/, "");

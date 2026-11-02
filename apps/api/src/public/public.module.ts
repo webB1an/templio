@@ -6,5 +6,6 @@ import { ShortLinkController } from "./short-link.controller";
 @Module({
   controllers: [PublicTemplatesController, ShortLinkController],
   providers: [PublicTemplatesService],
+  exports: [PublicTemplatesService],
 })
 export class PublicModule {}
