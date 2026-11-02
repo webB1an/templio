@@ -170,6 +170,9 @@ git push origin main
 | 管理端计数 | 管理端模板列表 `viewCount=1 / copyCount=1`；测试后清理归零 |
 | 数据看板 | `/api/admin/stats` 返回 total=13 / published=10 / pendingReview=3 / 总浏览 1935 / 今日互动 / 热门模板 5 条 |
 | AI 自动应用 | `/api/admin/ai/auto-apply`（≥0.9）→ 3/3 应用，`needsReview=false`，3 条仍待人工上架 |
+| 源文件上传 | `templio upload --with-source` → `source` 暂存 `/storage/private/sources/<hash8>/`，大小 68688 字节 |
+| 源文件下载 | `GET /api/admin/templates/:id/source` → 200，`Content-Disposition` 中文文件名正确 |
+| 源文件清理 | `DELETE .../source` → 删除文件与 `TemplateFile` 记录；再次下载 404 |
 
 ### 3.6 公开 API（已上线）
 
@@ -205,7 +208,7 @@ node prisma/seed.cjs
 | 登录 | 账号密码登录，JWT（HMAC-SHA256）12 小时有效 |
 | 概览 | 模板总数、已上架、待复核、已下架；总浏览/下载/收藏、今日互动；热门模板 Top5；最近更新；分类分布 |
 | 模板库 | 搜索 / 状态 / 分类筛选；分页；行内编辑（标题/简介/分类/状态）；单条上下架；批量上下架；封面缩略图 |
-| 网盘配置 | 模板行「网盘」弹窗：选百度/夸克 → 填分享链接/提取码 → 自动生成短链，可复制/移除 |
+| 网盘配置 | 模板行「网盘」弹窗：选百度/夸克 → 填分享链接/提取码 → 自动生成短链，可复制/移除；同时管理服务器源文件（下载/删除） |
 | AI 标注 | 模板行「AI」弹窗：DeepSeek 读取 `textContent` 生成标题/分类/标签/简介，显示置信度，可「重新标注」/「应用建议」 |
 | AI 批量标注 | 工具栏「AI 批量标注」：一次最多 5 个，自动挑选「已导入/草稿且未标注」的模板，成功后转「待复核」 |
 | AI 自动应用 | 工具栏「AI 自动应用」：置信度 ≥90% 且 safe 的建议批量写回模板（最多 20 条），仍保留待复核状态，需人工上架 |
@@ -226,6 +229,8 @@ node prisma/seed.cjs
 | POST | `/api/admin/import/package` | 物料包导入（multipart：`manifest` / `text` / `cover` / `thumb` / `previews`） |
 | PUT | `/api/admin/templates/:id/netdisk` | 配置网盘链接/提取码并生成短链 |
 | DELETE | `/api/admin/templates/:id/netdisk` | 移除网盘链接（短链随之失效） |
+| GET | `/api/admin/templates/:id/source` | 下载服务器暂存源文件 |
+| DELETE | `/api/admin/templates/:id/source` | 删除服务器暂存源文件 |
 | POST | `/api/admin/ai/templates/:id` | DeepSeek 标注（生成 AiAnalysis） |
 | POST | `/api/admin/ai/templates/:id/apply` | 应用 AI 建议（标题/分类/标签/简介） |
 | POST | `/api/admin/ai/batch` | 批量标注（一次最多 5 个） |
@@ -343,6 +348,33 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - `/api/admin/stats` → total 13 / published 10 / pendingReview 3 / 总浏览 1935 / 热门模板 5 条
 - `/api/admin/ai/auto-apply`（≥0.9）→ 3/3 应用成功；3 条待复核 AI 建议 `needsReview=false`，标题更新为 AI 建议
 
+### 3.14 源文件暂存、下载与清理（已上线）
+
+**流程（当前手动网盘版）：**
+
+```
+templio upload <dist> --with-source
+→ 服务端校验 sourceBytes/扩展名 → 暂存 storage/private/sources/<hash8>/<文件名>
+→ 管理端「网盘」弹窗下载源文件
+→ 手动上传百度/夸克网盘，填分享链接/提取码
+→ 确认后「删除服务器源文件」
+```
+
+| 能力 | 说明 |
+| --- | --- |
+| CLI | `upload --with-source`，multipart 字段 `source`；上限 80MB；Nginx `client_max_body_size 108m` |
+| 导入校验 | 源文件大小需与 `manifest.sourceBytes` 一致；扩展名需匹配格式（pptx/docx） |
+| 存储 | `storage/private/sources/<hash8>/`，`TemplateFile.role=source` |
+| 管理端 | 「网盘」弹窗显示源文件名/大小；下载（带 token fetch → blob）；删除 |
+| 接口 | `GET/DELETE /api/admin/templates/:id/source` |
+
+**已验证：**
+
+- 上传 68688 字节源文件 → 管理端 DTO 返回中文文件名、大小 67 KB
+- 下载 → 200，字节数一致，`Content-Disposition` 中文编码正确
+- 删除 → `{removed:true}`；文件被删；再次下载 404
+- 测试模板与存储目录已清理
+
 ---
 
 ## 4. 服务器现状（不含敏感信息）
@@ -363,7 +395,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 
 1. 微信小程序：AppID / AppSecret 已在服务器 `.env` 配置；还需要公众平台下载的「代码上传密钥」才能让 CI 上传体验版
 2. 百度网盘 / 夸克网盘官方 Skill 安装与账号授权（目前网盘链接需在管理端手动填写）
-3. 源文件上传 → 网盘同步 → 校验后删除服务器源文件
+3. 网盘 Skill 自动同步/删除（源文件暂存与手动清理已上线）
 4. 数据趋势图/周报与自动上架阈值配置（当前只有 Top5 与今日汇总）
 
 ---
@@ -400,5 +432,6 @@ npm run dev:api
 | API 启动报 `ERR_PACKAGE_PATH_NOT_EXPORTED`，PM2 反复 errored | `@templio/shared` 只有 ESM 输出，API 是 CommonJS | shared 增加 `dist-cjs` 双构建 + `exports.require` + `dist-cjs/package.json {"type":"commonjs"}`，部署同步 `dist-cjs/` |
 | 导入后封面 URL `/assets/public/templates/...` 404 | objectKey 里多带了一层 `public/`（Nginx `/assets/` 已指向 `storage/public`） | objectKey 改为 `templates/<hash8>/...`，并修正历史数据 |
 | 导入新模板报 500 `ENOENT storage/templates/<hash>/cover.webp` | writeFile 路径漏了 `storage/public` 前缀 | 写入使用 `join(STORAGE_ROOT, "public", objectKey)` |
+| 上传源文件中文名乱码 | multipart filename 被 busboy 按 latin1 解码 | 服务端按 latin1→UTF-8 还原，失败保留原值 |
 | 微信登录报「服务端未配置 AppID/AppSecret」，但 `.env` 里有值 | PM2 带着空值环境启动，dotenv 默认不覆盖已存在的空变量 | `main.ts` 改为 `dotenv.config({ override: true })`，以 `.env` 为准 |
 | PM2 显示 errored 但日志为空 | 应用启动即崩，PM2 日志未落盘 | 手动 `node dist/main.js` 捕获真实报错 |

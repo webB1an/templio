@@ -1,0 +1,19 @@
+{
+  "title": "基于深度学习的图像分类方法研究",
+  "outline": [
+    "1.0 UTF-8 yes FFFFFF 1 0 0 0 0 0 0 0 0 2 Text 0 640080 13716",
+    "1.0 UTF-8 yes FFFFFF 1 0 0 0 0 0 0 0 0 2 Text 0 640080 54864",
+    "1.0 UTF-8 yes FFFFFF 1 0 0 0 0 0 0 0 0 2 Text 0 640080 54864",
+    "1.0 UTF-8 yes FFFFFF 1 0 0 0 0 0 0 0 0 2 Text 0 640080 54864"
+  ],
+  "firstPagesText": [
+    "1.0 UTF-8 yes FFFFFF 1 0 0 0 0 0 0 0 0 2 Text 0 640080 1371600 7863840 1188720 rect square 0 ctr 0 0 1F3A2E Microsoft YaHei 34 0 Microsoft YaHei 34 -122 Microsoft YaHei 34 -120 en-US 3600 1 0 基于深度学习的图像分类方法研究 en-US 3600 0 3 Text 1 640080 2651760 7863840 548640 rect square 0 ctr 0 0 2E7D5B Microsoft YaHei 34 0 Microsoft YaHei 34 -122 Microsoft YaHei 34 -120 en-US 1800 0 硕士学位论文答辩 · 2026 届 en-US 1800 0 4 Text 2 640080 4480560 7863840 365760 rect square 0 ctr 0 0 45524A Microsoft YaHei 34 0 Microsoft YaHei 34 -122 Microsoft YaHei 34 -120 en-US 1100 0 Templio 模板测样 · 渲染管线验证 en-US 1100 0 Slide 1",
+    "1.0 UTF-8 yes FFFFFF 1 0 0 0 0 0 0 0 0 2 Text 0 640080 548640 7863840 731520 rect square 0 ctr 0 0 1F3A2E Microsoft YaHei 34 0 Microsoft YaHei 34 -122 Microsoft YaHei 34 -120 en-US 2800 1 0 研究背景与意义 en-US 2800 0 3 Text 1 822960 1554480 7498080 2560320 rect square 0 ctr 2800 100000 &#x2022; 342900 -342900 45524A Microsoft YaHei 34 0 Microsoft YaHei 34 -122 Microsoft YaHei 34 -120 en-US 1800 0 图像数据规模快速增长 en-US 1800 0 2800 100000 &#x2022; 342900 -342900 45524A Microsoft YaHei 34 0 Microsoft YaHei 34 -122 Microsoft YaHei 34 -120 en-US 1800 0 传统方法在复杂场景下泛化能力不足 en-US 1800 0 2800 100000 &#x2022; 342900 -342900 45524A Microsoft YaHei 34 0 Microsoft YaHei 34 -122 Microsoft YaHei 34 -120 en-US 1800 0 深度模型为自动化分类提供新思路 en-US 1800 0 Slide 2",
+    "1.0 UTF-8 yes FFFFFF 1 0 0 0 0 0 0 0 0 2 Text 0 640080 548640 7863840 731520 rect square 0 ctr 0 0 1F3A2E Microsoft YaHei 34 0 Microsoft YaHei 34 -122 Microsoft YaHei 34 -120 en-US 2800 1 0 方法与实验设计 en-US 2800 0 3 Text 1 822960 1554480 7498080 2560320 rect square 0 ctr 2800 100000 &#x2022; 342900 -342900 45524A Microsoft YaHei 34 0 Microsoft YaHei 34 -122 Microsoft YaHei 34 -120 en-US 1800 0 构建多尺度特征融合网络 en-US 1800 0 2800 100000 &#x2022; 342900 -342900 45524A Microsoft YaHei 34 0 Microsoft YaHei 34 -122 Microsoft YaHei 34 -120 en-US 1800 0 在公开数据集上进行对比实验 en-US 1800 0 2800 100000 &#x2022; 342900 -342900 45524A Microsoft YaHei 34 0 Microsoft YaHei 34 -122 Microsoft YaHei 34 -120 en-US 1800 0 消融实验验证各模块有效性 en-US 1800 0 Slide 3"
+  ],
+  "slideCount": 4,
+  "wordCount": 2783,
+  "fonts": [
+    "Microsoft YaHei"
+  ]
+}

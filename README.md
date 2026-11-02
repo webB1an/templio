@@ -64,7 +64,7 @@ npm run status -- fixtures/packages
 | `doctor` | 检查 LibreOffice / 中文字体 / Node / 图片预算 |
 | `render <srcDir> -o <out>` | 批量渲染：OOXML 抽文字 → LibreOffice 转 PDF → 图片 → 物料包 |
 | `status [distDir]` | 校验物料包 manifest 与文件完整性 |
-| `upload <distDir>` | 上传物料包到服务端导入接口（支持 `--limit` / `--dry-run`） |
+| `upload <distDir>` | 上传物料包（`--with-source` 同时暂存源文件；支持 `--limit` / `--dry-run`） |
 | `fixtures` | 生成合成 PPT/Word 测试模板（开发用） |
 
 渲染管线特性：SHA-256 幂等（同文件跳过）、`.ledger.jsonl` 断点账本、LibreOffice 独立 profile 并发、字体名抽取告警、图片体积预算内自动降质。
@@ -92,7 +92,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - 物料包按源文件 SHA-256 幂等，重复上传会返回 duplicate，不会重复创建
 - 导入后模板状态为 `imported`，在管理端「模板库」复核：可点「AI」让 DeepSeek 生成标题/分类/标签/简介并一键应用，再点「网盘」补齐分享链接/提取码（自动生成短链），最后「上架」
 - 封面/缩略图/预览图保存到 `storage/public/templates/<hash8>/`，由 `/assets/` 直出
-- 源文件暂不上传（等百度/夸克网盘同步接入后再补）
+- `--with-source` 可把源文件暂存到 `storage/private/sources/<hash8>/`；管理端「网盘」弹窗可下载/删除，确认源文件已上传网盘后务必删除服务器源文件
 
 ## 用户登录与收藏
 
@@ -114,7 +114,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - 地址：<https://templio.wdbzk.com/admin/>
 - 账号：`admin`，密码在服务器 `/www/wwwroot/templio/apps/api/.env` 的 `ADMIN_PASSWORD`
 - 本地开发：`npm run dev:admin`（Vite 5174，`/api` 代理到线上）
-- 功能：登录、概览数据看板（模板/浏览/下载/收藏/待复核/热门模板）、模板库（筛选 / 编辑 / 单条上下架 / 批量上下架 / 网盘链接与短链配置 / AI 单条与批量标注 / AI 自动应用 / 待复核队列）、导入说明
+- 功能：登录、概览数据看板（模板/浏览/下载/收藏/待复核/热门模板）、模板库（筛选 / 编辑 / 单条上下架 / 批量上下架 / 网盘链接与短链配置 / 服务器源文件管理 / AI 单条与批量标注 / AI 自动应用 / 待复核队列）、导入说明
 
 ## 小程序
 
