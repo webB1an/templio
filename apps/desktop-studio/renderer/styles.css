@@ -150,6 +150,13 @@ body {
   gap: 8px;
 }
 
+.field-hint {
+  margin: 7px 2px 0;
+  color: var(--ink-3);
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+
 input[type="text"],
 input[readonly] {
   width: 100%;

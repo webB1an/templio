@@ -207,6 +207,14 @@ ipcMain.handle("studio:render", async (_event, payload) => {
     return { ok: false, error: "源文件夹不存在" };
   }
 
+  const relativeOutput = path.relative(srcDir, outDir);
+  if (!relativeOutput || (!relativeOutput.startsWith("..") && !path.isAbsolute(relativeOutput))) {
+    return {
+      ok: false,
+      error: "输出文件夹不能放在源文件夹内部；否则下次递归扫描会把生成的 source 文件也当成模板"
+    };
+  }
+
   rendering = true;
   try {
     await ensureEngine();
