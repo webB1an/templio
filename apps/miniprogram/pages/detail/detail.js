@@ -1,12 +1,18 @@
 const { TEMPLATES, findTemplate } = require("../../data/mock");
 const { getNavMetrics } = require("../../utils/layout");
-const { fetchTemplateDetail } = require("../../utils/api");
+const {
+  fetchTemplateDetail,
+  fetchFavoriteStatus,
+  addFavorite,
+  removeFavorite
+} = require("../../utils/api");
 
 Page({
   data: {
     item: null,
     related: [],
     fav: false,
+    favPending: false,
     navTop: 20,
     navHeight: 44,
     menuRight: 96,
@@ -18,17 +24,17 @@ Page({
     const id = options.id || "demo-01";
     const item = findTemplate(id);
     const related = TEMPLATES.filter((template) => template.id !== item.id).slice(0, 4);
-    const favIds = wx.getStorageSync("favIds") || [];
 
     this.setData({
       item,
       related,
-      fav: favIds.indexOf(item.id) >= 0,
       navTop: metrics.statusBarHeight,
       navHeight: metrics.navHeight,
       menuRight: metrics.menuRight,
       contentTop: metrics.statusBarHeight + metrics.navHeight + 24
     });
+
+    this.loadFavoriteState(id);
 
     fetchTemplateDetail(id)
       .then((data) => {
@@ -37,10 +43,23 @@ Page({
             item: data,
             related: Array.isArray(data.related) && data.related.length ? data.related : related
           });
+          this.loadFavoriteState(data.id);
         }
       })
       .catch(() => {
         // 接口未就绪时使用 mock
+      });
+  },
+
+  loadFavoriteState(id) {
+    const app = getApp();
+    if (!app || !app.ensureLogin) return;
+    app
+      .ensureLogin()
+      .then(() => fetchFavoriteStatus(id))
+      .then((data) => this.setData({ fav: Boolean(data && data.favorited) }))
+      .catch(() => {
+        // 静默登录失败时保持未收藏状态
       });
   },
 
@@ -75,15 +94,22 @@ Page({
 
   toggleFav() {
     const item = this.data.item;
-    if (!item) return;
-    let favIds = wx.getStorageSync("favIds") || [];
+    if (!item || !item.id || this.data.favPending) return;
     const nextFav = !this.data.fav;
-    favIds = nextFav
-      ? favIds.concat(item.id).filter((id, index, arr) => arr.indexOf(id) === index)
-      : favIds.filter((id) => id !== item.id);
-    wx.setStorageSync("favIds", favIds);
-    this.setData({ fav: nextFav });
-    wx.showToast({ title: nextFav ? "已收藏" : "已取消收藏", icon: "none" });
+    this.setData({ fav: nextFav, favPending: true });
+
+    const app = getApp();
+    const ready = app && app.ensureLogin ? app.ensureLogin() : Promise.resolve();
+    ready
+      .then(() => (nextFav ? addFavorite(item.id) : removeFavorite(item.id)))
+      .then((data) => {
+        this.setData({ fav: Boolean(data && data.favorited), favPending: false });
+        wx.showToast({ title: data && data.favorited ? "已收藏" : "已取消收藏", icon: "none" });
+      })
+      .catch((error) => {
+        this.setData({ fav: !nextFav, favPending: false });
+        wx.showToast({ title: (error && error.message) || "操作失败", icon: "none" });
+      });
   },
 
   openRelated(event) {

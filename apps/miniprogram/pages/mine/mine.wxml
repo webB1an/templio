@@ -12,8 +12,8 @@
   <view class="profile glass">
     <view class="avatar">T</view>
     <view class="profile-main">
-      <text class="profile-name">微信用户</text>
-      <text class="profile-sub">登录后可同步收藏与下载记录</text>
+      <text class="profile-name">{{userName}}</text>
+      <text class="profile-sub">{{userSub}}</text>
     </view>
   </view>
 

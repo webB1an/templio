@@ -1,4 +1,5 @@
 const { getNavMetrics } = require("../../utils/layout");
+const { fetchFavorites } = require("../../utils/api");
 
 Page({
   data: {
@@ -6,13 +7,9 @@ Page({
     navHeight: 44,
     menuRight: 96,
     contentTop: 96,
-    favCount: 0,
-    menu: [
-      { key: "favorites", icon: "♡", label: "我的收藏", tip: "已收藏模板" },
-      { key: "downloads", icon: "↓", label: "下载记录", tip: "最近获取" },
-      { key: "about", icon: "ⓘ", label: "关于模板宝", tip: "v0.1.0 P0" },
-      { key: "feedback", icon: "✉", label: "意见反馈", tip: "帮助改进" }
-    ]
+    userName: "微信用户",
+    userSub: "微信静默登录 · 收藏云端同步",
+    favCount: 0
   },
 
   onLoad() {
@@ -29,19 +26,37 @@ Page({
     if (typeof this.getTabBar === "function" && this.getTabBar()) {
       this.getTabBar().setData({ selected: 2 });
     }
-    const favIds = wx.getStorageSync("favIds") || [];
-    this.setData({ favCount: favIds.length });
+    const app = getApp();
+    const cachedUser = wx.getStorageSync("userInfo") || {};
+    this.setData({
+      userName: cachedUser.nickname || "微信用户",
+      userSub: app && app.globalData.token ? "微信静默登录 · 收藏云端同步" : "正在静默登录..."
+    });
+    this.syncFavorites();
+  },
+
+  syncFavorites() {
+    const app = getApp();
+    if (!app || !app.ensureLogin) return;
+    app
+      .ensureLogin()
+      .then(() => fetchFavorites())
+      .then((data) => {
+        const items = (data && data.items) || [];
+        this.setData({
+          favCount: items.length,
+          userSub: "微信静默登录 · 收藏云端同步"
+        });
+      })
+      .catch(() => {
+        this.setData({ userSub: "登录失败，收藏暂不可用" });
+      });
   },
 
   onMenu(event) {
     const key = event.currentTarget.dataset.key;
     if (key === "favorites") {
-      if (this.data.favCount === 0) {
-        wx.showToast({ title: "还没有收藏的模板", icon: "none" });
-        return;
-      }
-      wx.switchTab({ url: "/pages/index/index" });
-      wx.showToast({ title: "收藏列表将在 P1 开放", icon: "none" });
+      wx.navigateTo({ url: "/pages/favorites/favorites" });
       return;
     }
     if (key === "about") {
