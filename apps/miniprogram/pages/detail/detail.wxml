@@ -12,7 +12,7 @@
   </view>
 
   <view class="detail-hero tone-{{item.tone}}" bindtap="previewImage">
-    <image wx:if="{{item.coverUrl}}" class="hero-img" src="{{item.coverUrl}}" mode="aspectFill" binderror="onCoverError" />
+    <image wx:if="{{item.previewUrls[0] || item.coverUrl}}" class="hero-img {{item.previewUrls.length ? '' : 'hero-img-cover'}}" src="{{item.previewUrls[0] || item.coverUrl}}" mode="aspectFill" binderror="onCoverError" />
     <text class="hero-format">{{item.format}}</text>
     <view wx:if="{{!item.coverUrl}}" class="hero-fallback">
       <text class="hero-fallback-format">{{item.formatLabel || item.format}}</text>

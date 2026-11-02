@@ -1,6 +1,6 @@
 <view class="tcard" bindtap="onOpen" hover-class="tcard-hover">
   <view class="tcard-cover tone-{{item.tone}}">
-    <image wx:if="{{imageUrl}}" class="tcard-img" src="{{imageUrl}}" mode="aspectFill" lazy-load />
+    <image wx:if="{{imageUrl}}" class="tcard-img {{imageIsCover ? 'tcard-img-cover' : ''}}" src="{{imageUrl}}" mode="aspectFill" lazy-load />
     <view wx:else class="tcard-fallback">
       <view class="tcard-fallback-panel"></view>
       <text class="tcard-fallback-format">{{formatLabel}}</text>

@@ -4,12 +4,12 @@ Component({
       type: Object,
       value: {},
       observer(item) {
-        const imageUrl =
-          (item && item.coverUrl) ||
-          (item && item.previewUrls && item.previewUrls.length ? item.previewUrls[0] : "") ||
-          "";
+        const previewUrl =
+          item && item.previewUrls && item.previewUrls.length ? item.previewUrls[0] : "";
+        const coverUrl = (item && item.coverUrl) || "";
         this.setData({
-          imageUrl,
+          imageUrl: previewUrl || coverUrl,
+          imageIsCover: !previewUrl && Boolean(coverUrl),
           formatLabel: (item && item.formatLabel) || shortFormat(item && item.format),
           viewCountText: (item && item.viewCountText) || shortCount(item && item.viewCount)
         });
@@ -20,6 +20,7 @@ Component({
 
   data: {
     imageUrl: "",
+    imageIsCover: false,
     formatLabel: "文件",
     viewCountText: ""
   },

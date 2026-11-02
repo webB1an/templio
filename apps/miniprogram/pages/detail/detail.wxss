@@ -67,11 +67,17 @@
 
 .hero-img {
   position: absolute;
-  left: -6%;
+  left: 0;
   top: 0;
-  width: 112%;
+  width: 100%;
   height: 100%;
   z-index: 0;
+}
+
+/* 只有封面（带模糊衬底）时才横向放大裁边 */
+.hero-img-cover {
+  left: -6%;
+  width: 112%;
 }
 
 .hero-format {

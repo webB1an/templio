@@ -20,16 +20,22 @@
 
 .tcard-cover {
   position: relative;
-  height: 230rpx;
+  height: 200rpx;
   overflow: hidden;
 }
 
 .tcard-img {
   position: absolute;
-  left: -6%;
+  left: 0;
   top: 0;
-  width: 112%;
+  width: 100%;
   height: 100%;
+}
+
+/* 没有预览图、只能用带模糊衬底的封面时，裁掉两侧衬底 */
+.tcard-img-cover {
+  left: -6%;
+  width: 112%;
 }
 
 .tcard-fallback {
