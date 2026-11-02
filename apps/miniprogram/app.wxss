@@ -113,9 +113,14 @@ page {
 }
 
 .nav-inner {
-  height: 84rpx;
+  height: 88rpx;
   display: flex;
   align-items: center;
+}
+
+/* 吸顶时导航与分类栏合并成一整块玻璃 */
+.nav-stuck {
+  border-bottom-color: transparent;
 }
 
 .brand {
@@ -216,7 +221,7 @@ page {
   border-right: none;
   border-top: none;
   border-bottom: 1rpx solid rgba(255, 255, 255, 0.66);
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.5);
   box-shadow: 0 10rpx 24rpx rgba(31, 58, 100, 0.08);
 }
 

@@ -1,4 +1,4 @@
-<view class="nav" style="padding-top: {{navTop}}px;">
+<view class="nav {{sticky ? 'nav-stuck' : ''}}" style="padding-top: {{navTop}}px;">
   <view class="nav-inner" style="margin-right: {{menuRight}}px;">
     <text class="brand">模板宝</text>
     <text class="brand-sub">模板库</text>

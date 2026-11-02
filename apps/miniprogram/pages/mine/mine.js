@@ -126,7 +126,7 @@ Page({
     if (key === "feedback") {
       wx.showModal({
         title: "意见反馈",
-        content: "欢迎反馈模板需求或问题：\nfeedback@wdbzk.com",
+        content: "欢迎反馈模板需求或问题：\n475008394@qq.com",
         showCancel: false
       });
       return;
