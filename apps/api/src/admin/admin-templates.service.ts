@@ -292,7 +292,7 @@ export class AdminTemplatesService {
 
   async saveNetdisk(
     id: string,
-    body: { provider?: unknown; url?: unknown; passcode?: unknown },
+    body: { provider?: unknown; url?: unknown; passcode?: unknown; accountId?: unknown },
   ): Promise<unknown> {
     const template = await this.prisma.template.findUnique({ where: { id } });
     if (!template) throw new NotFoundException("模板不存在");
@@ -340,6 +340,9 @@ export class AdminTemplatesService {
       status: "synced" as const,
       isPrimary: true,
       isActive: true,
+      ...(typeof body.accountId === "string" && body.accountId
+        ? { storageAccountId: body.accountId }
+        : {}),
     };
 
     const link = existing
