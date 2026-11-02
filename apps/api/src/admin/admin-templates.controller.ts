@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { AdminAuthGuard } from "./auth.guard";
 import { AdminTemplatesService } from "./admin-templates.service";
 
@@ -36,5 +36,18 @@ export class AdminTemplatesController {
   @Post("templates/bulk")
   bulk(@Body() body: { ids?: unknown; action?: unknown }) {
     return this.templates.bulk(body.ids, body.action);
+  }
+
+  @Put("templates/:id/netdisk")
+  saveNetdisk(
+    @Param("id") id: string,
+    @Body() body: { provider?: unknown; url?: unknown; passcode?: unknown },
+  ) {
+    return this.templates.saveNetdisk(id, body);
+  }
+
+  @Delete("templates/:id/netdisk")
+  removeNetdisk(@Param("id") id: string) {
+    return this.templates.removeNetdisk(id);
   }
 }
