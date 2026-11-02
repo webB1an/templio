@@ -41,6 +41,7 @@ export default function Templates() {
   const [netdiskEditing, setNetdiskEditing] = useState<AdminTemplate | null>(null);
   const [netdiskSaving, setNetdiskSaving] = useState(false);
   const [sourceDownloading, setSourceDownloading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [aiEditing, setAiEditing] = useState<AdminTemplate | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiApplying, setAiApplying] = useState(false);
@@ -166,6 +167,41 @@ export default function Templates() {
         }
       }
     });
+  };
+
+  const syncNetdisk = async () => {
+    if (!netdiskEditing?.source) {
+      message.warning("该模板没有服务器源文件");
+      return;
+    }
+    const provider = (netdiskForm.getFieldValue("provider") as "baidu" | "quark") || "baidu";
+    setSyncing(true);
+    try {
+      const started = await api.startNetdiskSync(netdiskEditing.id, provider);
+      if (started.status === "failed") {
+        message.error(started.message || "网盘同步启动失败");
+        return;
+      }
+      for (let attempt = 0; attempt < 120; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const task = await api.getTask(started.taskId);
+        if (task.status === "success") {
+          message.success("网盘同步完成，短链已生成，服务器源文件已清理");
+          setNetdiskEditing(null);
+          await load();
+          return;
+        }
+        if (task.status === "failed") {
+          message.error(task.error || task.message || "网盘同步失败");
+          return;
+        }
+      }
+      message.warning("同步超时，请稍后刷新模板库查看");
+    } catch (error) {
+      message.error((error as Error).message);
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const runAi = async (record: AdminTemplate) => {
@@ -531,6 +567,14 @@ export default function Templates() {
                 <Button size="small" loading={sourceDownloading} onClick={() => void downloadSource()}>
                   下载
                 </Button>
+                <Button
+                  size="small"
+                  type="primary"
+                  loading={syncing}
+                  onClick={() => void syncNetdisk()}
+                >
+                  同步到网盘
+                </Button>
                 <Button size="small" danger onClick={() => removeSource()}>
                   删除
                 </Button>
@@ -539,6 +583,9 @@ export default function Templates() {
           ) : (
             <div className="source-box-empty">未上传源文件（CLI 加 --with-source 可上传暂存）</div>
           )}
+          <div className="source-box-empty" style={{ marginTop: 6 }}>
+            自动同步需服务端配置 NETDISK_SYNC_COMMAND；未配置时请手动下载上传网盘后填写链接。
+          </div>
         </div>
 
         <Form<NetdiskValues> form={netdiskForm} layout="vertical">

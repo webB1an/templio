@@ -8,6 +8,18 @@ export type TemplateStatus =
   | "archived"
   | "failed";
 
+export interface AdminTask {
+  id: string;
+  type: string;
+  status: "queued" | "running" | "success" | "failed" | "skipped";
+  progress: number;
+  message: string | null;
+  error: string | null;
+  result: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AiAnalysis {
   title: string | null;
   categoryKey: string | null;

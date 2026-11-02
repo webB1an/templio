@@ -1,4 +1,12 @@
-import type { AdminTemplate, AiAnalysis, Facets, Stats, TemplateList, TemplateStatus } from "./types";
+import type {
+  AdminTask,
+  AdminTemplate,
+  AiAnalysis,
+  Facets,
+  Stats,
+  TemplateList,
+  TemplateStatus
+} from "./types";
 
 const TOKEN_KEY = "templio_admin_token";
 
@@ -132,6 +140,17 @@ export const api = {
 
   removeSource(id: string) {
     return request<{ removed: boolean }>(`/admin/templates/${id}/source`, { method: "DELETE" });
+  },
+
+  startNetdiskSync(id: string, provider: "baidu" | "quark") {
+    return request<{ taskId: string; status: string; message?: string }>(
+      `/admin/templates/${id}/netdisk/sync`,
+      { method: "POST", body: { provider } }
+    );
+  },
+
+  getTask(taskId: string) {
+    return request<AdminTask>(`/admin/tasks/${taskId}`);
   },
 
   annotateAi(id: string) {
