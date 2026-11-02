@@ -90,16 +90,16 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 ```
 
 - 物料包按源文件 SHA-256 幂等，重复上传会返回 duplicate，不会重复创建
-- 导入后模板状态为 `imported`，在管理端「模板库」复核标题/分类后点「上架」
+- 导入后模板状态为 `imported`，在管理端「模板库」复核标题/分类，点「网盘」补齐分享链接/提取码（自动生成短链），再点「上架」
 - 封面/缩略图/预览图保存到 `storage/public/templates/<hash8>/`，由 `/assets/` 直出
-- 源文件暂不上传（等百度/夸克网盘同步接入后再补），详情页暂无网盘链接
+- 源文件暂不上传（等百度/夸克网盘同步接入后再补）
 
 ## 管理端
 
 - 地址：<https://templio.wdbzk.com/admin/>
 - 账号：`admin`，密码在服务器 `/www/wwwroot/templio/apps/api/.env` 的 `ADMIN_PASSWORD`
 - 本地开发：`npm run dev:admin`（Vite 5174，`/api` 代理到线上）
-- 功能：登录、概览统计、模板库（筛选 / 编辑 / 单条上下架 / 批量上下架）、导入说明
+- 功能：登录、概览统计、模板库（筛选 / 编辑 / 单条上下架 / 批量上下架 / 网盘链接与短链配置）、导入说明
 
 ## 小程序
 
