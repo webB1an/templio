@@ -47,6 +47,9 @@ npm run render -- fixtures/samples -o fixtures/packages
 
 # 4. 检查物料包完整性
 npm run status -- fixtures/packages
+
+# 5. 生产验收（15 项）
+TEMPLIO_ADMIN_PASSWORD=<服务器 .env 的 ADMIN_PASSWORD> npm run verify:prod
 ```
 
 物料包结构（详见 `docs/01-流程确认稿-v1.md` §5）：
