@@ -77,7 +77,12 @@
       </view>
     </view>
 
-    <view class="footer-tip">模板仅供学习交流使用，版权归原作者所有</view>
+    <view class="disclaimer">
+      <text class="disclaimer-title">免责声明</text>
+      <text class="disclaimer-text">本站所有文章、图片、网盘、文档、文件等各种资源内容，均来自于网络用户自创设计以及整理发布于本平台，如果本站用户发布内容，侵犯了原著者的合法权益，可联系我们进行下架处理。</text>
+      <text class="disclaimer-text">但本平台对用户发布的任何内容均不承担任何连带责任，本平台无责任义务调查所有内容的具体出处与作者。</text>
+      <text class="disclaimer-contact" bindtap="copyContact">联系方式:475008394@qq.com(请举证侵权内容与证据)</text>
+    </view>
   </view>
 
   <view class="action-bar">

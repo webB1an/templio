@@ -133,6 +133,15 @@ Page({
     });
   },
 
+  copyContact() {
+    wx.setClipboardData({
+      data: "475008394@qq.com",
+      success() {
+        wx.showToast({ title: "联系邮箱已复制", icon: "none" });
+      }
+    });
+  },
+
   previewImage(event) {
     const urls = (this.data.item && this.data.item.previewUrls) || [];
     if (!urls.length) return;

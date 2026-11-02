@@ -252,6 +252,40 @@
   color: var(--ink-3);
 }
 
+.disclaimer {
+  margin-top: 34rpx;
+  padding: 26rpx 26rpx 24rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.52);
+  -webkit-backdrop-filter: blur(26rpx) saturate(170%);
+  backdrop-filter: blur(26rpx) saturate(170%);
+  border: 1rpx solid rgba(255, 255, 255, 0.7);
+}
+
+.disclaimer-title {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.disclaimer-text {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 21rpx;
+  line-height: 1.8;
+  color: var(--ink-3);
+  text-align: justify;
+}
+
+.disclaimer-contact {
+  display: block;
+  margin-top: 14rpx;
+  font-size: 21rpx;
+  line-height: 1.7;
+  color: var(--accent-ink);
+}
+
 /* 提取码 */
 .passcode-row {
   display: inline-flex;
