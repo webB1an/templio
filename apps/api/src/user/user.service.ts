@@ -139,13 +139,13 @@ export class UserService {
     });
     if (!existing) {
       try {
-        await this.prisma.$transaction([
-          this.prisma.userFavorite.create({ data: { userId, templateId } }),
-          this.prisma.template.update({
+        await this.prisma.$transaction(async (tx) => {
+          await tx.userFavorite.create({ data: { userId, templateId } });
+          await tx.template.update({
             where: { id: templateId },
             data: { favoriteCount: { increment: 1 } },
-          }),
-        ]);
+          });
+        });
       } catch (error) {
         // 并发双击时唯一键冲突：另一请求已完成收藏，不重复加计数
         if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
@@ -165,20 +165,17 @@ export class UserService {
     templateId: string,
   ): Promise<{ favorited: boolean; favoriteCount: number }> {
     if (!templateId) throw new BadRequestException("缺少模板 id");
-    const existing = await this.prisma.userFavorite.findUnique({
-      where: { userId_templateId: { userId, templateId } },
-    });
-    if (existing) {
-      await this.prisma.$transaction([
-        this.prisma.userFavorite.delete({
-          where: { userId_templateId: { userId, templateId } },
-        }),
-        this.prisma.template.updateMany({
+    // 用 deleteMany 的返回数判断是否真的删除了收藏：
+    // 并发取消时只有一个请求能减计数，避免计数被减两次。
+    await this.prisma.$transaction(async (tx) => {
+      const deleted = await tx.userFavorite.deleteMany({ where: { userId, templateId } });
+      if (deleted.count > 0) {
+        await tx.template.updateMany({
           where: { id: templateId, favoriteCount: { gt: 0 } },
           data: { favoriteCount: { decrement: 1 } },
-        }),
-      ]);
-    }
+        });
+      }
+    });
     const count = await this.prisma.template.findUnique({
       where: { id: templateId },
       select: { favoriteCount: true },
