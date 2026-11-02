@@ -38,9 +38,19 @@ async function main() {
 
   const orphans = [];
 
-  await collectOrphanDirs(join(storageRoot, "public", "templates"), publicDirs, "templates", orphans);
+  await collectOrphanDirs(
+    join(storageRoot, "public", "templates"),
+    publicDirs,
+    "public/templates",
+    orphans
+  );
   await collectOrphanFiles(join(storageRoot, "public"), referenced, orphans);
-  await collectOrphanDirs(join(storageRoot, "private", "sources"), privateDirs, "sources", orphans);
+  await collectOrphanDirs(
+    join(storageRoot, "private", "sources"),
+    privateDirs,
+    "private/sources",
+    orphans
+  );
 
   if (orphans.length === 0) {
     console.log(`✔ storage 干净：${storageRoot}`);
@@ -77,9 +87,10 @@ async function collectOrphanDirs(parent, referencedNames, prefix, orphans) {
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     if (!referencedNames.has(entry.name)) {
-      const relative = `${parent.split(/[\\/]/).slice(-2).join("/")}/${entry.name}`;
-      const path = relative.startsWith(`${prefix}/`) ? relative : `${prefix}/${entry.name}`;
-      orphans.push({ path, size: await directorySize(join(parent, entry.name)) });
+      orphans.push({
+        path: `${prefix}/${entry.name}`,
+        size: await directorySize(join(parent, entry.name)),
+      });
     }
   }
 }
