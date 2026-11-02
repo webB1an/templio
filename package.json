@@ -22,6 +22,7 @@
     "check:miniprogram": "node scripts/check-miniprogram.mjs",
     "upload:miniprogram": "node scripts/upload-miniprogram.mjs",
     "verify:prod": "node scripts/verify-production.mjs",
+    "cleanup:storage": "node scripts/cleanup-storage.mjs",
     "cli": "npm run dev -w @templio/desktop-cli",
     "dev:api": "npm run dev -w @templio/api",
     "dev:admin": "npm run dev -w @templio/admin",
