@@ -62,7 +62,7 @@
       </view>
 
       <view class="get-actions">
-        <button class="btn-dark copy-btn" bindtap="copyLink">复制链接和提取码</button>
+        <button class="btn-dark copy-btn" bindtap="copyLink">复制链接</button>
         <button class="btn-outline fav-btn {{fav ? 'fav-on' : ''}}" bindtap="toggleFav">
           {{fav ? "已收藏" : "收藏"}}
         </button>

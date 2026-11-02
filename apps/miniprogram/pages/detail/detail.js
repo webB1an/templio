@@ -88,16 +88,13 @@ Page({
   copyLink() {
     const item = this.data.item;
     if (!item || !item.shortLink) {
-      wx.showToast({ title: "暂无可用下载链接", icon: "none" });
+      wx.showToast({ title: "暂无可用链接", icon: "none" });
       return;
     }
-    const text = item.passcode
-      ? `${item.shortLink} 提取码 ${item.passcode}`
-      : item.shortLink;
     wx.setClipboardData({
-      data: text,
+      data: item.shortLink,
       success() {
-        wx.showToast({ title: "已复制，请打开网盘 App 保存", icon: "none" });
+        wx.showToast({ title: "链接已复制", icon: "none" });
       }
     });
     recordClick(item.id, "copy").catch(() => {});
