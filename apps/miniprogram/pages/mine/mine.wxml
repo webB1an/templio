@@ -43,7 +43,9 @@
       bindtap="onMenu"
       hover-class="menu-row-hover"
     >
-      <view class="menu-icon-box">{{item.initial}}</view>
+      <view class="menu-icon-box">
+        <image class="menu-icon" src="{{item.iconPath}}" mode="aspectFit" />
+      </view>
       <text class="menu-label">{{item.label}}</text>
       <text class="menu-tip">{{item.tip}}</text>
       <text class="menu-arrow">›</text>

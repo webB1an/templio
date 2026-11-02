@@ -12,11 +12,11 @@ Page({
     favCount: 0,
     downloadCount: 0,
     menu: [
-      { key: "favorites", initial: "收", label: "我的收藏", tip: "已收藏模板" },
-      { key: "downloads", initial: "下", label: "下载记录", tip: "最近获取" },
-      { key: "about", initial: "关", label: "关于模板宝", tip: "v0.4.0" },
-      { key: "feedback", initial: "反", label: "意见反馈", tip: "帮助改进" },
-      { key: "deleteAccount", initial: "注", label: "注销账号", tip: "删除个人数据" }
+      { key: "favorites", iconPath: "/assets/icons/heart.png", label: "我的收藏", tip: "已收藏模板" },
+      { key: "downloads", iconPath: "/assets/icons/download.png", label: "下载记录", tip: "最近获取" },
+      { key: "about", iconPath: "/assets/icons/info.png", label: "关于模板宝", tip: "v0.11.0" },
+      { key: "feedback", iconPath: "/assets/icons/feedback.png", label: "意见反馈", tip: "帮助改进" },
+      { key: "deleteAccount", iconPath: "/assets/icons/logout-red.png", label: "注销账号", tip: "删除个人数据" }
     ]
   },
 
