@@ -37,6 +37,12 @@
         <text wx:for="{{item.tags}}" wx:key="*this" class="tag">#{{item}}</text>
       </view>
 
+      <view wx:if="{{item.passcode}}" class="passcode-row" bindtap="copyPasscode">
+        <text class="passcode-label">提取码</text>
+        <text class="passcode-code">{{item.passcode}}</text>
+        <text class="passcode-copy">复制</text>
+      </view>
+
       <text class="summary">{{item.summary}}</text>
     </view>
 
@@ -81,11 +87,6 @@
   </view>
 
   <view class="action-bar">
-    <view wx:if="{{item.passcode}}" class="passcode-line" bindtap="copyPasscode">
-      <text>提取码 {{item.passcode}}</text>
-      <text class="passcode-copy">点击复制</text>
-    </view>
-
     <view class="action-row">
       <view class="action-item" bindtap="toggleFav">
         <text class="action-icon {{fav ? 'fav-active' : ''}}">{{fav ? "♥" : "♡"}}</text>
