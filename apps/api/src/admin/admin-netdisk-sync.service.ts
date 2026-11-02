@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { PrismaService } from "../prisma/prisma.service";
 import { AdminTemplatesService } from "./admin-templates.service";
-import { NetdiskProvider, StorageAccountService } from "./storage/storage-account.service";
-import { StorageCoordinatorService } from "./storage/storage-drives.service";
+import { NetdiskProvider, StorageAccountService } from "./netdisk/storage-account.service";
+import { StorageCoordinatorService } from "./netdisk/storage-drives.service";
 
 const execAsync = promisify(exec);
 

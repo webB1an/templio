@@ -12,12 +12,12 @@ import { AdminTemplatesService } from "./admin-templates.service";
 import { AdminNetdiskSyncService } from "./admin-netdisk-sync.service";
 import { DeepSeekService } from "./deepseek.service";
 import { StorageController } from "./storage.controller";
-import { StorageAccountService } from "./storage/storage-account.service";
+import { StorageAccountService } from "./netdisk/storage-account.service";
 import {
   BaiduStorageService,
   QuarkStorageService,
   StorageCoordinatorService,
-} from "./storage/storage-drives.service";
+} from "./netdisk/storage-drives.service";
 
 @Module({
   controllers: [

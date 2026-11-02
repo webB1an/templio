@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { AdminAuthGuard } from "./auth.guard";
-import { StorageAccountService } from "./storage/storage-account.service";
+import { StorageAccountService } from "./netdisk/storage-account.service";
 
 @Controller("admin/storage-accounts")
 @UseGuards(AdminAuthGuard)
