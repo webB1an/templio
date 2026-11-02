@@ -175,7 +175,7 @@ export class StorageAccountService {
       { stdin: `${code}\n`, timeoutMs: 60_000 },
     );
     if (!result.ok) {
-      throw new BadRequestException(shortOutput(lastLine(result.stderr || result.stdout) || "百度授权失败"));
+      throw new BadRequestException(cliErrorMessage(`${result.stdout}\n${result.stderr}`) || "百度授权失败");
     }
     return this.probeAccount(id);
   }
@@ -344,6 +344,19 @@ function lastLine(value: string): string {
       .filter(Boolean)
       .at(-1) || ""
   );
+}
+
+/** 从 bdpan 输出中优先提取 Error 行，避免把 Usage/Flags 帮助文本当成错误 */
+function cliErrorMessage(value: string): string {
+  const lines = String(value || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const errorLine = lines.find((line) => /^(Error|错误)[:：]/i.test(line) || /登录失败/.test(line));
+  if (errorLine) return errorLine.replace(/^(Error|错误)[:：]\s*/i, "").slice(0, 500);
+  const usageIndex = lines.findIndex((line) => /^Usage:/i.test(line));
+  const relevant = usageIndex > 0 ? lines.slice(0, usageIndex) : lines;
+  return (relevant.at(-1) || lastLine(value) || "").slice(0, 500);
 }
 
 /** 支持直接粘贴授权码、完整回调 URL 或含 code 的文本 */
