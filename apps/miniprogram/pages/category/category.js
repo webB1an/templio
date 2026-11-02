@@ -1,4 +1,4 @@
-﻿const { CATEGORIES, TEMPLATES } = require("../../data/mock");
+const { CATEGORIES, TEMPLATES } = require("../../data/mock");
 const { getNavMetrics } = require("../../utils/layout");
 const { fetchFacets } = require("../../utils/api");
 
@@ -27,6 +27,7 @@ Page({
       key: item.key,
       name: item.name,
       icon: ICONS[item.key] || "◇",
+      initial: item.name.slice(0, 1),
       ordinal: (index + 1 < 10 ? "0" : "") + (index + 1),
       count: TEMPLATES.filter((template) => template.categoryKey === item.key).length
     }));
@@ -54,6 +55,7 @@ Page({
             key: item.key,
             name: item.name,
             icon: ICONS[item.key] || "◇",
+            initial: item.name.slice(0, 1),
             ordinal: (index + 1 < 10 ? "0" : "") + (index + 1),
             count: item.count || 0
           }))

@@ -188,7 +188,7 @@ page {
 
 .type-bar-holder {
   height: 104rpx;
-  margin-top: 24rpx;
+  margin-top: 22rpx;
 }
 
 .type-bar {
@@ -203,12 +203,21 @@ page {
   box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.95), 0 12rpx 30rpx rgba(31, 58, 100, 0.08);
 }
 
-.type-bar-fixed {
+/* 吸顶后与顶部导航同一套全宽玻璃样式 */
+.type-bar-stuck {
   position: fixed;
-  left: 32rpx;
-  right: 32rpx;
+  left: 0;
+  right: 0;
   z-index: 18;
-  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.95), 0 16rpx 36rpx rgba(31, 58, 100, 0.16);
+  height: 96rpx;
+  padding: 8rpx 32rpx;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.66);
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: 0 10rpx 24rpx rgba(31, 58, 100, 0.08);
 }
 
 .type-scroll {
@@ -217,12 +226,16 @@ page {
   white-space: nowrap;
 }
 
+.type-bar-stuck .type-scroll {
+  height: 80rpx;
+}
+
 .type-item {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   height: 84rpx;
-  padding: 0 30rpx;
+  padding: 0 28rpx;
   margin-right: 4rpx;
   border-radius: 999rpx;
   font-size: 25rpx;
@@ -238,6 +251,38 @@ page {
   font-weight: 600;
   background: rgba(10, 132, 255, 0.94);
   box-shadow: 0 8rpx 20rpx rgba(10, 132, 255, 0.28);
+}
+
+/* 吸顶状态：改为顶部导航式下划线，不再是大胶囊 */
+.type-bar-stuck .type-item {
+  position: relative;
+  height: 80rpx;
+  margin-right: 40rpx;
+  padding: 0;
+  border-radius: 0;
+  font-size: 25rpx;
+  color: var(--ink-2);
+  background: transparent;
+  box-shadow: none;
+}
+
+.type-bar-stuck .type-active {
+  color: var(--accent);
+  font-weight: 600;
+  background: transparent;
+  box-shadow: none;
+}
+
+.type-bar-stuck .type-active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 6rpx;
+  width: 30rpx;
+  height: 4rpx;
+  border-radius: 2rpx;
+  background: var(--accent);
+  transform: translateX(-50%);
 }
 
 /* ---------------- 区块标题 ---------------- */

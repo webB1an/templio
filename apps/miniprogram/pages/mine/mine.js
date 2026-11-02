@@ -12,11 +12,11 @@ Page({
     favCount: 0,
     downloadCount: 0,
     menu: [
-      { key: "favorites", icon: "♡", label: "我的收藏", tip: "已收藏模板" },
-      { key: "downloads", icon: "↓", label: "下载记录", tip: "最近获取" },
-      { key: "about", icon: "ⓘ", label: "关于模板宝", tip: "v0.1.0" },
-      { key: "feedback", icon: "✉", label: "意见反馈", tip: "帮助改进" },
-      { key: "deleteAccount", icon: "⚠", label: "注销账号", tip: "删除个人数据" }
+      { key: "favorites", initial: "收", label: "我的收藏", tip: "已收藏模板" },
+      { key: "downloads", initial: "下", label: "下载记录", tip: "最近获取" },
+      { key: "about", initial: "关", label: "关于模板宝", tip: "v0.4.0" },
+      { key: "feedback", initial: "反", label: "意见反馈", tip: "帮助改进" },
+      { key: "deleteAccount", initial: "注", label: "注销账号", tip: "删除个人数据" }
     ]
   },
 
@@ -88,9 +88,14 @@ Page({
       });
   },
 
-  onMenu(event) {
+  onStat(event) {
     const key = event.currentTarget.dataset.key;
-    if (key === "favorites") {
+    if (key === "favorites") wx.navigateTo({ url: "/pages/favorites/favorites" });
+    if (key === "downloads") wx.navigateTo({ url: "/pages/downloads/downloads" });
+  },
+
+  onMenu(event) {
+    const key = event.currentTarget.dataset.key;    if (key === "favorites") {
       wx.navigateTo({ url: "/pages/favorites/favorites" });
       return;
     }

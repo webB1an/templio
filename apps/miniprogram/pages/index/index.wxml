@@ -17,7 +17,7 @@
   </view>
 
   <view class="type-bar-holder">
-    <view id="typeBar" class="type-bar {{sticky ? 'type-bar-fixed' : ''}}" style="top: {{navTop + navHeight}}px;">
+    <view id="typeBar" class="type-bar {{sticky ? 'type-bar-stuck' : ''}}" style="top: {{navTop + navHeight}}px;">
       <scroll-view class="type-scroll" scroll-x enhanced show-scrollbar="{{false}}">
         <view
           wx:for="{{categories}}"

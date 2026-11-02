@@ -1,57 +1,68 @@
-.account-card {
+.profile-card {
   margin-top: 8rpx;
+  padding: 30rpx 26rpx 0;
   overflow: hidden;
-  border-radius: 32rpx;
+  border-radius: 34rpx;
   background: var(--glass);
   -webkit-backdrop-filter: blur(32rpx) saturate(180%);
   backdrop-filter: blur(32rpx) saturate(180%);
   border: 1rpx solid var(--glass-border);
-  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.95), 0 16rpx 38rpx rgba(31, 58, 100, 0.1);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.95), 0 18rpx 40rpx rgba(31, 58, 100, 0.1);
 }
 
-.profile-row {
+.profile-top {
   display: flex;
   align-items: center;
-  padding: 34rpx 28rpx 30rpx;
 }
 
 .avatar {
-  width: 96rpx;
-  height: 96rpx;
+  width: 104rpx;
+  height: 104rpx;
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 40rpx;
+  font-size: 42rpx;
   font-weight: 700;
   color: #ffffff;
   background: linear-gradient(135deg, #0a84ff 0%, #6aa9ff 100%);
-  box-shadow: 0 10rpx 24rpx rgba(10, 132, 255, 0.26);
+  box-shadow: 0 12rpx 28rpx rgba(10, 132, 255, 0.26);
 }
 
 .profile-main {
-  margin-left: 24rpx;
+  margin-left: 22rpx;
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
 }
 
 .profile-name {
-  font-size: 31rpx;
+  font-size: 32rpx;
   font-weight: 700;
   letter-spacing: -0.3rpx;
 }
 
 .profile-sub {
   margin-top: 8rpx;
-  font-size: 21rpx;
+  font-size: 20rpx;
   line-height: 1.5;
   color: var(--ink-3);
 }
 
+.profile-badge {
+  flex: none;
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 19rpx;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+
 .stats {
   display: flex;
+  margin-top: 26rpx;
   border-top: 1rpx solid var(--line);
 }
 
@@ -60,7 +71,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 26rpx 0 28rpx;
+  padding: 22rpx 0 24rpx;
 }
 
 .stat + .stat {
@@ -75,14 +86,14 @@
 }
 
 .stat-label {
-  margin-top: 6rpx;
-  font-size: 21rpx;
+  margin-top: 4rpx;
+  font-size: 20rpx;
   color: var(--ink-3);
 }
 
 .section-label {
   display: block;
-  margin: 40rpx 4rpx 16rpx;
+  margin: 38rpx 4rpx 16rpx;
   font-size: 20rpx;
   letter-spacing: 2rpx;
   color: var(--ink-3);
@@ -101,8 +112,8 @@
 .menu-row {
   display: flex;
   align-items: center;
-  min-height: 104rpx;
-  padding: 0 26rpx;
+  min-height: 108rpx;
+  padding: 0 24rpx;
   border-bottom: 1rpx solid var(--line);
 }
 
@@ -114,15 +125,35 @@
   background: rgba(255, 255, 255, 0.32);
 }
 
+.menu-icon-box {
+  width: 62rpx;
+  height: 62rpx;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18rpx;
+  font-size: 25rpx;
+  font-weight: 600;
+  color: var(--accent-ink);
+  background: rgba(10, 132, 255, 0.12);
+}
+
+.menu-danger .menu-icon-box {
+  color: #c2413a;
+  background: rgba(194, 65, 58, 0.1);
+}
+
 .menu-label {
   flex: 1;
+  margin-left: 18rpx;
   font-size: 27rpx;
   font-weight: 500;
 }
 
 .menu-tip {
-  margin-right: 12rpx;
-  font-size: 21rpx;
+  margin-right: 10rpx;
+  font-size: 20rpx;
   color: var(--ink-3);
 }
 

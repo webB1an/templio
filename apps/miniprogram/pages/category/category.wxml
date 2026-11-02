@@ -11,22 +11,22 @@
     <text class="hero-sub">从主题出发，快速找到需要的模板</text>
   </view>
 
-  <view class="cat-list">
+  <view class="category-grid">
     <view
       wx:for="{{categories}}"
       wx:key="key"
-      class="cat-row"
+      class="category-card"
       data-key="{{item.key}}"
       data-name="{{item.name}}"
       bindtap="openCategory"
-      hover-class="cat-row-hover"
+      hover-class="category-hover"
     >
-      <text class="cat-index">{{item.ordinal}}</text>
-      <view class="cat-main">
-        <text class="cat-name">{{item.name}}</text>
-        <text class="cat-count">{{item.count}} 个模板</text>
+      <view class="category-top">
+        <view class="category-icon">{{item.initial}}</view>
+        <text class="category-arrow">›</text>
       </view>
-      <text class="cat-arrow">→</text>
+      <text class="category-name">{{item.name}}</text>
+      <text class="category-count">{{item.count}} 个模板</text>
     </view>
   </view>
 

@@ -6,21 +6,22 @@
 </view>
 
 <view class="page" style="padding-top: {{contentTop}}px;">
-  <view class="account-card">
-    <view class="profile-row">
+  <view class="profile-card">
+    <view class="profile-top">
       <view class="avatar">T</view>
       <view class="profile-main">
         <text class="profile-name">{{userName}}</text>
         <text class="profile-sub">{{userSub}}</text>
       </view>
+      <text class="profile-badge">已同步</text>
     </view>
 
     <view class="stats">
-      <view class="stat">
+      <view class="stat" bindtap="onStat" data-key="favorites">
         <text class="stat-num">{{favCount}}</text>
         <text class="stat-label">收藏</text>
       </view>
-      <view class="stat">
+      <view class="stat" bindtap="onStat" data-key="downloads">
         <text class="stat-num">{{downloadCount}}</text>
         <text class="stat-label">下载</text>
       </view>
@@ -37,11 +38,12 @@
     <view
       wx:for="{{menu}}"
       wx:key="key"
-      class="menu-row"
+      class="menu-row {{item.key === 'deleteAccount' ? 'menu-danger' : ''}}"
       data-key="{{item.key}}"
       bindtap="onMenu"
       hover-class="menu-row-hover"
     >
+      <view class="menu-icon-box">{{item.initial}}</view>
       <text class="menu-label">{{item.label}}</text>
       <text class="menu-tip">{{item.tip}}</text>
       <text class="menu-arrow">›</text>
