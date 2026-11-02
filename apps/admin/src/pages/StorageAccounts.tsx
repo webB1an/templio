@@ -140,11 +140,16 @@ export default function StorageAccounts() {
     }
     setBusy(true);
     try {
-      await api.finishStorageAuth(authTarget.id, value);
-      message.success("授权完成");
-      setAuthTarget(null);
-      setAuthUrl("");
-      setAuthMessage("");
+      const result = await api.finishStorageAuth(authTarget.id, value);
+      if (result.lastProbeOk) {
+        message.success("授权完成");
+        setAuthTarget(null);
+        setAuthUrl("");
+        setAuthMessage("");
+      } else {
+        message.warning(result.lastProbeMessage || "授权已保存，但探活失败，请检查后重试");
+        setAuthMessage(result.lastProbeMessage || "授权已保存，但探活失败");
+      }
       load();
     } catch (error) {
       message.error((error as Error).message);
