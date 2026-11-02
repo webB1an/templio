@@ -51,6 +51,31 @@ export class AdminTemplatesController {
     return this.templates.update(id, body);
   }
 
+  @Get("export/templates.csv")
+  async exportTemplates(
+    @Res({ passthrough: true }) res: { set: (headers: Record<string, string>) => void },
+  ) {
+    const csv = await this.templates.exportTemplatesCsv();
+    res.set({
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename*=UTF-8''templates-${new Date().toISOString().slice(0, 10)}.csv`,
+    });
+    return csv;
+  }
+
+  @Get("export/clicks.csv")
+  async exportClicks(
+    @Query("days") days: string | undefined,
+    @Res({ passthrough: true }) res: { set: (headers: Record<string, string>) => void },
+  ) {
+    const csv = await this.templates.exportClicksCsv(days);
+    res.set({
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename*=UTF-8''clicks-${new Date().toISOString().slice(0, 10)}.csv`,
+    });
+    return csv;
+  }
+
   @Post("templates/bulk")
   bulk(@Body() body: { ids?: unknown; action?: unknown }) {
     return this.templates.bulk(body.ids, body.action);

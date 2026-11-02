@@ -146,6 +146,29 @@ export const api = {
     return request<{ deleted: boolean }>(`/admin/templates/${id}`, { method: "DELETE" });
   },
 
+  async downloadCsv(path: string, fallbackName: string): Promise<{ blob: Blob; filename: string }> {
+    const response = await fetch(`/api${path}`, {
+      headers: { authorization: `Bearer ${getToken()}` }
+    });
+    if (!response.ok) {
+      throw new Error(`导出失败（HTTP ${response.status}）`);
+    }
+    const disposition = response.headers.get("content-disposition") || "";
+    const match = disposition.match(/filename\*=UTF-8''([^;]+)/);
+    return {
+      blob: await response.blob(),
+      filename: match ? decodeURIComponent(match[1]) : fallbackName
+    };
+  },
+
+  downloadTemplatesCsv() {
+    return api.downloadCsv("/admin/export/templates.csv", "templates.csv");
+  },
+
+  downloadClicksCsv(days = 30) {
+    return api.downloadCsv(`/admin/export/clicks.csv?days=${days}`, "clicks.csv");
+  },
+
   startNetdiskSync(id: string, provider: "baidu" | "quark") {
     return request<{ taskId: string; status: string; message?: string }>(
       `/admin/templates/${id}/netdisk/sync`,

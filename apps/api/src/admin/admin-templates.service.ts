@@ -393,6 +393,95 @@ export class AdminTemplatesService {
     return { removed: result.count > 0 };
   }
 
+  async exportTemplatesCsv(): Promise<string> {
+    const rows = await this.prisma.template.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        category: true,
+        tags: { include: { tag: true }, orderBy: { sort: "asc" } },
+        files: { where: { role: "source" }, take: 1 },
+        netdiskLinks: {
+          where: { isActive: true },
+          orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+          include: { shortLinks: true },
+        },
+      },
+    });
+
+    const appOrigin = (process.env.APP_ORIGIN || "https://templio.wdbzk.com").replace(/\/$/, "");
+    const header = [
+      "id",
+      "title",
+      "status",
+      "format",
+      "pageCount",
+      "fileSize",
+      "category",
+      "tags",
+      "viewCount",
+      "copyCount",
+      "favoriteCount",
+      "shortLink",
+      "passcode",
+      "sourceFile",
+      "publishedAt",
+      "createdAt",
+      "updatedAt",
+    ];
+    const lines = rows.map((row) => {
+      const link = row.netdiskLinks[0];
+      const code = link?.shortLinks?.[0]?.code;
+      return [
+        row.id,
+        row.title || "",
+        row.status,
+        row.format || "",
+        row.pageCount || "",
+        row.fileSize ? Number(row.fileSize) : "",
+        row.category?.name || "",
+        row.tags.map((item) => item.tag.name).join("|"),
+        row.viewCount,
+        row.copyCount,
+        row.favoriteCount,
+        code ? `${appOrigin}/r/${code}` : "",
+        link?.passcode || "",
+        row.files[0] ? basename(row.files[0].objectKey) : "",
+        row.publishedAt ? row.publishedAt.toISOString() : "",
+        row.createdAt.toISOString(),
+        row.updatedAt.toISOString(),
+      ]
+        .map(csvCell)
+        .join(",");
+    });
+    return `\uFEFF${[header.join(","), ...lines].join("\r\n")}`;
+  }
+
+  async exportClicksCsv(daysRaw?: string): Promise<string> {
+    const parsed = Number.parseInt(daysRaw || "30", 10);
+    const days = Number.isFinite(parsed) ? Math.min(365, Math.max(1, parsed)) : 30;
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const rows = await this.prisma.templateClick.findMany({
+      where: { createdAt: { gte: since } },
+      orderBy: { createdAt: "desc" },
+      take: 5000,
+      include: { template: { select: { title: true } } },
+    });
+    const header = ["id", "createdAt", "kind", "templateId", "templateTitle", "userId"];
+    const lines = rows.map((row) =>
+      [
+        row.id,
+        row.createdAt.toISOString(),
+        row.kind,
+        row.templateId,
+        row.template.title || "",
+        row.userId || "",
+      ]
+        .map(csvCell)
+        .join(",")
+    );
+    return `\uFEFF${[header.join(","), ...lines].join("\r\n")}`;
+  }
+
   async deleteTemplate(id: string): Promise<{ deleted: boolean }> {
     const template = await this.prisma.template.findUnique({
       where: { id },
@@ -582,4 +671,12 @@ function formatDateKey(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function csvCell(value: unknown): string {
+  const text = value === null || value === undefined ? "" : String(value);
+  if (/[",\r\n]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
 }

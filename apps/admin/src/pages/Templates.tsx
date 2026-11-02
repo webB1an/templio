@@ -47,6 +47,7 @@ export default function Templates() {
   const [aiApplying, setAiApplying] = useState(false);
   const [batchLoading, setBatchLoading] = useState(false);
   const [autoApplying, setAutoApplying] = useState(false);
+  const [exporting, setExporting] = useState<"templates" | "clicks" | null>(null);
   const [aiResult, setAiResult] = useState<{
     analysis: AiAnalysis;
     matchedCategory: { key: string; name: string } | null;
@@ -294,6 +295,43 @@ export default function Templates() {
     });
   };
 
+  const saveBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportTemplatesCsv = async () => {
+    setExporting("templates");
+    try {
+      const { blob, filename } = await api.downloadTemplatesCsv();
+      saveBlob(blob, filename);
+      message.success("模板 CSV 已导出");
+    } catch (error) {
+      message.error((error as Error).message);
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const exportClicksCsv = async () => {
+    setExporting("clicks");
+    try {
+      const { blob, filename } = await api.downloadClicksCsv(30);
+      saveBlob(blob, filename);
+      message.success("最近 30 天点击 CSV 已导出");
+    } catch (error) {
+      message.error((error as Error).message);
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const changeStatus = async (record: AdminTemplate, next: TemplateStatus) => {
     try {
       await api.updateTemplate(record.id, { status: next });
@@ -504,6 +542,12 @@ export default function Templates() {
         />
         <Button onClick={() => void load()}>刷新</Button>
         <Button onClick={() => { setStatus("pending_review"); setPage(1); }}>待复核</Button>
+        <Button loading={exporting === "templates"} onClick={() => void exportTemplatesCsv()}>
+          导出模板 CSV
+        </Button>
+        <Button loading={exporting === "clicks"} onClick={() => void exportClicksCsv()}>
+          导出点击 CSV
+        </Button>
         <div style={{ flex: 1 }} />
         <Button loading={batchLoading} onClick={() => void batchAnnotate()}>
           AI 批量标注
