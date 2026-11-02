@@ -23,7 +23,7 @@
         <aside class="panel settings">
           <div class="panel-head">
             <h2>生成设置</h2>
-            <span class="panel-note">本机运行，不上传源文件</span>
+            <span class="panel-note">本机生成，按需上传</span>
           </div>
 
           <div class="field">
@@ -74,6 +74,7 @@
               <span id="statusDetail" class="status-detail">选择源文件夹后开始生成</span>
             </div>
             <span id="resultCount" class="result-count"></span>
+            <button id="uploadBtn" class="upload-btn" disabled>上传到服务器</button>
             <div class="progress-track">
               <div id="progressBar" class="progress-bar"></div>
             </div>
@@ -97,6 +98,47 @@
         </section>
       </main>
     </div>
+
+    <div id="uploadModal" class="modal-backdrop" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
+        <div class="modal-head">
+          <h2 id="uploadTitle">上传物料到服务器</h2>
+          <button id="closeUpload" class="icon-btn" aria-label="关闭">×</button>
+        </div>
+        <p class="modal-sub">把输出文件夹中的物料包导入服务器，上传后到管理端复核上架。</p>
+
+        <div class="field">
+          <label for="apiUrl">服务器地址</label>
+          <input id="apiUrl" type="text" placeholder="https://templio.wdbzk.com" />
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="adminUser">管理员账号</label>
+            <input id="adminUser" type="text" value="admin" autocomplete="username" />
+          </div>
+          <div class="field">
+            <label for="adminPassword">管理员密码</label>
+            <input id="adminPassword" type="password" autocomplete="current-password" placeholder="请输入密码" />
+          </div>
+        </div>
+
+        <label class="check-field source-check">
+          <input id="withSource" type="checkbox" checked />
+          <span>同时上传源文件（用于自动同步网盘，同步成功后服务器自动删除）</span>
+        </label>
+
+        <p class="modal-hint">
+          不勾选源文件也可以导入，但之后无法自动同步网盘；密码只用于本次上传，不会保存。
+        </p>
+
+        <div class="modal-actions">
+          <button id="cancelUpload" class="secondary-btn">取消</button>
+          <button id="confirmUpload" class="primary-btn">开始上传</button>
+        </div>
+      </div>
+    </div>
+
     <script src="app.js"></script>
   </body>
 </html>

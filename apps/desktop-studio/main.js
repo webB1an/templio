@@ -26,6 +26,7 @@ function findRepoRoot() {
 
 let mainWindow = null;
 let rendering = false;
+let uploading = false;
 
 function createWindow() {
   const iconPath = path.join(__dirname, "assets", "icon.ico");
@@ -47,6 +48,7 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, "renderer", "index.html"));
   const screenshotPath = process.env.TEMPLIO_STUDIO_SCREENSHOT;
   const smokePayload = process.env.TEMPLIO_STUDIO_SMOKE_PAYLOAD;
+  const smokeJs = process.env.TEMPLIO_STUDIO_SMOKE_JS;
   if (screenshotPath || smokePayload) {
     mainWindow.webContents.once("did-finish-load", () => {
       setTimeout(async () => {
@@ -59,6 +61,10 @@ function createWindow() {
               )}); window.__templioStudio.startRender(); })()`
             );
             await new Promise((resolve) => setTimeout(resolve, 15000));
+          }
+          if (smokeJs) {
+            await mainWindow.webContents.executeJavaScript(smokeJs);
+            await new Promise((resolve) => setTimeout(resolve, 12000));
           }
           if (screenshotPath) {
             const image = await mainWindow.webContents.capturePage();
@@ -190,6 +196,11 @@ ipcMain.handle("studio:pick-output", async () => {
 
 ipcMain.handle("studio:default-output", () => DEFAULT_OUTPUT);
 
+ipcMain.handle("studio:list-packages", async (_event, outDirRaw) => {
+  const outDir = path.resolve(String(outDirRaw || DEFAULT_OUTPUT));
+  return scanPackages(outDir);
+});
+
 ipcMain.handle("studio:open-path", async (_event, target) => {
   if (!target) return { ok: false, error: "路径为空" };
   const error = await shell.openPath(path.resolve(String(target)));
@@ -246,8 +257,45 @@ ipcMain.handle("studio:render", async (_event, payload) => {
   }
 });
 
-app.whenReady().then(() => {
-  createWindow();
+ipcMain.handle("studio:upload", async (_event, payload) => {
+  if (uploading) return { ok: false, error: "已有上传任务正在进行" };
+  if (rendering) return { ok: false, error: "请等待当前生成任务完成" };
+
+  const outDir = path.resolve(String(payload.outDir || DEFAULT_OUTPUT));
+  const api = String(payload.api || "").trim().replace(/\/+$/, "");
+  const username = String(payload.username || "admin").trim() || "admin";
+  const password = String(payload.password || "");
+  const withSource = Boolean(payload.withSource);
+
+  if (!fs.existsSync(outDir)) return { ok: false, error: "输出文件夹不存在，请先生成物料包" };
+  if (!/^https?:\/\/[^/]+/i.test(api)) return { ok: false, error: "服务器地址格式不正确" };
+  if (!password) return { ok: false, error: "请输入管理员密码" };
+
+  uploading = true;
+  try {
+    await ensureEngine();
+    const packages = await scanPackages(outDir);
+    if (!packages.length) return { ok: false, error: "输出文件夹里还没有可上传的物料包" };
+
+    const args = [CLI_ENTRY, "upload", outDir, "--api", api, "--username", username];
+    if (withSource) args.push("--with-source");
+    sendLog(`上传服务器：${api}`);
+    sendLog(`物料包：${packages.length} 个${withSource ? " · 含源文件" : " · 不含源文件"}`);
+
+    // 密码通过环境变量传给 CLI，避免出现在进程命令行/日志中
+    await spawnLogged(process.env.npm_node_execpath || "node", args, {
+      env: { TEMPLIO_ADMIN_PASSWORD: password },
+    });
+    sendLog("✓ 上传完成");
+    return { ok: true, count: packages.length };
+  } catch (error) {
+    return { ok: false, error: error && error.message ? error.message : String(error) };
+  } finally {
+    uploading = false;
+  }
+});
+
+app.whenReady().then(() => {  createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
