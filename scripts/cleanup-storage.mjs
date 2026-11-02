@@ -44,7 +44,7 @@ async function main() {
     "public/templates",
     orphans
   );
-  await collectOrphanFiles(join(storageRoot, "public"), referenced, orphans);
+  await collectOrphanFiles(join(storageRoot, "public"), referenced, orphans, publicDirs);
   await collectOrphanDirs(
     join(storageRoot, "private", "sources"),
     privateDirs,
@@ -95,7 +95,7 @@ async function collectOrphanDirs(parent, referencedNames, prefix, orphans) {
   }
 }
 
-async function collectOrphanFiles(root, referenced, orphans) {
+async function collectOrphanFiles(root, referenced, orphans, referencedDirs) {
   const templatesRoot = join(root, "templates");
   let dirs;
   try {
@@ -105,6 +105,7 @@ async function collectOrphanFiles(root, referenced, orphans) {
   }
   for (const dir of dirs) {
     if (!dir.isDirectory()) continue;
+    if (!referencedDirs.has(dir.name)) continue;
     const dirPath = join(templatesRoot, dir.name);
     const entries = await readdir(dirPath, { withFileTypes: true });
     for (const entry of entries) {

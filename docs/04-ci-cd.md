@@ -174,6 +174,8 @@ git push origin main
 | 源文件下载 | `GET /api/admin/templates/:id/source` → 200，`Content-Disposition` 中文文件名正确 |
 | 源文件清理 | `DELETE .../source` → 删除文件与 `TemplateFile` 记录；再次下载 404 |
 | 网盘同步任务 | 配置 mock `NETDISK_SYNC_COMMAND` 后：任务 success、短链 302、源文件自动清理 |
+| 7 天趋势 | `/api/admin/stats` 返回 7 个 date/views/copies 桶 |
+| 存储清理 | 构造 2 个孤儿目录 → dry-run 列出 → `--delete` 删除 → 再次运行 storage 干净 |
 
 ### 3.6 公开 API（已上线）
 
@@ -337,6 +339,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
   - 第二行：总浏览 / 总下载 / 总收藏 / 今日互动
   - 热门模板表（封面 + 浏览/下载/收藏）
   - 最近更新、分类分布
+  - 近 7 天浏览/下载趋势（纯 CSS 柱状图）
 
 **AI 自动应用：**
 
