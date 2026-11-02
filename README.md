@@ -6,8 +6,8 @@ PPT / Word 模板库小程序：微信小程序（用户端）+ Web 管理端 + 
 
 > 产品展示名：**模板宝**；仓库名、包名、域名仍保留 `templio` 技术标识（不影响 CI/CD 与已配置的域名）。
 >
-> 当前阶段：**P0 打样**。服务端与模板公开接口已上线；小程序搜索/列表/详情已接入真实接口；管理端待开发。
-> 线上 API：<https://templio.wdbzk.com/health>
+> 当前阶段：**P0 打样**。服务端、模板公开接口、Web 管理端已上线；小程序搜索/列表/详情已接入真实接口。
+> 线上 API：<https://templio.wdbzk.com/health>　管理端：<https://templio.wdbzk.com/admin/>
 >
 > 规划文档见 `docs/`，部署与 CI/CD 见 `docs/04-ci-cd.md`。
 
@@ -18,7 +18,7 @@ templio/
 ├── apps/
 │   ├── desktop-cli/      桌面批处理 CLI（LibreOffice 渲染 + 物料包 + 上传）
 │   ├── api/              服务端（NestJS + Prisma + MySQL，/health 已就绪）
-│   ├── admin/            Web 管理端（React + AntD，待建）
+│   ├── admin/            Web 管理端（React + AntD，已上线）
 │   └── miniprogram/      微信原生小程序（液态玻璃 UI，P0 演示已初始化）
 ├── packages/
 │   └── shared/           跨端契约：枚举、物料包 schema、图片规格
@@ -76,6 +76,13 @@ npm run status -- fixtures/packages
 | GET | `/api/templates/facets` | 分类与标签聚合 |
 | GET | `/api/templates/:id` | 模板详情（含相关推荐） |
 | GET | `/r/:code` | 网盘短链 302 跳转 |
+
+## 管理端
+
+- 地址：<https://templio.wdbzk.com/admin/>
+- 账号：`admin`，密码在服务器 `/www/wwwroot/templio/apps/api/.env` 的 `ADMIN_PASSWORD`
+- 本地开发：`npm run dev:admin`（Vite 5174，`/api` 代理到线上）
+- 功能：登录、概览统计、模板库（筛选 / 编辑 / 单条上下架 / 批量上下架）
 
 ## 小程序
 

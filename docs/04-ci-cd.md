@@ -151,6 +151,9 @@ git push origin main
 | 分类聚合 | `GET /api/templates/facets` → 7 个分类与标签 |
 | 短链跳转 | `GET /r/demo01` → 302 `https://pan.baidu.com/s/1demo01` |
 | 演示数据 | `seed done: 7 categories, 8 templates` |
+| 管理端页面 | `https://templio.wdbzk.com/admin/` → 200 HTML，JS/CSS 资源 200 |
+| 管理端登录 | `POST /api/admin/login` → 返回 token；`/api/admin/templates` 可读 |
+| 管理端上下架 | PATCH 状态后公开接口总数 8 → 7 → 8（已验证并恢复） |
 
 ### 3.6 公开 API（已上线）
 
@@ -173,6 +176,34 @@ node prisma/seed.cjs
 
 幂等：按 `sourceHash` / `category.slug` / `tag.name` / `shortLink.code` upsert。seed 中的网盘链接为占位地址（`pan.baidu.com/s/1demoXX`），接入真实模板后由管理端替换。
 
+### 3.8 管理端（已上线）
+
+- 地址：<https://templio.wdbzk.com/admin/>
+- 账号：`admin`
+- 密码：服务器 `/www/wwwroot/templio/apps/api/.env` 中的 `ADMIN_PASSWORD`
+
+**功能（P0）：**
+
+| 页面 | 能力 |
+| --- | --- |
+| 登录 | 账号密码登录，JWT（HMAC-SHA256）12 小时有效 |
+| 概览 | 模板总数、已上架、待处理、已下架；最近更新；分类分布 |
+| 模板库 | 搜索 / 状态 / 分类筛选；分页；行内编辑（标题/简介/分类/状态）；单条上下架；批量上下架 |
+
+**相关接口：**
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/admin/login` | 账号密码登录 |
+| GET | `/api/admin/me` | 校验登录态 |
+| GET | `/api/admin/stats` | 概览统计 |
+| GET | `/api/admin/templates` | 管理端模板列表 |
+| PATCH | `/api/admin/templates/:id` | 更新标题/简介/分类/状态 |
+| POST | `/api/admin/templates/bulk` | 批量 `publish` / `offline` |
+| GET | `/api/admin/facets` | 分类与标签 |
+
+本地开发：`npm run dev:admin`（Vite 5174，`/api` 代理到 `https://templio.wdbzk.com`）。
+
 ---
 
 ## 4. 服务器现状（不含敏感信息）
@@ -193,8 +224,9 @@ node prisma/seed.cjs
 
 1. 微信小程序：AppID / AppSecret 已在服务器 `.env` 配置；还需要公众平台下载的「代码上传密钥」才能让 CI 上传体验版
 2. 百度网盘 / 夸克网盘官方 Skill 安装与账号授权
-3. Web 管理端（`apps/admin`）：登录、模板导入、AI 复核、上下架
+3. 管理端下一阶段：物料包导入、AI 复核队列、真实网盘链接管理（当前管理端只支持编辑/上下架）
 4. 小程序登录 / 收藏接口（当前收藏仅本地存储）
+5. 桌面 CLI「上传物料包」接口与上传流程
 
 ---
 
