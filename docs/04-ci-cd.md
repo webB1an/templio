@@ -160,6 +160,8 @@ git push origin main
 | 网盘配置 | `PUT /api/admin/templates/:id/netdisk` → 返回 `shortLink` / `passcode` / `hasNetdisk` |
 | 公开详情 | 配置后 `/api/templates/:id` 返回 `shortLink` + `passcode`，详情页可复制 |
 | 短链跳转 | `/r/0b1a5f71fa` → 302 `https://pan.baidu.com/s/1templio-contract` |
+| AI 标注 | `POST /api/admin/ai/templates/:id` → 标题「技术服务合同模板」/ 分类「合同文书」/ 3 标签 / 置信度 0.97 |
+| AI 应用 | `POST .../apply` → 模板标题/分类/标签写回数据库（published 保持上架） |
 
 ### 3.6 公开 API（已上线）
 
@@ -196,6 +198,7 @@ node prisma/seed.cjs
 | 概览 | 模板总数、已上架、待处理、已下架；最近更新；分类分布 |
 | 模板库 | 搜索 / 状态 / 分类筛选；分页；行内编辑（标题/简介/分类/状态）；单条上下架；批量上下架；封面缩略图 |
 | 网盘配置 | 模板行「网盘」弹窗：选百度/夸克 → 填分享链接/提取码 → 自动生成短链，可复制/移除 |
+| AI 标注 | 模板行「AI」弹窗：DeepSeek 读取 `textContent` 生成标题/分类/标签/简介，显示置信度，可「重新标注」/「应用建议」 |
 | 导入模板 | CLI 导入链路说明、可复制命令、当前限制说明 |
 
 **相关接口：**
@@ -212,6 +215,8 @@ node prisma/seed.cjs
 | POST | `/api/admin/import/package` | 物料包导入（multipart：`manifest` / `text` / `cover` / `thumb` / `previews`） |
 | PUT | `/api/admin/templates/:id/netdisk` | 配置网盘链接/提取码并生成短链 |
 | DELETE | `/api/admin/templates/:id/netdisk` | 移除网盘链接（短链随之失效） |
+| POST | `/api/admin/ai/templates/:id` | DeepSeek 标注（生成 AiAnalysis） |
+| POST | `/api/admin/ai/templates/:id/apply` | 应用 AI 建议（标题/分类/标签/简介） |
 
 本地开发：`npm run dev:admin`（Vite 5174，`/api` 代理到 `https://templio.wdbzk.com`）。
 
@@ -229,10 +234,19 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 | 物料包 | `manifest.json` + `text.json` + `images/{cover,thumb,preview-*.webp}` + 源文件 |
 | CLI 上传 | `upload` 命令登录管理端 → 逐包 POST `/api/admin/import/package`（multipart，源文件暂不传） |
 | 服务端 | 校验 shared schema → 按 `sourceHash` 去重 → 图片写入 `storage/public/templates/<hash8>/` → 创建 `Template(status=imported)` + `TemplateFile` + `textContent` |
-| 管理端 | 模板库筛「已导入」→ 编辑标题/分类 → 点「网盘」配置链接/提取码（自动生成短链）→ 上架；上架后公开接口返回 `coverUrl` / `previewUrls` / `shortLink` / `passcode` |
+| 管理端 | 模板库筛「已导入」→ 可选「AI」生成标题/分类/标签/简介并应用 → 点「网盘」配置链接/提取码（自动生成短链）→ 上架；上架后公开接口返回 `coverUrl` / `previewUrls` / `shortLink` / `passcode` |
 | 图片访问 | Nginx `location /assets/ { alias /www/wwwroot/templio/storage/public/; }` |
 
 已验证：导入 2 条 → 配置网盘 → 上架后公开 total 10，封面 200；短链 `/r/0b1a5f71fa` 302 到网盘；重复上传返回 duplicate。
+
+### 3.10 AI 标注（DeepSeek，已上线）
+
+- 服务端 env：`DEEPSEEK_API_KEY`、`DEEPSEEK_MODEL`（当前 `deepseek-flash`）
+- `POST /api/admin/ai/templates/:id`：读取模板 `textContent`（标题/大纲/前几页文字）+ 分类列表 → 调用 DeepSeek 输出 JSON → upsert `AiAnalysis`；`imported` 状态自动转 `pending_review`
+- `POST /api/admin/ai/templates/:id/apply`：把建议写回模板标题/简介/分类/标签；`published` 保持上架，其余转 `pending_review`
+- 管理端模板库「AI」弹窗：展示标题/分类/标签/简介/置信度，支持「重新标注」「应用建议」
+
+已验证：技术服务合同模板 → 标题「技术服务合同模板」、分类「合同文书」、标签 3 个、置信度 0.97；应用后数据库标题/分类/标签同步更新。
 
 ---
 
@@ -254,7 +268,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 
 1. 微信小程序：AppID / AppSecret 已在服务器 `.env` 配置；还需要公众平台下载的「代码上传密钥」才能让 CI 上传体验版
 2. 百度网盘 / 夸克网盘官方 Skill 安装与账号授权（目前网盘链接需在管理端手动填写）
-3. AI 复核队列（DeepSeek 标注标题/分类/标签）与人工确认
+3. AI 批量标注 / 复核队列（当前为单条「AI」按钮）
 4. 小程序登录 / 收藏接口（当前收藏仅本地存储）
 5. 源文件上传 → 网盘同步 → 校验后删除服务器源文件
 
