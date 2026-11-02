@@ -8,6 +8,7 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
+import { LoginRateLimitGuard } from "../common/login-rate-limit.guard";
 import { UserAuthGuard } from "./user-auth.guard";
 import { UserAuthService } from "./user-auth.service";
 import { UserService } from "./user.service";
@@ -24,6 +25,7 @@ export class UserController {
   ) {}
 
   @Post("login")
+  @UseGuards(LoginRateLimitGuard)
   login(@Body() body: { code?: unknown }) {
     return this.auth.loginWithCode(String(body.code || ""));
   }

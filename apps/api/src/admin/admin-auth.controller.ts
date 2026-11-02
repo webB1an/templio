@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
+import { LoginRateLimitGuard } from "../common/login-rate-limit.guard";
 import { AdminAuthService } from "./auth.service";
 import { AdminAuthGuard } from "./auth.guard";
 
@@ -12,6 +13,7 @@ export class AdminAuthController {
   constructor(private readonly auth: AdminAuthService) {}
 
   @Post("login")
+  @UseGuards(LoginRateLimitGuard)
   login(@Req() request: LoginRequest) {
     const username = String(request.body?.username || "").trim();
     const password = String(request.body?.password || "");

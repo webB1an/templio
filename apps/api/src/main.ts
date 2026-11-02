@@ -11,7 +11,11 @@ async function bootstrap(): Promise<void> {
 
   // 公开 API 统一 /api 前缀；/health 保持根路径，供部署健康检查使用
   app.setGlobalPrefix("api", { exclude: ["health"] });
-  app.enableCors();
+  const allowedOrigins = (process.env.CORS_ORIGINS || process.env.APP_ORIGIN || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  app.enableCors(allowedOrigins.length > 0 ? { origin: allowedOrigins } : { origin: false });
   app.enableShutdownHooks();
 
   const port = Number(process.env.PORT || 4000);

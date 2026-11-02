@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { LoginRateLimitGuard } from "../common/login-rate-limit.guard";
 import { PublicModule } from "../public/public.module";
 import { TemplateClickController } from "./template-click.controller";
 import { UserAuthGuard } from "./user-auth.guard";
@@ -9,6 +10,6 @@ import { UserService } from "./user.service";
 @Module({
   imports: [PublicModule],
   controllers: [UserController, TemplateClickController],
-  providers: [UserAuthService, UserService, UserAuthGuard],
+  providers: [UserAuthService, UserService, UserAuthGuard, LoginRateLimitGuard],
 })
 export class UserModule {}
