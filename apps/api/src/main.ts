@@ -1,7 +1,10 @@
 import "reflect-metadata";
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
+
+// PM2 可能带着空值/旧值环境启动；这里以 apps/api/.env 为准覆盖
+loadEnv({ override: true });
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
