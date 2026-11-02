@@ -14,7 +14,7 @@
 
   <view class="tcard-body">
     <view class="tcard-author">
-      <view class="tcard-avatar">T</view>
+      <image class="tcard-avatar" src="/assets/logo.png" mode="aspectFill" />
       <text class="tcard-author-name">模板宝</text>
       <text class="tcard-type">{{formatLabel}}</text>
     </view>

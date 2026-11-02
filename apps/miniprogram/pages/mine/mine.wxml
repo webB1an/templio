@@ -8,7 +8,7 @@
 <view class="page" style="padding-top: {{contentTop}}px;">
   <view class="profile-card">
     <view class="profile-top">
-      <view class="avatar">T</view>
+      <image class="avatar" src="/assets/logo.png" mode="aspectFill" />
       <view class="profile-main">
         <text class="profile-name">{{userName}}</text>
         <text class="profile-sub">{{userSub}}</text>

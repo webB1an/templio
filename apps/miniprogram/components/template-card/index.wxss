@@ -146,14 +146,9 @@
   width: 32rpx;
   height: 32rpx;
   flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   border-radius: 50%;
-  font-size: 17rpx;
-  font-weight: 700;
-  color: #ffffff;
-  background: linear-gradient(135deg, #0a84ff 0%, #63a8ff 100%);
+  background: #eaf2ff;
 }
 
 .tcard-author-name {
