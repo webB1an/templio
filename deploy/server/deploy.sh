@@ -18,6 +18,8 @@ if [ ! -f apps/api/.env ]; then
   exit 1
 fi
 
+chmod 600 apps/api/.env
+
 if [ ! -d node_modules/@nestjs/core ]; then
   echo "✘ node_modules 不完整（CI 未同步依赖），请检查 deploy workflow 的 Sync release 步骤"
   exit 1
@@ -28,6 +30,17 @@ set -a
 # shellcheck disable=SC1091
 . apps/api/.env
 set +a
+
+# 记录本次部署的 commit，供 /health 返回（dotenv 启动时读取）
+if [ -n "${GIT_SHA:-}" ]; then
+  ENV_TMP="$(mktemp)"
+  grep -v '^GIT_SHA=' apps/api/.env > "$ENV_TMP" || true
+  printf '\n# 由 deploy.sh 自动写入\nGIT_SHA=%s\n' "$GIT_SHA" >> "$ENV_TMP"
+  cat "$ENV_TMP" > apps/api/.env
+  rm -f "$ENV_TMP"
+  export GIT_SHA
+  echo "-- release commit: ${GIT_SHA}"
+fi
 
 echo "-- Prisma generate (server native target)"
 # CI runner 与服务器 OpenSSL target 不同（CI: debian-openssl-3.0.x / 服务器: debian-openssl-1.0.x），
