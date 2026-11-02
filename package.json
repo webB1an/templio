@@ -26,11 +26,14 @@
     "cli": "npm run dev -w @templio/desktop-cli",
     "dev:api": "npm run dev -w @templio/api",
     "dev:admin": "npm run dev -w @templio/admin",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "studio": "npm run start -w @templio/desktop-studio",
+    "build:desktop": "electron-packager apps/desktop-studio 模板宝工作台 --platform=win32 --arch=x64 --out=release --overwrite --icon=apps/desktop-studio/assets/icon.ico"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
+    "@electron/packager": "^20.3.0",
     "@types/node": "^24.0.0",
     "husky": "^9.1.7",
     "miniprogram-ci": "^2.1.31",

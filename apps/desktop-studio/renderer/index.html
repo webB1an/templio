@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>模板宝 · 模板工作台</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <img class="brand-logo" src="../assets/logo.png" alt="模板宝" />
+          <div class="brand-copy">
+            <h1>模板宝 · 模板工作台</h1>
+            <p>PPT / Word → 封面、缩略图与页面预览</p>
+          </div>
+        </div>
+        <div class="engine-badge"><span class="dot"></span>本地渲染</div>
+      </header>
+
+      <main class="layout">
+        <aside class="panel settings">
+          <div class="panel-head">
+            <h2>生成设置</h2>
+            <span class="panel-note">本机运行，不上传源文件</span>
+          </div>
+
+          <div class="field">
+            <label for="srcDir">源文件夹</label>
+            <div class="path-row">
+              <input id="srcDir" readonly placeholder="选择包含 .pptx / .docx 的文件夹" />
+              <button id="pickSrc" class="ghost-btn">选择</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="outDir">输出文件夹</label>
+            <div class="path-row">
+              <input id="outDir" readonly placeholder="选择封面/缩略图输出位置" />
+              <button id="pickOut" class="ghost-btn">选择</button>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="pages">预览页数</label>
+              <input id="pages" type="number" min="1" max="8" value="4" />
+            </div>
+            <label class="check-field">
+              <input id="force" type="checkbox" />
+              <span>强制重新渲染</span>
+            </label>
+          </div>
+
+          <button id="render" class="primary-btn">开始生成</button>
+          <button id="openOutput" class="secondary-btn">打开输出目录</button>
+
+          <div class="tips">
+            <p>每生成一个模板会输出：</p>
+            <ul>
+              <li>cover.webp · 800×1067 详情封面</li>
+              <li>thumb.webp · 360×480 列表缩略图</li>
+              <li>preview-01.webp · 宽 800 页面预览</li>
+            </ul>
+          </div>
+        </aside>
+
+        <section class="workspace">
+          <div class="status-panel">
+            <div class="status-copy">
+              <span id="status" class="status-text">准备就绪</span>
+              <span id="statusDetail" class="status-detail">选择源文件夹后开始生成</span>
+            </div>
+            <span id="resultCount" class="result-count"></span>
+            <div class="progress-track">
+              <div id="progressBar" class="progress-bar"></div>
+            </div>
+          </div>
+
+          <div id="results" class="results">
+            <div class="empty-state">
+              <div class="empty-icon">▤</div>
+              <h3>还没有生成结果</h3>
+              <p>左侧选择源文件夹，点击「开始生成」<br />生成的封面和缩略图会显示在这里</p>
+            </div>
+          </div>
+
+          <div class="log-panel">
+            <div class="log-head">
+              <span>生成日志</span>
+              <button id="clearLog" class="link-btn">清空</button>
+            </div>
+            <pre id="log" class="log"></pre>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
