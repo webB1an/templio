@@ -41,8 +41,14 @@
   background: #0a84ff;
 }
 
+.tab-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
 .tab-text {
-  font-size: 23rpx;
+  margin-top: 6rpx;
+  font-size: 20rpx;
   line-height: 1;
   letter-spacing: 1rpx;
 }

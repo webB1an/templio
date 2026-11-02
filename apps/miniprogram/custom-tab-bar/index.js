@@ -2,9 +2,24 @@ Component({
   data: {
     selected: 0,
     tabs: [
-      { pagePath: "/pages/index/index", text: "首页" },
-      { pagePath: "/pages/category/category", text: "分类" },
-      { pagePath: "/pages/mine/mine", text: "我的" }
+      {
+        pagePath: "/pages/index/index",
+        text: "首页",
+        icon: "/assets/icons/home.png",
+        iconActive: "/assets/icons/home-active.png"
+      },
+      {
+        pagePath: "/pages/category/category",
+        text: "分类",
+        icon: "/assets/icons/category.png",
+        iconActive: "/assets/icons/category-active.png"
+      },
+      {
+        pagePath: "/pages/mine/mine",
+        text: "我的",
+        icon: "/assets/icons/mine.png",
+        iconActive: "/assets/icons/mine-active.png"
+      }
     ]
   },
 
