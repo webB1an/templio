@@ -12,7 +12,7 @@ interface RateLimitRequest {
 }
 
 /**
- * 登录接口简单内存限流：同一 IP 每分钟最多 10 次。
+ * 登录接口简单内存限流：同一客户端 IP 每分钟最多 10 次。
  * 单进程部署（PM2 fork 1 实例）足够；多实例时应换 Redis/数据库。
  */
 @Injectable()
@@ -23,8 +23,9 @@ export class LoginRateLimitGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<RateLimitRequest>();
-    const forwarded = (request.headers?.["x-forwarded-for"] || "").split(",")[0].trim();
-    const ip = forwarded || request.ip || "unknown";
+    // Nginx 会覆盖 X-Real-IP；不要取 X-Forwarded-For 首项，客户端可伪造
+    const realIp = (request.headers?.["x-real-ip"] || "").trim();
+    const ip = realIp || request.ip || "unknown";
     const now = Date.now();
 
     const current = this.hits.get(ip);

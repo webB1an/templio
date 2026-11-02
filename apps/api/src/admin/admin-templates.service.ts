@@ -728,7 +728,9 @@ function formatDateKey(date: Date): string {
 }
 
 function csvCell(value: unknown): string {
-  const text = value === null || value === undefined ? "" : String(value);
+  let text = value === null || value === undefined ? "" : String(value);
+  // 防止 Excel/WPS 把模板标题等字段当作公式执行
+  if (/^[=+\-@]/.test(text)) text = `'${text}`;
   if (/[",\r\n]/.test(text)) {
     return `"${text.replace(/"/g, '""')}"`;
   }

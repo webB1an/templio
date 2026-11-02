@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rmdir, unlink, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { Prisma } from "@prisma/client";
 import { parseManifest, shortHash, templateTextSchema } from "@templio/shared";
@@ -60,7 +60,31 @@ export class AdminImportService {
     // Nginx /assets/ 已指向 storage/public，因此 objectKey 不再包含 public 前缀
     const relativeDir = `templates/${hash}`;
     const absoluteDir = join(storageRoot, "public", relativeDir);
-    await mkdir(absoluteDir, { recursive: true });
+
+    // 先校验源文件，避免校验失败时已经在磁盘留下孤立图片
+    const source = files.source?.[0];
+    let sourceMeta:
+      | { safeName: string; sourceKey: string; sourceDir: string; size: number; mimetype: string }
+      | null = null;
+    if (source) {
+      if (Math.abs(Number(manifest.sourceBytes) - source.size) > 1) {
+        throw new BadRequestException("源文件大小与 manifest.sourceBytes 不一致");
+      }
+      const safeName = sanitizeFilename(decodeFilename(source.originalname || basename(manifest.sourceFile)));
+      const extension = safeName.includes(".") ? safeName.split(".").pop()!.toLowerCase() : "";
+      if (extension !== manifest.format) {
+        throw new BadRequestException(`源文件扩展名应为 .${manifest.format}`);
+      }
+      sourceMeta = {
+        safeName,
+        sourceKey: `sources/${shortHash(manifest.sourceHash, 8)}/${safeName}`,
+        sourceDir: join(storageRoot, "private", "sources", shortHash(manifest.sourceHash, 8)),
+        size: source.size || source.buffer.length,
+        mimetype: source.mimetype || "application/octet-stream"
+      };
+    }
+
+    const writtenPaths: string[] = [];
 
     const fileCreates: Prisma.TemplateFileCreateWithoutTemplateInput[] = [];
 
@@ -71,7 +95,9 @@ export class AdminImportService {
       seq: number,
     ) => {
       const objectKey = `${relativeDir}/${name}`;
-      await writeFile(join(storageRoot, "public", objectKey), file.buffer);
+      const absolutePath = join(storageRoot, "public", objectKey);
+      await writeFile(absolutePath, file.buffer);
+      writtenPaths.push(absolutePath);
       fileCreates.push({
         role,
         objectKey,
@@ -81,58 +107,58 @@ export class AdminImportService {
       });
     };
 
-    await saveImage(cover, "cover.webp", "cover", 0);
-    await saveImage(thumb, "thumb.webp", "thumb", 0);
-    for (let index = 0; index < previews.length; index += 1) {
-      await saveImage(previews[index]!, `preview-${String(index + 1).padStart(2, "0")}.webp`, "preview", index);
-    }
-
-    // 可选：源文件先暂存到服务器私有目录，等同步网盘后再删除
-    const source = files.source?.[0];
-    let sourceInfo: { filename: string; size: number } | null = null;
-    if (source) {
-      if (Math.abs(Number(manifest.sourceBytes) - source.size) > 1) {
-        throw new BadRequestException("源文件大小与 manifest.sourceBytes 不一致");
-      }
-      const safeName = sanitizeFilename(decodeFilename(source.originalname || basename(manifest.sourceFile)));
-      const extension = safeName.includes(".") ? safeName.split(".").pop()!.toLowerCase() : "";
-      if (extension !== manifest.format) {
-        throw new BadRequestException(`源文件扩展名应为 .${manifest.format}`);
+    try {
+      await mkdir(absoluteDir, { recursive: true });
+      await saveImage(cover, "cover.webp", "cover", 0);
+      await saveImage(thumb, "thumb.webp", "thumb", 0);
+      for (let index = 0; index < previews.length; index += 1) {
+        await saveImage(previews[index]!, `preview-${String(index + 1).padStart(2, "0")}.webp`, "preview", index);
       }
 
-      const sourceKey = `sources/${hash}/${safeName}`;
-      const sourceDir = join(storageRoot, "private", "sources", hash);
-      await mkdir(sourceDir, { recursive: true });
-      await writeFile(join(storageRoot, "private", sourceKey), source.buffer);
+      // 可选：源文件先暂存到服务器私有目录，等同步网盘后再删除
+      let sourceInfo: { filename: string; size: number } | null = null;
+      if (sourceMeta && source) {
+        await mkdir(sourceMeta.sourceDir, { recursive: true });
+        const sourceAbsolutePath = join(storageRoot, "private", sourceMeta.sourceKey);
+        await writeFile(sourceAbsolutePath, source.buffer);
+        writtenPaths.push(sourceAbsolutePath);
+        fileCreates.push({
+          role: "source",
+          objectKey: sourceMeta.sourceKey,
+          mime: sourceMeta.mimetype,
+          size: BigInt(sourceMeta.size),
+          seq: 0,
+        });
+        sourceInfo = { filename: sourceMeta.safeName, size: sourceMeta.size };
+      }
 
-      fileCreates.push({
-        role: "source",
-        objectKey: sourceKey,
-        mime: source.mimetype || "application/octet-stream",
-        size: BigInt(source.size || source.buffer.length),
-        seq: 0,
+      const title = (manifest.titleGuess || text.title || basename(manifest.sourceFile)).slice(0, 200);
+      const template = await this.prisma.template.create({
+        data: {
+          sourceHash: manifest.sourceHash,
+          title,
+          description: text.firstPagesText?.[0]?.slice(0, 500) || null,
+          status: "imported",
+          format: manifest.format,
+          pageCount: manifest.pageCount,
+          fileSize: BigInt(manifest.sourceBytes),
+          originalName: basename(manifest.sourceFile),
+          batchKey: "cli",
+          textContent: text as unknown as Prisma.InputJsonValue,
+          files: { create: fileCreates },
+        },
       });
-      sourceInfo = { filename: safeName, size: source.size || source.buffer.length };
+
+      return { status: "imported", id: template.id, title: template.title, sourceFile: sourceInfo?.filename || null };
+    } catch (error) {
+      // 数据库写失败或写入中途异常时，清理本次已经落盘的图片/源文件
+      for (const absolutePath of writtenPaths) {
+        await unlink(absolutePath).catch(() => undefined);
+      }
+      await rmdir(absoluteDir).catch(() => undefined);
+      if (sourceMeta) await rmdir(sourceMeta.sourceDir).catch(() => undefined);
+      throw error;
     }
-
-    const title = (manifest.titleGuess || text.title || basename(manifest.sourceFile)).slice(0, 200);
-    const template = await this.prisma.template.create({
-      data: {
-        sourceHash: manifest.sourceHash,
-        title,
-        description: text.firstPagesText?.[0]?.slice(0, 500) || null,
-        status: "imported",
-        format: manifest.format,
-        pageCount: manifest.pageCount,
-        fileSize: BigInt(manifest.sourceBytes),
-        originalName: basename(manifest.sourceFile),
-        batchKey: "cli",
-        textContent: text as unknown as Prisma.InputJsonValue,
-        files: { create: fileCreates },
-      },
-    });
-
-    return { status: "imported", id: template.id, title: template.title, sourceFile: sourceInfo?.filename || null };
   }
 }
 

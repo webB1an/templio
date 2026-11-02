@@ -651,7 +651,7 @@ export default function Templates() {
             <div className="source-box-empty">未上传源文件（CLI 加 --with-source 可上传暂存）</div>
           )}
           <div className="source-box-empty" style={{ marginTop: 6 }}>
-            自动同步需服务端配置 NETDISK_SYNC_COMMAND；未配置时请手动下载上传网盘后填写链接。
+            自动同步会使用「网盘账号」中该类型的默认账号；未配置时请手动下载上传网盘后填写链接。
           </div>
         </div>
 

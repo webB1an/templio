@@ -1,5 +1,5 @@
 import { readdir, stat } from "node:fs/promises";
-import { basename, extname, join, resolve } from "node:path";
+import { basename, extname, isAbsolute, join, relative, resolve } from "node:path";
 import type { TemplateFormat } from "@templio/shared";
 import { makeCover, makePreview, makeThumb } from "../lib/images.js";
 import { ensureDir } from "../lib/fsx.js";
@@ -37,6 +37,12 @@ interface Failure {
 export async function runRender(options: RenderCommandOptions): Promise<number> {
   const srcDir = resolve(options.srcDir);
   const distDir = resolve(options.outDir);
+  const relativeOutput = relative(srcDir, distDir);
+  if (!relativeOutput || (!relativeOutput.startsWith("..") && !isAbsolute(relativeOutput))) {
+    console.error("✘ 输出目录不能放在源目录内部，否则下次会扫描到生成的 source 文件。");
+    return 1;
+  }
+  const previewPages = Math.min(8, Math.max(1, options.previewPages));
 
   const soffice = await findSoffice();
   if (!soffice) {
@@ -56,7 +62,7 @@ export async function runRender(options: RenderCommandOptions): Promise<number> 
 
   console.log(`Templio 渲染：${files.length} 个模板 → ${distDir}`);
   console.log(
-    `LibreOffice ${sofficeVersion} · 并发 ${options.concurrency} · 预览 ${options.previewPages} 页 · 渲染宽度 ${options.renderWidth}px\n`,
+    `LibreOffice ${sofficeVersion} · 并发 ${options.concurrency} · 预览 ${previewPages} 页 · 渲染宽度 ${options.renderWidth}px\n`,
   );
 
   const failures: Failure[] = [];
@@ -102,7 +108,7 @@ export async function runRender(options: RenderCommandOptions): Promise<number> 
       const pdfBytes = await convertToPdf(soffice, file.path, { timeoutMs: 300_000 });
       const rendered = await renderPdfPages(pdfBytes, {
         width: options.renderWidth,
-        maxPages: options.previewPages,
+        maxPages: previewPages,
       });
       const firstPage = rendered.pages[0];
       if (!firstPage) throw new Error("PDF 没有可渲染页面");

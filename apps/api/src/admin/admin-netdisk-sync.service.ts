@@ -45,6 +45,36 @@ export class AdminNetdiskSyncService {
       throw new BadRequestException("该模板没有服务器源文件，请用 templio upload --with-source 重新上传");
     }
 
+    // 同一模板同一时间只允许一个同步任务，避免上传/清理源文件相互踩踏
+    const activeTask = await this.prisma.task.findFirst({
+      where: {
+        templateId,
+        type: "netdisk_sync",
+        status: { in: ["queued", "running"] },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    if (activeTask) {
+      const ageMs = Date.now() - activeTask.createdAt.getTime();
+      if (ageMs < 30 * 60 * 1000) {
+        return {
+          taskId: activeTask.id,
+          status: activeTask.status,
+          message: "该模板已有网盘同步任务正在进行",
+        };
+      }
+      await this.prisma.task
+        .update({
+          where: { id: activeTask.id },
+          data: {
+            status: "failed",
+            message: "同步任务超时",
+            error: "同步任务超过 30 分钟未完成，已自动标记失败，可重新发起",
+          },
+        })
+        .catch(() => undefined);
+    }
+
     const commandTemplate = (process.env.NETDISK_SYNC_COMMAND || "").trim();
     const provider = await this.pickProvider(requested);
     const mode: SyncMode = provider ? "account" : "command";
@@ -225,7 +255,14 @@ export class AdminNetdiskSyncService {
       }
 
       if (process.env.DELETE_SOURCE_AFTER_SYNC !== "false") {
-        await this.templates.removeSourceFile(templateId);
+        try {
+          await this.templates.removeSourceFile(templateId);
+        } catch (cleanupError) {
+          // 上传和短链已成功，源文件清理失败不应把同步任务标记为失败
+          this.logger.warn(
+            `网盘同步成功但清理源文件失败 template=${templateId}：${(cleanupError as Error).message}`,
+          );
+        }
       }
     } catch (error) {
       const rawMessage = (error as Error).message || "网盘同步失败";
@@ -242,7 +279,7 @@ export class AdminNetdiskSyncService {
 
 function friendlySyncMessage(message: string): string {
   if (/BaiduPanAuthError|missing STOKEN|BDUSS|login cookies required/i.test(message)) {
-    return "百度 Cookie 缺少 STOKEN/BDUSS 或已失效，请到「网盘账号」重新粘贴完整 Cookie";
+    return "百度网盘授权已失效，请到「网盘账号」重新授权百度账号";
   }
   if (/QUARK_SKILL_DIR|未配置夸克 Skill/i.test(message)) {
     return "未配置夸克 Skill，请在服务器设置 QUARK_SKILL_DIR 后重试";

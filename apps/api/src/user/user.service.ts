@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { PublicTemplatesService } from "../public/templates.service";
 
@@ -137,19 +138,26 @@ export class UserService {
       where: { userId_templateId: { userId, templateId } },
     });
     if (!existing) {
-      await this.prisma.$transaction([
-        this.prisma.userFavorite.create({ data: { userId, templateId } }),
-        this.prisma.template.update({
-          where: { id: templateId },
-          data: { favoriteCount: { increment: 1 } },
-        }),
-      ]);
+      try {
+        await this.prisma.$transaction([
+          this.prisma.userFavorite.create({ data: { userId, templateId } }),
+          this.prisma.template.update({
+            where: { id: templateId },
+            data: { favoriteCount: { increment: 1 } },
+          }),
+        ]);
+      } catch (error) {
+        // 并发双击时唯一键冲突：另一请求已完成收藏，不重复加计数
+        if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
+          throw error;
+        }
+      }
     }
     const count = await this.prisma.template.findUnique({
       where: { id: templateId },
       select: { favoriteCount: true },
     });
-    return { favorited: true, favoriteCount: count?.favoriteCount || 0 };
+    return { favorited: true, favoriteCount: Math.max(0, count?.favoriteCount || 0) };
   }
 
   async removeFavorite(
@@ -165,8 +173,8 @@ export class UserService {
         this.prisma.userFavorite.delete({
           where: { userId_templateId: { userId, templateId } },
         }),
-        this.prisma.template.update({
-          where: { id: templateId },
+        this.prisma.template.updateMany({
+          where: { id: templateId, favoriteCount: { gt: 0 } },
           data: { favoriteCount: { decrement: 1 } },
         }),
       ]);
