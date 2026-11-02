@@ -20,6 +20,7 @@
     "render": "npm run build -w @templio/shared && npm run render -w @templio/desktop-cli --",
     "status": "npm run build -w @templio/shared && npm run status -w @templio/desktop-cli --",
     "check:miniprogram": "node scripts/check-miniprogram.mjs",
+    "upload:miniprogram": "node scripts/upload-miniprogram.mjs",
     "cli": "npm run dev -w @templio/desktop-cli",
     "dev:api": "npm run dev -w @templio/api",
     "dev:admin": "npm run dev -w @templio/admin",
@@ -30,6 +31,7 @@
     "@commitlint/config-conventional": "^21.2.4",
     "@types/node": "^24.0.0",
     "husky": "^9.1.7",
+    "miniprogram-ci": "^2.1.31",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
   },
