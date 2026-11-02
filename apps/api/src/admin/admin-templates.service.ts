@@ -393,6 +393,28 @@ export class AdminTemplatesService {
     return { removed: result.count > 0 };
   }
 
+  async deleteTemplate(id: string): Promise<{ deleted: boolean }> {
+    const template = await this.prisma.template.findUnique({
+      where: { id },
+      include: { files: true },
+    });
+    if (!template) throw new NotFoundException("模板不存在");
+
+    await this.prisma.task.deleteMany({ where: { templateId: id } });
+    await this.prisma.template.delete({ where: { id } });
+
+    const storageRoot = process.env.STORAGE_ROOT || join(process.cwd(), "storage");
+    for (const file of template.files) {
+      const absolutePath = file.objectKey.startsWith("sources/")
+        ? join(storageRoot, "private", file.objectKey)
+        : join(storageRoot, "public", file.objectKey);
+      await unlink(absolutePath).catch(() => undefined);
+      await rmdir(dirname(absolutePath)).catch(() => undefined);
+    }
+
+    return { deleted: true };
+  }
+
   async getSourceFile(id: string): Promise<{ path: string; filename: string; size: number }> {
     const file = await this.prisma.templateFile.findFirst({
       where: { templateId: id, role: "source" },

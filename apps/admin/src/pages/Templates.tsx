@@ -274,6 +274,26 @@ export default function Templates() {
     }
   };
 
+  const deleteTemplate = (record: AdminTemplate) => {
+    Modal.confirm({
+      title: `删除模板「${record.title}」？`,
+      content: "删除后数据库记录、封面/预览图、网盘短链、收藏与浏览记录都会移除，且不可恢复。",
+      okText: "确认删除",
+      okType: "danger",
+      cancelText: "取消",
+      onOk: async () => {
+        try {
+          await api.deleteTemplate(record.id);
+          message.success("已删除模板");
+          setSelected((keys) => keys.filter((key) => key !== record.id));
+          await load();
+        } catch (error) {
+          message.error((error as Error).message);
+        }
+      }
+    });
+  };
+
   const changeStatus = async (record: AdminTemplate, next: TemplateStatus) => {
     try {
       await api.updateTemplate(record.id, { status: next });
@@ -414,7 +434,7 @@ export default function Templates() {
     {
       title: "操作",
       key: "actions",
-      width: 170,
+      width: 230,
       render: (_value, record) => (
         <Space size={4}>
           <Button type="link" size="small" onClick={() => openEdit(record)}>
@@ -435,6 +455,9 @@ export default function Templates() {
               上架
             </Button>
           )}
+          <Button type="link" size="small" danger onClick={() => deleteTemplate(record)}>
+            删除
+          </Button>
         </Space>
       )
     }
@@ -510,7 +533,7 @@ export default function Templates() {
           showTotal: (count) => `共 ${count} 个模板`,
           onChange: (nextPage) => setPage(nextPage)
         }}
-        scroll={{ x: 1180 }}
+        scroll={{ x: 1240 }}
       />
 
       <Modal

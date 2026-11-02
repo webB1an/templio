@@ -88,6 +88,11 @@ export class AdminTemplatesController {
     return this.templates.removeSourceFile(id);
   }
 
+  @Delete("templates/:id")
+  removeTemplate(@Param("id") id: string) {
+    return this.templates.deleteTemplate(id);
+  }
+
   @Post("templates/:id/netdisk/sync")
   syncNetdisk(@Param("id") id: string, @Body() body: { provider?: unknown }) {
     return this.netdiskSync.start(id, body.provider);

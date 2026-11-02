@@ -142,6 +142,10 @@ export const api = {
     return request<{ removed: boolean }>(`/admin/templates/${id}/source`, { method: "DELETE" });
   },
 
+  deleteTemplate(id: string) {
+    return request<{ deleted: boolean }>(`/admin/templates/${id}`, { method: "DELETE" });
+  },
+
   startNetdiskSync(id: string, provider: "baidu" | "quark") {
     return request<{ taskId: string; status: string; message?: string }>(
       `/admin/templates/${id}/netdisk/sync`,
