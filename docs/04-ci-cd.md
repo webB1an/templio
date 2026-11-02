@@ -166,6 +166,8 @@ git push origin main
 | 新导入封面 | 3 个新导入模板 `/assets/templates/<hash8>/cover.webp` 均生成 |
 | 微信登录 | `POST /api/user/login`（fake code）→ 401「微信登录失败（40029: invalid code）」，证明 AppID/Secret 与微信网络通 |
 | 用户收藏 | 测试 token：`/user/me` 200、未登录 401、收藏增/查/删、favoriteCount 1→0 |
+| 浏览/复制计数 | 匿名 view → 201、登录 copy → 201；`/user/downloads` 返回 1 条；无 token 401 |
+| 管理端计数 | 管理端模板列表 `viewCount=1 / copyCount=1`；测试后清理归零 |
 
 ### 3.6 公开 API（已上线）
 
@@ -293,6 +295,25 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - fake code 调登录 → 401 `微信登录失败（40029: invalid code）`，说明 AppID/Secret 与微信接口已通
 - 测试用户 token：`/user/me` 200、无 token 401、收藏增/查/删、模板 favoriteCount 1→0
 - 小程序静态检查 7 个页面通过；真实登录需在开发者工具/真机用 `wx.login` 的 code，无感完成
+
+### 3.12 浏览/下载统计与下载记录（已上线）
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/templates/:id/click` | 请求体 `{kind:"view"\|"copy"}`；带用户 token 时记录 userId，匿名也计数 |
+| GET | `/api/user/downloads` | 最近「复制链接」的模板（按模板去重，含公开 DTO + downloadedAt） |
+
+- `Template.viewCount / copyCount` 累加，同时写 `TemplateClick` 明细
+- 小程序：详情页进入记 `view`，复制链接成功记 `copy`
+- 「我的」→「下载记录」页可查看已复制过的模板；下载数展示在「我的」统计里
+- 管理端模板列表标题下展示「N 浏览 · N 下载」
+
+**已验证：**
+
+- 匿名 view → 201；登录 copy → 201
+- 下载记录 `total=1`、无 token → 401
+- 管理端 `viewCount=1 / copyCount=1`
+- 测试数据清理后计数归零
 
 ---
 

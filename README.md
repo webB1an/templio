@@ -106,6 +106,8 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 | GET | `/api/user/favorites/:templateId` | 是否已收藏 |
 | POST | `/api/user/favorites` | 收藏 |
 | DELETE | `/api/user/favorites/:templateId` | 取消收藏 |
+| POST | `/api/templates/:id/click` | 浏览/复制计数（匿名也记录） |
+| GET | `/api/user/downloads` | 下载记录（最近复制的模板） |
 
 ## 管理端
 
@@ -120,6 +122,7 @@ templio upload D:\templates-dist --api https://templio.wdbzk.com
 - 用微信开发者工具直接导入该目录（AppID 已写入 `project.config.json`）
 - **微信静默登录**：进入小程序自动 `wx.login`，无需用户点击授权；token 失效自动重登
 - **云端收藏**：详情页收藏/取消同步服务端，「我的」→ 我的收藏可查看
+- **下载记录**：详情页复制下载链接后记录到服务端，「我的」→ 下载记录可查看
 - 生产接口域名：`https://templio.wdbzk.com`（需在微信公众平台配置 request 合法域名）
 - 静态检查：`npm run check:miniprogram`（页面四件套 / JSON / JS 语法 / WXML 标签闭合）
 - 详细说明：`apps/miniprogram/README.md`
