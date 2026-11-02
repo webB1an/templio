@@ -25,6 +25,18 @@ export class ShortLinkController {
       .update({ where: { code }, data: { clickCount: { increment: 1 } } })
       .catch(() => undefined);
 
-    res.redirect(302, target.url);
+    res.redirect(302, withPasscode(target.url, target.passcode));
+  }
+}
+
+/** 提取码不直接展示给用户，短链跳转时自动带上 pwd（网盘链接已带 pwd 时跳过） */
+function withPasscode(rawUrl: string, passcode: string | null): string {
+  if (!passcode) return rawUrl;
+  try {
+    const url = new URL(rawUrl);
+    if (!url.searchParams.get("pwd")) url.searchParams.set("pwd", passcode);
+    return url.toString();
+  } catch {
+    return rawUrl;
   }
 }

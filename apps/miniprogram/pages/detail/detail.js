@@ -115,17 +115,6 @@ Page({
     recordClick(item.id, "copy").catch(() => {});
   },
 
-  copyPasscode() {
-    const passcode = this.data.item && this.data.item.passcode;
-    if (!passcode) return;
-    wx.setClipboardData({
-      data: passcode,
-      success() {
-        wx.showToast({ title: "提取码已复制", icon: "none" });
-      }
-    });
-  },
-
   reportTemplate() {
     wx.showModal({
       title: "举报模板",

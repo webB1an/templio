@@ -37,12 +37,6 @@
         <text wx:for="{{item.tags}}" wx:key="*this" class="tag">#{{item}}</text>
       </view>
 
-      <view wx:if="{{item.passcode}}" class="passcode-row" bindtap="copyPasscode">
-        <text class="passcode-label">提取码</text>
-        <text class="passcode-code">{{item.passcode}}</text>
-        <text class="passcode-copy">复制</text>
-      </view>
-
       <text class="summary">{{item.summary}}</text>
     </view>
 
