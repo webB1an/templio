@@ -147,5 +147,13 @@ export const api = {
         analysis?: AiAnalysis;
       }>;
     }>("/admin/ai/batch", { method: "POST", body });
+  },
+
+  autoApplyAi(body: { minConfidence?: number; limit?: number }) {
+    return request<{
+      applied: number;
+      failed: number;
+      items: Array<{ id: string; title: string; ok: boolean; message?: string }>;
+    }>("/admin/ai/auto-apply", { method: "POST", body });
   }
 };

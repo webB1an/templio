@@ -49,10 +49,26 @@ export interface TemplateList {
   total: number;
 }
 
+export interface TopTemplate {
+  id: string;
+  title: string;
+  category: string;
+  viewCount: number;
+  copyCount: number;
+  favoriteCount: number;
+  coverUrl: string | null;
+}
+
 export interface Stats {
   total: number;
   byStatus: Record<string, number>;
   categories: Array<{ key: string; name: string; count: number }>;
+  views: number;
+  copies: number;
+  favorites: number;
+  today: { views: number; copies: number; clicks: number };
+  pendingReview: number;
+  topTemplates: TopTemplate[];
 }
 
 export interface Facets {

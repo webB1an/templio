@@ -44,6 +44,7 @@ export default function Templates() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiApplying, setAiApplying] = useState(false);
   const [batchLoading, setBatchLoading] = useState(false);
+  const [autoApplying, setAutoApplying] = useState(false);
   const [aiResult, setAiResult] = useState<{
     analysis: AiAnalysis;
     matchedCategory: { key: string; name: string } | null;
@@ -171,6 +172,25 @@ export default function Templates() {
       message.error((error as Error).message);
     } finally {
       setBatchLoading(false);
+    }
+  };
+
+  const autoApply = async () => {
+    setAutoApplying(true);
+    try {
+      const result = await api.autoApplyAi({ minConfidence: 0.9, limit: 20 });
+      if (result.applied === 0) {
+        message.info("没有置信度 ≥ 90% 的待复核 AI 建议");
+      } else {
+        message.success(
+          `已自动应用 ${result.applied} 个模板${result.failed ? `，失败 ${result.failed} 个` : ""}`
+        );
+      }
+      await load();
+    } catch (error) {
+      message.error((error as Error).message);
+    } finally {
+      setAutoApplying(false);
     }
   };
 
@@ -384,6 +404,9 @@ export default function Templates() {
         <div style={{ flex: 1 }} />
         <Button loading={batchLoading} onClick={() => void batchAnnotate()}>
           AI 批量标注
+        </Button>
+        <Button loading={autoApplying} onClick={() => void autoApply()}>
+          AI 自动应用
         </Button>
         <Button disabled={selected.length === 0} onClick={() => void bulkAction("publish")}>
           批量上架
