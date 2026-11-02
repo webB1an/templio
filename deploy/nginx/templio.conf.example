@@ -41,6 +41,10 @@ server {
     client_max_body_size 108m;
 
     # Web 管理端（React 构建产物，后续实现）
+    location = /admin {
+        return 301 /admin/;
+    }
+
     location /admin/ {
         alias /www/wwwroot/templio/apps/admin/dist/;
         try_files $uri $uri/ /admin/index.html;
