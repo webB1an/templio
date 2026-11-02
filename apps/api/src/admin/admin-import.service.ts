@@ -94,7 +94,7 @@ export class AdminImportService {
       if (Math.abs(Number(manifest.sourceBytes) - source.size) > 1) {
         throw new BadRequestException("源文件大小与 manifest.sourceBytes 不一致");
       }
-      const safeName = sanitizeFilename(source.originalname || basename(manifest.sourceFile));
+      const safeName = sanitizeFilename(decodeFilename(source.originalname || basename(manifest.sourceFile)));
       const extension = safeName.includes(".") ? safeName.split(".").pop()!.toLowerCase() : "";
       if (extension !== manifest.format) {
         throw new BadRequestException(`源文件扩展名应为 .${manifest.format}`);
@@ -142,4 +142,16 @@ function sanitizeFilename(name: string): string {
     .replace(/\s+/g, " ")
     .trim();
   return cleaned.slice(0, 120) || "source";
+}
+
+/**
+ * multipart 的 filename 在 busboy/multer 下常被按 latin1 解码，中文会变成乱码；
+ * 这里尝试还原为 UTF-8，失败则保留原值。
+ */
+function decodeFilename(raw: string): string {
+  if (!raw) return raw;
+  if (!/^[\x00-\xff]*$/.test(raw)) return raw;
+  const decoded = Buffer.from(raw, "latin1").toString("utf8");
+  if (decoded.includes("\uFFFD")) return raw;
+  return decoded;
 }
