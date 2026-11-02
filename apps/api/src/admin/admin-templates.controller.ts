@@ -15,11 +15,15 @@ import {
 } from "@nestjs/common";
 import { AdminAuthGuard } from "./auth.guard";
 import { AdminTemplatesService } from "./admin-templates.service";
+import { AdminNetdiskSyncService } from "./admin-netdisk-sync.service";
 
 @Controller("admin")
 @UseGuards(AdminAuthGuard)
 export class AdminTemplatesController {
-  constructor(private readonly templates: AdminTemplatesService) {}
+  constructor(
+    private readonly templates: AdminTemplatesService,
+    private readonly netdiskSync: AdminNetdiskSyncService,
+  ) {}
 
   @Get("stats")
   stats() {
@@ -82,5 +86,15 @@ export class AdminTemplatesController {
   @Delete("templates/:id/source")
   removeSource(@Param("id") id: string) {
     return this.templates.removeSourceFile(id);
+  }
+
+  @Post("templates/:id/netdisk/sync")
+  syncNetdisk(@Param("id") id: string, @Body() body: { provider?: unknown }) {
+    return this.netdiskSync.start(id, body.provider);
+  }
+
+  @Get("tasks/:id")
+  task(@Param("id") id: string) {
+    return this.netdiskSync.getTask(id);
   }
 }
