@@ -341,7 +341,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1c1c1e;
+  background: rgba(44, 44, 46, 0.74);
+  -webkit-backdrop-filter: blur(22rpx) saturate(160%);
+  backdrop-filter: blur(22rpx) saturate(160%);
+  border-left: 1rpx solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.12);
   color: #ffffff;
   font-size: 28rpx;
   font-weight: 600;
@@ -350,7 +354,9 @@
 
 .action-disabled {
   color: var(--ink-3);
-  background: rgba(120, 130, 150, 0.2);
+  background: rgba(120, 130, 150, 0.18);
+  border-left-color: transparent;
+  box-shadow: none;
 }
 
 .get-block {
