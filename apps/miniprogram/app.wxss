@@ -1,91 +1,77 @@
 /* ============================================================
    模板宝小程序 · 全局样式
-   液态玻璃（Liquid Glass）设计：玻璃仅用于「浮在内容之上的控制层」
-   —— 导航、搜索条、筛选 chip、TabBar、详情信息卡、弹层。
+   设计方向：纸感编辑风（Editorial）
+   - 暖白纸面、墨色文字、陶土色强调
+   - 细边框与留白代替玻璃、渐变和光斑
    ============================================================ */
 
 page {
-  --ink: #1b2340;
-  --ink-2: #5a6380;
-  --ink-3: #8a90a6;
-  --brand: #2f6be4;
-  --brand-soft: rgba(47, 107, 228, 0.12);
-  --glass-bg: rgba(255, 255, 255, 0.56);
-  --glass-bg-strong: rgba(255, 255, 255, 0.74);
-  --glass-border: rgba(255, 255, 255, 0.78);
-  --glass-shadow: 0 12rpx 40rpx rgba(31, 58, 147, 0.12);
-  --radius-lg: 40rpx;
-  --radius-md: 28rpx;
-  --radius-sm: 18rpx;
+  --paper: #f6f5f2;
+  --paper-2: #efede8;
+  --surface: #ffffff;
+  --ink: #191b1e;
+  --ink-2: #5f6369;
+  --ink-3: #96999e;
+  --line: #e7e4de;
+  --line-strong: #d8d4cc;
+  --accent: #b0472a;
+  --accent-ink: #8d371f;
+  --accent-soft: #f4e8e2;
+  --radius: 16rpx;
+  --radius-sm: 10rpx;
 
   min-height: 100vh;
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
     "Helvetica Neue", sans-serif;
-  background: linear-gradient(180deg, #edf2ff 0%, #f7f4ff 44%, #f1f7ff 100%);
+  background: var(--paper);
+  font-size: 28rpx;
   -webkit-font-smoothing: antialiased;
 }
 
-/* 背景光斑：让玻璃有内容可模糊 */
+/* 旧版光斑容器不再使用 */
 .bg-orb {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(70rpx);
-  opacity: 0.55;
-  z-index: 0;
-  pointer-events: none;
+  display: none !important;
 }
 
-.orb-a {
-  width: 480rpx;
-  height: 480rpx;
-  left: -160rpx;
-  top: -80rpx;
-  background: radial-gradient(circle, #7aa7ff 0%, rgba(122, 167, 255, 0) 70%);
-}
+/* ---------------- 页面骨架 ---------------- */
 
-.orb-b {
-  width: 520rpx;
-  height: 520rpx;
-  right: -200rpx;
-  top: 420rpx;
-  background: radial-gradient(circle, #ffb7dd 0%, rgba(255, 183, 221, 0) 70%);
-}
-
-.orb-c {
-  width: 420rpx;
-  height: 420rpx;
-  left: 120rpx;
-  bottom: -180rpx;
-  background: radial-gradient(circle, #9ff0d8 0%, rgba(159, 240, 216, 0) 70%);
-}
-
-/* 页面内容需在光斑之上 */
 .page {
   position: relative;
   z-index: 1;
   min-height: 100vh;
-  padding: 0 32rpx 200rpx;
+  padding: 0 36rpx 220rpx;
   box-sizing: border-box;
 }
 
-/* ---------------- 玻璃基础 ---------------- */
-
-.glass {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(24rpx) saturate(160%);
-  backdrop-filter: blur(24rpx) saturate(160%);
-  border: 1rpx solid var(--glass-border);
-  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.9), var(--glass-shadow);
-  border-radius: var(--radius-md);
+.hero {
+  padding: 8rpx 0 0;
 }
 
-.glass-pill {
-  border-radius: 999rpx;
+.eyebrow {
+  display: block;
+  margin-bottom: 18rpx;
+  color: var(--accent);
+  font-size: 19rpx;
+  font-weight: 600;
+  letter-spacing: 4rpx;
+  line-height: 1.4;
 }
 
-.glass-strong {
-  background: var(--glass-bg-strong);
+.hero-title {
+  display: block;
+  font-size: 46rpx;
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -1rpx;
+}
+
+.hero-sub {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  line-height: 1.65;
+  color: var(--ink-2);
 }
 
 /* ---------------- 自定义导航 ---------------- */
@@ -96,126 +82,159 @@ page {
   right: 0;
   top: 0;
   z-index: 20;
-  padding: 0 32rpx;
+  padding: 0 36rpx;
   box-sizing: border-box;
+  background: rgba(246, 245, 242, 0.94);
+  -webkit-backdrop-filter: blur(16rpx);
+  backdrop-filter: blur(16rpx);
+  border-bottom: 1rpx solid var(--line);
 }
 
 .nav-inner {
-  height: 76rpx;
+  height: 84rpx;
   display: flex;
   align-items: center;
-  padding: 0 28rpx;
+  margin-right: 0 !important;
+}
+
+/* 旧的玻璃导航 class 统一降级为透明 */
+.nav .glass {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-radius: 0;
+  padding: 0;
 }
 
 .brand {
   font-size: 32rpx;
   font-weight: 700;
-  letter-spacing: 1rpx;
+  letter-spacing: -0.5rpx;
   color: var(--ink);
 }
 
 .brand-sub {
-  margin-left: 12rpx;
-  font-size: 22rpx;
+  margin-left: 14rpx;
+  font-size: 18rpx;
+  letter-spacing: 2rpx;
   color: var(--ink-3);
 }
 
 .nav-back {
-  width: 68rpx;
-  height: 68rpx;
-  border-radius: 50%;
+  width: 64rpx;
+  height: 64rpx;
+  margin-left: -18rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 30rpx;
+  border-radius: var(--radius-sm);
+  font-size: 42rpx;
+  line-height: 1;
   color: var(--ink);
 }
 
 .nav-title {
   flex: 1;
   text-align: center;
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 600;
 }
 
-/* ---------------- 通用元素 ---------------- */
-
-.hero-title {
-  display: block;
-  font-size: 52rpx;
-  line-height: 1.25;
-  font-weight: 800;
-  letter-spacing: -1rpx;
+.nav-placeholder {
+  width: 64rpx;
+  height: 64rpx;
 }
 
-.hero-sub {
-  display: block;
-  margin-top: 14rpx;
-  font-size: 26rpx;
-  color: var(--ink-2);
+/* ---------------- 通用表面 ---------------- */
+
+/* 保留旧 .glass 名称，但视觉改为纸面卡片 */
+.glass {
+  background: var(--surface);
+  border: 1rpx solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
+
+.glass-pill {
+  border-radius: var(--radius);
+}
+
+/* ---------------- 搜索条 ---------------- */
 
 .search {
   display: flex;
   align-items: center;
-  height: 92rpx;
-  padding: 0 30rpx;
-  margin-top: 36rpx;
-  border-radius: 999rpx;
+  height: 88rpx;
+  padding: 0 26rpx;
+  margin-top: 34rpx;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1rpx solid var(--line);
 }
 
 .search-icon {
-  font-size: 34rpx;
+  margin-right: 14rpx;
+  font-size: 30rpx;
   color: var(--ink-3);
-  margin-right: 16rpx;
 }
 
 .search-text {
-  font-size: 27rpx;
+  font-size: 26rpx;
   color: var(--ink-3);
 }
+
+/* ---------------- 分类文字标签 ---------------- */
 
 .chips {
   margin-top: 30rpx;
   white-space: nowrap;
   width: 100%;
+  border-bottom: 1rpx solid var(--line);
 }
 
 .chip {
-  display: inline-flex;
-  align-items: center;
-  height: 64rpx;
-  padding: 0 30rpx;
-  margin-right: 16rpx;
-  border-radius: 999rpx;
+  display: inline-block;
+  height: auto;
+  padding: 0 0 18rpx;
+  margin-right: 34rpx;
+  border-radius: 0;
   font-size: 26rpx;
-  color: var(--ink-2);
-  background: rgba(255, 255, 255, 0.5);
-  border: 1rpx solid rgba(255, 255, 255, 0.7);
+  color: var(--ink-3);
+  background: transparent;
+  border: none;
+  border-bottom: 3rpx solid transparent;
 }
 
 .chip-active {
-  color: #ffffff;
-  background: linear-gradient(135deg, #2f6be4 0%, #6a8dff 100%);
-  border-color: rgba(47, 107, 228, 0.6);
-  box-shadow: 0 10rpx 24rpx rgba(47, 107, 228, 0.3);
+  color: var(--ink);
+  font-weight: 600;
+  background: transparent;
+  border-bottom-color: var(--accent);
+  box-shadow: none;
 }
+
+/* ---------------- 区块标题 ---------------- */
 
 .section-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin: 48rpx 0 24rpx;
+  margin: 46rpx 0 22rpx;
 }
 
 .section-title {
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: 700;
+  letter-spacing: -0.4rpx;
 }
 
 .section-more {
-  font-size: 25rpx;
-  color: var(--brand);
+  font-size: 23rpx;
+  color: var(--ink-3);
 }
 
 /* ---------------- 模板卡片 ---------------- */
@@ -227,23 +246,33 @@ page {
 }
 
 .card {
-  width: 48.6%;
-  margin-bottom: 26rpx;
-  border-radius: var(--radius-md);
+  position: relative;
+  width: 48.5%;
+  margin-bottom: 28rpx;
+  border-radius: var(--radius);
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 14rpx 36rpx rgba(31, 58, 147, 0.1);
+  background: var(--surface);
+  border: 1rpx solid var(--line);
+  box-shadow: none;
+}
+
+.card-hover {
+  opacity: 0.82;
 }
 
 .cover {
   position: relative;
-  height: 420rpx;
-  padding: 28rpx;
+  height: 330rpx;
+  padding: 20rpx;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   overflow: hidden;
+}
+
+.cover::after {
+  display: none;
 }
 
 .cover-img {
@@ -255,46 +284,34 @@ page {
   z-index: 0;
 }
 
-.cover::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 46%;
-  z-index: 1;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
-}
-
 .cover-format {
   position: absolute;
-  top: 24rpx;
-  right: 24rpx;
+  top: 16rpx;
+  left: 16rpx;
   z-index: 2;
-  font-size: 20rpx;
-  letter-spacing: 2rpx;
-  color: rgba(255, 255, 255, 0.92);
-  background: rgba(0, 0, 0, 0.18);
-  padding: 6rpx 16rpx;
-  border-radius: 999rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+  font-size: 18rpx;
+  letter-spacing: 1rpx;
+  color: #ffffff;
+  background: rgba(25, 27, 30, 0.56);
 }
 
 .cover-title {
   position: relative;
   z-index: 2;
   color: #ffffff;
-  font-size: 27rpx;
-  line-height: 1.35;
+  font-size: 26rpx;
+  line-height: 1.4;
   font-weight: 600;
-  text-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.22);
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .card-body {
-  padding: 22rpx 24rpx 26rpx;
+  padding: 18rpx 20rpx 22rpx;
 }
 
 .card-title {
@@ -302,70 +319,87 @@ page {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: 27rpx;
-  line-height: 1.4;
+  font-size: 26rpx;
+  line-height: 1.45;
   font-weight: 600;
 }
 
 .card-meta {
-  margin-top: 12rpx;
+  margin-top: 10rpx;
   display: flex;
   justify-content: space-between;
-  font-size: 22rpx;
+  font-size: 21rpx;
   color: var(--ink-3);
 }
 
-/* 封面配色（占位图，后续替换为真实预览图） */
-.tone-blue {
-  background: linear-gradient(145deg, #2563eb 0%, #60a5fa 55%, #bfdbfe 100%);
-}
-.tone-indigo {
-  background: linear-gradient(145deg, #4338ca 0%, #818cf8 55%, #c7d2fe 100%);
-}
-.tone-green {
-  background: linear-gradient(145deg, #047857 0%, #34d399 60%, #bbf7d0 100%);
-}
-.tone-orange {
-  background: linear-gradient(145deg, #c2410c 0%, #fb923c 60%, #fed7aa 100%);
-}
-.tone-pink {
-  background: linear-gradient(145deg, #be185d 0%, #f472b6 60%, #fbcfe8 100%);
-}
-.tone-slate {
-  background: linear-gradient(145deg, #1e293b 0%, #64748b 60%, #cbd5e1 100%);
-}
-.tone-teal {
-  background: linear-gradient(145deg, #0f766e 0%, #2dd4bf 60%, #ccfbf1 100%);
-}
-.tone-purple {
-  background: linear-gradient(145deg, #6d28d9 0%, #a78bfa 60%, #ddd6fe 100%);
+/* 封面占位色：低饱和的纸面配色 */
+.tone-blue { background: #31465f; }
+.tone-indigo { background: #454363; }
+.tone-green { background: #335a4d; }
+.tone-orange { background: #8a4c32; }
+.tone-pink { background: #744256; }
+.tone-slate { background: #3b434d; }
+.tone-teal { background: #2f5a58; }
+.tone-purple { background: #4f4564; }
+
+/* ---------------- 空态 / 列表提示 ---------------- */
+
+.empty {
+  padding: 96rpx 40rpx;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 25rpx;
+  line-height: 1.7;
 }
 
 .footer-tip {
-  margin-top: 48rpx;
+  margin-top: 44rpx;
   text-align: center;
-  font-size: 22rpx;
+  font-size: 21rpx;
   color: var(--ink-3);
-}
-
-/* ---------------- 空态 / 骨架 ---------------- */
-
-.empty {
-  padding: 120rpx 0;
-  text-align: center;
-  color: var(--ink-3);
-  font-size: 26rpx;
-}
-
-/* ---------------- TabBar 占位 ---------------- */
-
-.tabbar-pad {
-  height: 180rpx;
 }
 
 .list-tip {
   margin: 28rpx 0 8rpx;
   text-align: center;
-  font-size: 23rpx;
+  font-size: 22rpx;
   color: var(--ink-3);
+}
+
+.tabbar-pad {
+  height: 180rpx;
+}
+
+/* 通用小按钮 */
+.btn-dark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84rpx;
+  border-radius: var(--radius-sm);
+  font-size: 27rpx;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--ink);
+  border: none;
+}
+
+.btn-dark::after {
+  border: none;
+}
+
+.btn-outline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84rpx;
+  border-radius: var(--radius-sm);
+  font-size: 26rpx;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1rpx solid var(--line-strong);
+}
+
+.btn-outline::after {
+  border: none;
 }

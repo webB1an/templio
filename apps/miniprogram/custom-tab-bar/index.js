@@ -2,9 +2,9 @@ Component({
   data: {
     selected: 0,
     tabs: [
-      { pagePath: "/pages/index/index", text: "首页", icon: "⌂" },
-      { pagePath: "/pages/category/category", text: "分类", icon: "▦" },
-      { pagePath: "/pages/mine/mine", text: "我的", icon: "◍" }
+      { pagePath: "/pages/index/index", text: "首页" },
+      { pagePath: "/pages/category/category", text: "分类" },
+      { pagePath: "/pages/mine/mine", text: "我的" }
     ]
   },
 

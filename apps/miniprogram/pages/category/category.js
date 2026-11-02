@@ -1,4 +1,4 @@
-const { CATEGORIES, TEMPLATES } = require("../../data/mock");
+﻿const { CATEGORIES, TEMPLATES } = require("../../data/mock");
 const { getNavMetrics } = require("../../utils/layout");
 const { fetchFacets } = require("../../utils/api");
 
@@ -23,10 +23,11 @@ Page({
 
   onLoad() {
     const metrics = getNavMetrics();
-    const categories = CATEGORIES.filter((item) => item.key !== "all").map((item) => ({
+    const categories = CATEGORIES.filter((item) => item.key !== "all").map((item, index) => ({
       key: item.key,
       name: item.name,
       icon: ICONS[item.key] || "◇",
+      ordinal: (index + 1 < 10 ? "0" : "") + (index + 1),
       count: TEMPLATES.filter((template) => template.categoryKey === item.key).length
     }));
     this.setData({
@@ -49,10 +50,11 @@ Page({
         const remote = data && data.categories;
         if (!Array.isArray(remote) || remote.length === 0) return;
         this.setData({
-          categories: remote.map((item) => ({
+          categories: remote.map((item, index) => ({
             key: item.key,
             name: item.name,
             icon: ICONS[item.key] || "◇",
+            ordinal: (index + 1 < 10 ? "0" : "") + (index + 1),
             count: item.count || 0
           }))
         });
@@ -78,3 +80,4 @@ Page({
     return { title: "模板宝 · 模板分类", path: "/pages/category/category" };
   }
 });
+

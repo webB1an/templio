@@ -13,16 +13,16 @@
     "navigationStyle": "custom",
     "navigationBarTitleText": "模板宝",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#F3F6FF",
-    "backgroundColorTop": "#EDF2FF",
-    "backgroundColorBottom": "#F7F4FF",
+    "backgroundColor": "#F6F5F2",
+    "backgroundColorTop": "#F6F5F2",
+    "backgroundColorBottom": "#F6F5F2",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
     "custom": true,
-    "color": "#8A8F9E",
-    "selectedColor": "#2F6BE4",
-    "backgroundColor": "#00000000",
+    "color": "#96999E",
+    "selectedColor": "#191B1E",
+    "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
       { "pagePath": "pages/index/index", "text": "首页" },

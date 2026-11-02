@@ -1,9 +1,5 @@
-<view class="bg-orb orb-a"></view>
-<view class="bg-orb orb-b"></view>
-<view class="bg-orb orb-c"></view>
-
 <view class="nav" style="padding-top: {{navTop}}px;">
-  <view class="nav-inner glass glass-pill" style="margin-right: {{menuRight}}px;">
+  <view class="nav-inner" style="margin-right: {{menuRight}}px;">
     <text class="brand">模板宝</text>
     <text class="brand-sub">模板库</text>
   </view>
@@ -11,14 +7,13 @@
 
 <view class="page" style="padding-top: {{contentTop}}px;">
   <view class="hero">
-    <text class="hero-title">找到你的</text>
-    <text class="hero-title">下一份灵感</text>
-    <text class="hero-sub">PPT · Word 模板，精选每周更新</text>
+    <text class="hero-title">选一份好用的模板</text>
+    <text class="hero-sub">PPT / Word · 商务、答辩、求职与教学</text>
   </view>
 
-  <view class="search glass glass-pill" bindtap="goSearch">
+  <view class="search" bindtap="goSearch">
     <text class="search-icon">⌕</text>
-    <text class="search-text">搜索模板 / 场景 / 风格</text>
+    <text class="search-text">搜索模板、场景或风格</text>
   </view>
 
   <scroll-view class="chips" scroll-x enhanced show-scrollbar="{{false}}">
@@ -33,7 +28,7 @@
 
   <view class="section-head">
     <text class="section-title">精选模板</text>
-    <text class="section-more" bindtap="goList">全部 ›</text>
+    <text class="section-more" bindtap="goList">查看全部 ›</text>
   </view>
 
   <view class="grid">
@@ -48,7 +43,7 @@
       <view class="cover tone-{{item.tone}}">
         <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load binderror="onCoverError" data-index="{{index}}" />
         <text class="cover-format">{{item.format}}</text>
-        <text class="cover-title">{{item.title}}</text>
+        <text wx:if="{{!item.coverUrl}}" class="cover-title">{{item.title}}</text>
       </view>
       <view class="card-body">
         <text class="card-title">{{item.title}}</text>
@@ -60,10 +55,10 @@
     </view>
   </view>
 
-  <view class="list-tip" wx:if="{{loading}}">加载中...</view>
+  <view class="list-tip" wx:if="{{loading}}">加载中…</view>
   <view class="list-tip" wx:if="{{!loading && templates.length === 0}}">暂无模板</view>
-  <view class="list-tip" wx:if="{{!loading && !hasMore && templates.length}}">没有更多了</view>
+  <view class="list-tip" wx:if="{{!loading && !hasMore && templates.length}}">已经到底了</view>
 
-  <view class="footer-tip">模板宝 · 模板仅供学习交流，版权归原作者</view>
+  <view class="footer-tip">模板内容仅供学习与交流，版权归原作者所有</view>
   <view class="tabbar-pad"></view>
 </view>

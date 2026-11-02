@@ -1,8 +1,5 @@
-<view class="bg-orb orb-a"></view>
-<view class="bg-orb orb-b"></view>
-
 <view class="nav" style="padding-top: {{navTop}}px;">
-  <view class="nav-inner glass glass-pill" style="margin-right: {{menuRight}}px;">
+  <view class="nav-inner" style="margin-right: {{menuRight}}px;">
     <view class="nav-back" bindtap="onCancel">‹</view>
     <view class="search-field">
       <text class="search-icon">⌕</text>
@@ -10,7 +7,7 @@
         class="search-input"
         value="{{inputValue}}"
         focus="{{autoFocus}}"
-        placeholder="搜索模板 / 场景 / 风格"
+        placeholder="搜索模板、场景或风格"
         placeholder-class="search-placeholder"
         confirm-type="search"
         bindinput="onInput"
@@ -23,15 +20,19 @@
 
 <view class="page search-page" style="padding-top: {{contentTop}}px;">
   <block wx:if="{{!hasSearched}}">
-    <view class="block-title">热门搜索</view>
-    <view class="chip-wrap">
+    <text class="block-title">热门搜索</text>
+    <view class="keyword-list">
       <view
         wx:for="{{hotKeywords}}"
         wx:key="*this"
-        class="chip"
+        class="keyword-row"
         data-keyword="{{item}}"
         bindtap="onHotTap"
-      >{{item}}</view>
+        hover-class="keyword-hover"
+      >
+        <text class="keyword-text">{{item}}</text>
+        <text class="keyword-arrow">→</text>
+      </view>
     </view>
 
     <block wx:if="{{history.length}}">
@@ -39,14 +40,18 @@
         <text class="block-title">搜索历史</text>
         <text class="block-clear" bindtap="onClearHistory">清空</text>
       </view>
-      <view class="chip-wrap">
+      <view class="keyword-list">
         <view
           wx:for="{{history}}"
           wx:key="*this"
-          class="chip"
+          class="keyword-row"
           data-keyword="{{item}}"
           bindtap="onHistoryTap"
-        >{{item}}</view>
+          hover-class="keyword-hover"
+        >
+          <text class="keyword-text">{{item}}</text>
+          <text class="keyword-arrow">→</text>
+        </view>
       </view>
     </block>
 
@@ -61,7 +66,7 @@
       <text class="result-count">{{results.length}} 个模板</text>
     </view>
 
-    <view wx:if="{{results.length === 0}}" class="empty glass">
+    <view wx:if="{{!loading && results.length === 0}}" class="empty">
       没有找到「{{keyword}}」相关模板，换个关键词试试
     </view>
 
@@ -72,11 +77,12 @@
         class="card"
         data-id="{{item.id}}"
         bindtap="openDetail"
+        hover-class="card-hover"
       >
         <view class="cover tone-{{item.tone}}">
           <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load binderror="onCoverError" data-index="{{index}}" />
           <text class="cover-format">{{item.format}}</text>
-          <text class="cover-title">{{item.title}}</text>
+          <text wx:if="{{!item.coverUrl}}" class="cover-title">{{item.title}}</text>
         </view>
         <view class="card-body">
           <text class="card-title">{{item.title}}</text>
@@ -88,8 +94,8 @@
       </view>
     </view>
 
-    <view class="list-tip" wx:if="{{loading}}">加载中...</view>
-    <view class="list-tip" wx:if="{{!loading && !hasMore && results.length}}">没有更多了</view>
+    <view class="list-tip" wx:if="{{loading}}">加载中…</view>
+    <view class="list-tip" wx:if="{{!loading && !hasMore && results.length}}">已经到底了</view>
   </block>
 
   <view class="tabbar-pad"></view>

@@ -1,8 +1,5 @@
-<view class="bg-orb orb-a"></view>
-<view class="bg-orb orb-b"></view>
-
 <view class="nav" style="padding-top: {{navTop}}px;">
-  <view class="nav-inner glass glass-pill" style="margin-right: {{menuRight}}px;">
+  <view class="nav-inner" style="margin-right: {{menuRight}}px;">
     <view class="nav-back" bindtap="goBack">‹</view>
     <text class="nav-title">{{title}}</text>
     <view class="nav-placeholder"></view>
@@ -12,11 +9,11 @@
 <view class="page" style="padding-top: {{contentTop}}px;">
   <view class="list-head">
     <text class="hero-title list-title">{{title}}</text>
-    <text class="hero-sub">{{templates.length}} 个模板</text>
+    <text class="list-count">{{templates.length}} 个模板</text>
   </view>
 
-  <view wx:if="{{templates.length === 0}}" class="empty glass">
-    没有找到相关模板，换个关键词试试
+  <view wx:if="{{!loading && templates.length === 0}}" class="empty">
+    没有找到相关模板，换个关键词或分类试试
   </view>
 
   <view class="grid list-grid">
@@ -26,11 +23,12 @@
       class="card"
       data-id="{{item.id}}"
       bindtap="openDetail"
+      hover-class="card-hover"
     >
       <view class="cover tone-{{item.tone}}">
         <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load binderror="onCoverError" data-index="{{index}}" />
         <text class="cover-format">{{item.format}}</text>
-        <text class="cover-title">{{item.title}}</text>
+        <text wx:if="{{!item.coverUrl}}" class="cover-title">{{item.title}}</text>
       </view>
       <view class="card-body">
         <text class="card-title">{{item.title}}</text>
@@ -42,8 +40,8 @@
     </view>
   </view>
 
-  <view class="list-tip" wx:if="{{loading}}">加载中...</view>
-  <view class="list-tip" wx:if="{{!loading && !hasMore && templates.length}}">没有更多了</view>
+  <view class="list-tip" wx:if="{{loading}}">加载中…</view>
+  <view class="list-tip" wx:if="{{!loading && !hasMore && templates.length}}">已经到底了</view>
 
   <view class="tabbar-pad"></view>
 </view>

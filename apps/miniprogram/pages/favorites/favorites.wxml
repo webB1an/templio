@@ -1,8 +1,5 @@
-<view class="bg-orb orb-a"></view>
-<view class="bg-orb orb-b"></view>
-
 <view class="nav" style="padding-top: {{navTop}}px;">
-  <view class="nav-inner glass glass-pill" style="margin-right: {{menuRight}}px;">
+  <view class="nav-inner" style="margin-right: {{menuRight}}px;">
     <view class="nav-back" bindtap="goBack">‹</view>
     <text class="brand">我的收藏</text>
     <text class="brand-sub">{{items.length}} 个</text>
@@ -10,7 +7,7 @@
 </view>
 
 <view class="page" style="padding-top: {{contentTop}}px;">
-  <view wx:if="{{loading}}" class="favorites-tip">加载中...</view>
+  <view wx:if="{{loading}}" class="favorites-tip">加载中…</view>
 
   <block wx:elif="{{items.length}}">
     <view class="grid">
@@ -20,11 +17,12 @@
         class="card"
         data-id="{{item.id}}"
         bindtap="openDetail"
+        hover-class="card-hover"
       >
         <view class="cover tone-{{item.tone}}">
           <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" lazy-load />
           <text class="cover-format">{{item.format}}</text>
-          <text class="cover-title">{{item.title}}</text>
+          <text wx:if="{{!item.coverUrl}}" class="cover-title">{{item.title}}</text>
         </view>
         <view class="card-body">
           <text class="card-title">{{item.title}}</text>
@@ -33,15 +31,15 @@
             <text>{{item.pageCount}} 页</text>
           </view>
         </view>
-        <view class="fav-remove" catchtap="removeFav" data-id="{{item.id}}">取消收藏</view>
+        <view class="fav-remove" catchtap="removeFav" data-id="{{item.id}}">移除</view>
       </view>
     </view>
   </block>
 
-  <view wx:else class="favorites-empty glass">
+  <view wx:else class="favorites-empty">
     <text class="favorites-empty-title">还没有收藏的模板</text>
-    <text class="favorites-empty-sub">去首页看看，详情页点「收藏」会同步到这里</text>
-    <button class="favorites-empty-btn" bindtap="goHome">去逛逛</button>
+    <text class="favorites-empty-sub">在详情页点「收藏」，模板会同步到这里</text>
+    <button class="btn-dark favorites-empty-btn" bindtap="goHome">去逛逛</button>
   </view>
 
   <view class="tabbar-pad"></view>

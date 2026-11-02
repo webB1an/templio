@@ -1,33 +1,32 @@
-<view class="bg-orb orb-a"></view>
-<view class="bg-orb orb-b"></view>
-<view class="bg-orb orb-c"></view>
-
 <view class="nav" style="padding-top: {{navTop}}px;">
-  <view class="nav-inner glass glass-pill" style="margin-right: {{menuRight}}px;">
+  <view class="nav-inner" style="margin-right: {{menuRight}}px;">
     <text class="brand">分类</text>
-    <text class="brand-sub">按场景找模板</text>
+    <text class="brand-sub">场景分类</text>
   </view>
 </view>
 
 <view class="page" style="padding-top: {{contentTop}}px;">
   <view class="hero">
-    <text class="hero-title">按场景</text>
-    <text class="hero-title">挑选模板</text>
-    <text class="hero-sub">商务、答辩、课件、简历……快速定位</text>
+    <text class="hero-title">按场景浏览</text>
+    <text class="hero-sub">从主题出发，快速找到需要的模板</text>
   </view>
 
-  <view class="cat-grid">
+  <view class="cat-list">
     <view
       wx:for="{{categories}}"
       wx:key="key"
-      class="cat-card glass"
+      class="cat-row"
       data-key="{{item.key}}"
       data-name="{{item.name}}"
       bindtap="openCategory"
+      hover-class="cat-row-hover"
     >
-      <text class="cat-icon">{{item.icon}}</text>
-      <text class="cat-name">{{item.name}}</text>
-      <text class="cat-count">{{item.count}} 个模板</text>
+      <text class="cat-index">{{item.ordinal}}</text>
+      <view class="cat-main">
+        <text class="cat-name">{{item.name}}</text>
+        <text class="cat-count">{{item.count}} 个模板</text>
+      </view>
+      <text class="cat-arrow">→</text>
     </view>
   </view>
 

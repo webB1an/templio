@@ -1,20 +1,25 @@
-.nav-placeholder {
-  width: 68rpx;
-  height: 68rpx;
-}
-
 .list-head {
-  padding: 12rpx 8rpx 30rpx;
+  padding: 12rpx 0 30rpx;
 }
 
 .list-title {
   font-size: 44rpx;
 }
 
+.list-count {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 23rpx;
+  color: var(--ink-3);
+}
+
 .list-grid {
-  margin-top: 8rpx;
+  margin-top: 10rpx;
 }
 
 .empty {
-  order: 1;
+  margin-top: 40rpx;
+  background: var(--surface);
+  border: 1rpx solid var(--line);
+  border-radius: var(--radius);
 }
