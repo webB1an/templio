@@ -29,7 +29,7 @@ CI 会在部署时自动构建并同步到服务器 `/www/wwwroot/templio/apps/a
 | --- | --- |
 | 登录 | 账号密码 → `POST /api/admin/login`，JWT 存 localStorage |
 | 概览 | 模板总数、已上架、待处理、已下架；最近更新；分类分布 |
-| 模板库 | 搜索 / 状态 / 分类筛选，分页；编辑标题/简介/分类/状态；单条与批量上下架；封面缩略图；网盘链接/提取码配置与短链复制；AI 标注（DeepSeek）与应用建议 |
+| 模板库 | 搜索 / 状态 / 分类筛选，分页；编辑标题/简介/分类/状态；单条与批量上下架；封面缩略图；网盘链接/提取码配置与短链复制；AI 单条/批量标注与应用建议；待复核快捷筛选与 AI 列 |
 | 导入模板 | CLI 导入链路说明、可复制命令、当前限制说明 |
 
 ## API
@@ -48,3 +48,4 @@ CI 会在部署时自动构建并同步到服务器 `/www/wwwroot/templio/apps/a
 | DELETE | `/api/admin/templates/:id/netdisk` | 移除网盘链接 |
 | POST | `/api/admin/ai/templates/:id` | DeepSeek 标注 |
 | POST | `/api/admin/ai/templates/:id/apply` | 应用 AI 建议 |
+| POST | `/api/admin/ai/batch` | 批量标注（最多 5 个） |
