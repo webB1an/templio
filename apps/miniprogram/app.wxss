@@ -94,7 +94,6 @@ page {
   height: 84rpx;
   display: flex;
   align-items: center;
-  margin-right: 0 !important;
 }
 
 /* 旧的玻璃导航 class 统一降级为透明 */
