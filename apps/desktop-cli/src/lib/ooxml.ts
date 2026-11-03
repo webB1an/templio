@@ -88,7 +88,7 @@ async function extractPptx(zip: JSZip, coreTitle: string): Promise<OoxmlExtract>
     } catch {
       // 个别损坏页跳过，不影响整包
     }
-    const joined = normalizeText(texts.join(" "));
+    const joined = normalizeText(texts.filter(isUsefulText).join(" "));
 
     if (joined) {
       if (index < 3) firstPagesText.push(joined.slice(0, 1500));
@@ -171,6 +171,26 @@ function collectTextValues(node: unknown, out: string[]): void {
 
 function normalizeText(value: string): string {
   return value.replace(/\s+/g, " ").trim();
+}
+
+const XML_LEAK_RE =
+  /(1\.0\s+UTF-8\s+yes|bg1|accent\d|typeface\s*=|xmlns\s*=|rId\d|TextBox|roundRect|schemeClr|srgbClr|p:txBody|a:ln|微软雅黑|020B0503)/i;
+
+/**
+ * 部分损坏/第三方生成的 PPTX 会把 XML 属性或图形几何序列化进 <a:t>，
+ * 直接当正文会得到“1.0 UTF-8 yes bg1 ...”这类乱码。这里只保留像人话的文本。
+ */
+function isUsefulText(value: string): boolean {
+  const text = normalizeText(value);
+  if (text.length < 2) return false;
+  if (XML_LEAK_RE.test(text)) return false;
+  if (/^[\d\s.,%+\-/:]+$/.test(text)) return false;
+  const cjk = (text.match(/[\u4e00-\u9fff]/g) || []).length;
+  const letters = (text.match(/[a-z]/gi) || []).length;
+  const digits = (text.match(/\d/g) || []).length;
+  if (cjk + letters < 2) return false;
+  if (digits > (cjk + letters) * 1.5) return false;
+  return true;
 }
 
 function slideNumber(name: string): number {

@@ -37,7 +37,7 @@
         <text wx:for="{{item.tags}}" wx:key="*this" class="tag">#{{item}}</text>
       </view>
 
-      <text class="summary">{{item.summary}}</text>
+      <text class="summary" wx:if="{{item.summary}}">{{item.summary}}</text>
     </view>
 
     <view wx:if="{{item.previewUrls && item.previewUrls.length}}" class="preview-section">

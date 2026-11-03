@@ -31,6 +31,34 @@ export interface RenderPdfOptions {
   maxPages: number;
 }
 
+/** 从 PDF 提取前几页可读文字；比手工解析损坏的 OOXML 更可靠 */
+export async function extractPdfText(pdfBytes: Buffer, maxPages = 3): Promise<string[]> {
+  const loadingTask = getDocument({
+    data: new Uint8Array(pdfBytes),
+    useSystemFonts: true,
+    standardFontDataUrl,
+  });
+  const document = await loadingTask.promise;
+  const pages: string[] = [];
+  try {
+    const count = Math.min(Math.max(1, maxPages), document.numPages);
+    for (let pageNumber = 1; pageNumber <= count; pageNumber += 1) {
+      const page = await document.getPage(pageNumber);
+      const content = await page.getTextContent();
+      const text = content.items
+        .map((item) => ("str" in item ? item.str : ""))
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (text) pages.push(text.slice(0, 1500));
+      page.cleanup();
+    }
+  } finally {
+    await loadingTask.destroy();
+  }
+  return pages;
+}
+
 /**
  * PDF → PNG。
  * 用 pdfjs 的 legacy 构建：在 Node.js 环境下官方要求 legacy 版本，

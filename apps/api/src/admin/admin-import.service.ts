@@ -147,11 +147,12 @@ export class AdminImportService {
       }
 
       const title = (manifest.titleGuess || text.title || basename(manifest.sourceFile)).slice(0, 200);
+      const fallbackDescription = `${manifest.format === "docx" ? "Word" : "PPT"} 模板 · 共 ${manifest.pageCount} 页`;
       const template = await this.prisma.template.create({
         data: {
           sourceHash: manifest.sourceHash,
           title,
-          description: text.firstPagesText?.[0]?.slice(0, 500) || null,
+          description: cleanDescription(text.firstPagesText?.[0], fallbackDescription),
           status: "imported",
           format: manifest.format,
           pageCount: manifest.pageCount,
@@ -182,6 +183,20 @@ function sanitizeFilename(name: string): string {
     .replace(/\s+/g, " ")
     .trim();
   return cleaned.slice(0, 120) || "source";
+}
+
+const EXTRACTION_NOISE_RE =
+  /(1\.0\s+UTF-8\s+yes|bg1|accent\d|typeface\s*=|xmlns\s*=|rId\d|TextBox|roundRect|schemeClr|srgbClr|p:txBody|a:ln|微软雅黑|020B0503)/i;
+const PLACEHOLDER_RE =
+  /^(PowerPoint|幻灯片|单击此处|点击此处|这里输入|请输入|此处输入|添加文字|Write Your Title|ThemeGallery)/i;
+
+function cleanDescription(value: unknown, fallback: string): string {
+  const text = typeof value === "string" ? value.trim() : "";
+  if (!text || EXTRACTION_NOISE_RE.test(text) || PLACEHOLDER_RE.test(text)) return fallback;
+  const digits = (text.match(/\d/g) || []).length;
+  const words = (text.match(/[\u4e00-\u9fffA-Za-z]/g) || []).length;
+  if (words < 2 || digits > words * 1.5) return fallback;
+  return text.slice(0, 500);
 }
 
 /**

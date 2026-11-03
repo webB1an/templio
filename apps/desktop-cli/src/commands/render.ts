@@ -12,7 +12,7 @@ import {
   loadLedger,
   writeRenderedPackage,
 } from "../lib/package.js";
-import { renderPdfPages } from "../lib/pdf.js";
+import { renderPdfPages, extractPdfText } from "../lib/pdf.js";
 import { convertToPdf, findSoffice, readSofficeVersion } from "../lib/soffice.js";
 
 export interface RenderCommandOptions {
@@ -92,7 +92,7 @@ export async function runRender(options: RenderCommandOptions): Promise<number> 
       }
 
       const sourceStat = await stat(file.path);
-      const { text, fonts } = await extractOoxmlText(file.path, file.format);
+      const { text: ooxmlText, fonts } = await extractOoxmlText(file.path, file.format);
 
       const warnings: string[] = [];
       const unknownFonts = filterUnknownFonts(fonts);
@@ -101,11 +101,20 @@ export async function runRender(options: RenderCommandOptions): Promise<number> 
           `模板使用非常用字体：${unknownFonts.slice(0, 10).join("、")}${unknownFonts.length > 10 ? " 等" : ""}（渲染前请确认已安装）`,
         );
       }
+
+      const pdfBytes = await convertToPdf(soffice, file.path, { timeoutMs: 300_000 });
+      // 部分第三方 PPTX 的 <a:t> 会夹杂 XML/几何噪声；优先用真实 PDF 文字作为
+      // 标题、简介和 AI 输入，避免详情页出现大段乱码。
+      const pdfPages = await extractPdfText(pdfBytes, 3);
+      const text = {
+        ...ooxmlText,
+        firstPagesText: pdfPages.length > 0 ? pdfPages : ooxmlText.firstPagesText,
+        outline: pdfPages.length > 0 ? pdfPages.map((page) => page.slice(0, 60)) : ooxmlText.outline,
+      };
       if (text.firstPagesText.length === 0) {
         warnings.push("未从模板中抽取到文字，AI 分类准确率可能受影响");
       }
 
-      const pdfBytes = await convertToPdf(soffice, file.path, { timeoutMs: 300_000 });
       const rendered = await renderPdfPages(pdfBytes, {
         width: options.renderWidth,
         maxPages: previewPages,
