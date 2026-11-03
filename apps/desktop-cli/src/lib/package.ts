@@ -1,4 +1,4 @@
-import { copyFile, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, link, readFile, rm, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import {
   parseManifest,
@@ -103,7 +103,14 @@ export async function writeRenderedPackage(distDir: string, input: PackageInput)
   await ensureDir(sourceDir);
 
   const sourceName = basename(input.sourcePath);
-  await copyFile(input.sourcePath, join(sourceDir, sourceName));
+  // 同一磁盘优先硬链接，避免大合集批量渲染时把几十 GB 源文件再复制一份。
+  // 跨磁盘/不支持硬链接时自动回退为复制。
+  const packageSourcePath = join(sourceDir, sourceName);
+  try {
+    await link(input.sourcePath, packageSourcePath);
+  } catch {
+    await copyFile(input.sourcePath, packageSourcePath);
+  }
 
   const coverName = "cover.webp";
   const thumbName = "thumb.webp";

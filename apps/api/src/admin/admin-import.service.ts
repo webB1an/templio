@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, ServiceUnavailableException } from "@nestjs/common";
 import { mkdir, rmdir, unlink, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { Prisma } from "@prisma/client";
@@ -82,6 +82,20 @@ export class AdminImportService {
         size: source.size || source.buffer.length,
         mimetype: source.mimetype || "application/octet-stream"
       };
+
+      // 源文件是网盘同步的临时中转，限制总量，防止上传大合集直接把 40GB 磁盘写满
+      const quotaGb = Math.max(1, Number(process.env.INCOMING_QUOTA_GB || 8));
+      const quotaBytes = quotaGb * 1024 * 1024 * 1024;
+      const usage = await this.prisma.templateFile.aggregate({
+        where: { role: "source" },
+        _sum: { size: true },
+      });
+      const usedBytes = Number(usage._sum.size || 0);
+      if (usedBytes + sourceMeta.size > quotaBytes) {
+        throw new ServiceUnavailableException(
+          `源文件暂存区已超过 ${quotaGb}GB 限额，请先在管理端完成网盘同步或删除旧源文件，再上传下一批`,
+        );
+      }
     }
 
     const writtenPaths: string[] = [];
