@@ -1,4 +1,4 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { parseManifest } from "@templio/shared";
 import { pathExists } from "../lib/fsx.js";
@@ -12,6 +12,16 @@ export interface UploadCommandOptions {
   limit?: number;
   dryRun: boolean;
   withSource: boolean;
+  report?: string;
+}
+
+interface UploadReportItem {
+  package: string;
+  dir: string;
+  status: "imported" | "duplicate" | "failed";
+  id?: string;
+  title?: string | null;
+  error?: string;
 }
 
 interface PackageItem {
@@ -49,10 +59,18 @@ export async function runUpload(options: UploadCommandOptions): Promise<number> 
   let imported = 0;
   let duplicated = 0;
   const failures: Array<{ name: string; error: string }> = [];
+  const reportItems: UploadReportItem[] = [];
 
   for (const item of limited) {
     try {
       const result = await uploadWithRetry(() => uploadPackage(api, token, item.dir, options.withSource));
+      reportItems.push({
+        package: item.name,
+        dir: item.dir,
+        status: result.status === "duplicate" ? "duplicate" : "imported",
+        id: result.id,
+        title: result.title,
+      });
       if (result.status === "duplicate") {
         duplicated += 1;
         console.log(`  ↷ ${item.name} 已存在（${result.title || result.id}）`);
@@ -63,8 +81,18 @@ export async function runUpload(options: UploadCommandOptions): Promise<number> 
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       failures.push({ name: item.name, error: message });
+      reportItems.push({ package: item.name, dir: item.dir, status: "failed", error: message });
       console.log(`  ✘ ${item.name} ${message}`);
     }
+  }
+
+  if (options.report) {
+    await writeFile(
+      resolve(options.report),
+      JSON.stringify({ api, generatedAt: new Date().toISOString(), results: reportItems }, null, 2),
+      "utf8",
+    );
+    console.log(`\n上传报告：${resolve(options.report)}`);
   }
 
   console.log(`\n完成：导入 ${imported}，跳过 ${duplicated}，失败 ${failures.length}`);
