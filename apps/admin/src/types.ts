@@ -41,6 +41,19 @@ export interface SystemStatus {
   commit: string;
 }
 
+export interface AiAutoStatus {
+  enabled: boolean;
+  running: boolean;
+  offpeak: boolean;
+  minConfidence: number;
+  delayMs: number;
+  pendingCount: number;
+  readyApplyCount: number;
+  processedTotal: number;
+  lastProcessedAt: string | null;
+  lastError: string | null;
+}
+
 export interface AdminTask {
   id: string;
   type: string;

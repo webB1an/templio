@@ -2,6 +2,7 @@ import type {
   AdminTask,
   AdminTemplate,
   AiAnalysis,
+  AiAutoStatus,
   Facets,
   NetdiskProvider,
   Stats,
@@ -86,6 +87,17 @@ export const api = {
 
   system() {
     return request<SystemStatus>("/admin/system");
+  },
+
+  aiAutoStatus() {
+    return request<AiAutoStatus>("/admin/settings/ai-auto");
+  },
+
+  setAiAutoEnabled(enabled: boolean) {
+    return request<{ enabled: boolean }>("/admin/settings/ai-auto", {
+      method: "PATCH",
+      body: { enabled }
+    });
   },
 
   storageAccounts() {

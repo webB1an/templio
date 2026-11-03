@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { AdminAiService } from "./admin-ai.service";
 import { DeepSeekService } from "./deepseek.service";
@@ -18,7 +19,7 @@ import { DeepSeekService } from "./deepseek.service";
 @Injectable()
 export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AdminAiAutoService.name);
-  private readonly enabled = (process.env.AI_AUTO_ENABLED || "true").trim() !== "false";
+  private readonly defaultEnabled = (process.env.AI_AUTO_ENABLED || "true").trim() !== "false";
   private readonly minConfidence = clamp(Number.parseFloat(process.env.AI_AUTO_MIN_CONFIDENCE || "0.85"), 0, 1, 0.85);
   private readonly delayMs = Math.max(1000, Number.parseInt(process.env.AI_AUTO_DELAY_MS || "2500", 10) || 2500);
   private readonly holidays = new Set(
@@ -30,6 +31,9 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
   private timer: ReturnType<typeof setInterval> | null = null;
   private initialTimer: ReturnType<typeof setTimeout> | null = null;
   private running = false;
+  private processedTotal = 0;
+  private lastProcessedAt: string | null = null;
+  private lastError: string | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -38,16 +42,12 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
-    if (!this.enabled) {
-      this.logger.log("AI 自动标注已关闭（AI_AUTO_ENABLED=false）");
-      return;
-    }
     if (!this.deepseek.configured) {
       this.logger.warn("AI 自动标注未启动：DEEPSEEK_API_KEY 未配置");
       return;
     }
     this.logger.log(
-      `AI 自动标注已启用：平价时段执行，置信度阈值 ${this.minConfidence}，间隔 ${this.delayMs}ms`,
+      `AI 自动标注已调度：平价时段执行，默认开关 ${this.defaultEnabled ? "开" : "关"}，置信度阈值 ${this.minConfidence}，间隔 ${this.delayMs}ms`,
     );
     this.initialTimer = setTimeout(() => void this.tick(), 5_000);
     this.timer = setInterval(() => void this.tick(), 60_000);
@@ -59,15 +59,76 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async tick(): Promise<void> {
-    if (this.running || !this.isOffPeak(new Date())) return;
+    if (this.running) return;
+    if (!(await this.isAutoEnabled())) return;
+    if (!this.isOffPeak(new Date())) return;
     this.running = true;
     try {
       await this.processUntilWindowEnds();
     } catch (error) {
-      this.logger.error(`AI 自动标注异常：${(error as Error).message}`);
+      this.lastError = (error as Error).message;
+      this.logger.error(`AI 自动标注异常：${this.lastError}`);
     } finally {
       this.running = false;
     }
+  }
+
+  /** 管理端系统开关；数据库优先，没配置时用 env 默认值 */
+  async isAutoEnabled(): Promise<boolean> {
+    const row = await this.prisma.setting.findUnique({ where: { key: "ai_auto_enabled" } });
+    if (row && typeof row.value === "boolean") return row.value;
+    return this.defaultEnabled;
+  }
+
+  async setEnabled(enabled: boolean): Promise<{ enabled: boolean }> {
+    await this.prisma.setting.upsert({
+      where: { key: "ai_auto_enabled" },
+      update: { value: enabled },
+      create: { key: "ai_auto_enabled", value: enabled },
+    });
+    this.logger.log(`管理端${enabled ? "开启" : "关闭"}了 AI 平价时段自动标注`);
+    return { enabled };
+  }
+
+  async getStatus(): Promise<{
+    enabled: boolean;
+    running: boolean;
+    offpeak: boolean;
+    minConfidence: number;
+    delayMs: number;
+    pendingCount: number;
+    readyApplyCount: number;
+    processedTotal: number;
+    lastProcessedAt: string | null;
+    lastError: string | null;
+  }> {
+    const statusWhere: Prisma.TemplateWhereInput = {
+      status: { in: ["published", "imported", "pending_review"] },
+    };
+    const [enabled, pendingCount, readyApplyCount] = await Promise.all([
+      this.isAutoEnabled(),
+      this.prisma.template.count({ where: { ...statusWhere, aiAnalysis: { is: null } } }),
+      this.prisma.aiAnalysis.count({
+        where: {
+          needsReview: true,
+          safe: true,
+          confidence: { gte: this.minConfidence },
+          template: { status: { in: ["published", "imported", "pending_review", "ai_processing"] } },
+        },
+      }),
+    ]);
+    return {
+      enabled,
+      running: this.running,
+      offpeak: this.isOffPeak(new Date()),
+      minConfidence: this.minConfidence,
+      delayMs: this.delayMs,
+      pendingCount,
+      readyApplyCount,
+      processedTotal: this.processedTotal,
+      lastProcessedAt: this.lastProcessedAt,
+      lastError: this.lastError,
+    };
   }
 
   private async processUntilWindowEnds(): Promise<void> {
@@ -131,11 +192,13 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
         where: { templateId },
         data: { needsReview: false },
       });
+      this.markProcessed();
       this.logger.log(
         `AI 自动标注完成 ${templateId}：${result.analysis.title || ""} / ${result.analysis.categoryKey || "未分类"} / ${confidence.toFixed(2)}`,
       );
     } catch (error) {
-      this.logger.warn(`AI 自动标注失败 ${templateId}：${(error as Error).message}`);
+      this.lastError = (error as Error).message;
+      this.logger.warn(`AI 自动标注失败 ${templateId}：${this.lastError}`);
     }
   }
 
@@ -146,10 +209,17 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
         where: { templateId },
         data: { needsReview: false },
       });
+      this.markProcessed();
       this.logger.log(`AI 自动应用完成 ${templateId}`);
     } catch (error) {
-      this.logger.warn(`AI 自动应用失败 ${templateId}：${(error as Error).message}`);
+      this.lastError = (error as Error).message;
+      this.logger.warn(`AI 自动应用失败 ${templateId}：${this.lastError}`);
     }
+  }
+
+  private markProcessed(): void {
+    this.processedTotal += 1;
+    this.lastProcessedAt = new Date().toISOString();
   }
 
   /** 以北京时间为准判断当前是否 DeepSeek 平价时段 */

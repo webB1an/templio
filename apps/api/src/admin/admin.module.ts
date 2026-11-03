@@ -3,6 +3,7 @@ import { LoginRateLimitGuard } from "../common/login-rate-limit.guard";
 import { AdminAiController } from "./admin-ai.controller";
 import { AdminAiService } from "./admin-ai.service";
 import { AdminAiAutoService } from "./admin-ai-auto.service";
+import { AdminSettingsController } from "./admin-settings.controller";
 import { AdminAuthController } from "./admin-auth.controller";
 import { AdminImportController } from "./admin-import.controller";
 import { AdminTemplatesController } from "./admin-templates.controller";
@@ -26,6 +27,7 @@ import {
     AdminTemplatesController,
     AdminImportController,
     AdminAiController,
+    AdminSettingsController,
     StorageController,
   ],
   providers: [
