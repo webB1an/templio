@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { LoginRateLimitGuard } from "../common/login-rate-limit.guard";
 import { AdminAiController } from "./admin-ai.controller";
 import { AdminAiService } from "./admin-ai.service";
+import { AdminAiAutoService } from "./admin-ai-auto.service";
 import { AdminAuthController } from "./admin-auth.controller";
 import { AdminImportController } from "./admin-import.controller";
 import { AdminTemplatesController } from "./admin-templates.controller";
@@ -32,6 +33,7 @@ import {
     AdminTemplatesService,
     AdminImportService,
     AdminAiService,
+    AdminAiAutoService,
     AdminNetdiskSyncService,
     DeepSeekService,
     AdminAuthGuard,
