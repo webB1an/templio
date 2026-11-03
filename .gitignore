@@ -42,3 +42,6 @@ tmp/
 
 # 桌面端打包产物
 release/
+
+# 大合集分批工作目录
+batches/
