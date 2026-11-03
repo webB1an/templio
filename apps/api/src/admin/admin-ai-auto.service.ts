@@ -134,6 +134,8 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
   private async processUntilWindowEnds(): Promise<void> {
     let processed = 0;
     while (this.isOffPeak(new Date())) {
+      // 管理端关闭开关后，当前请求处理完就停止，不再继续整夜跑
+      if (!(await this.isAutoEnabled())) break;
       const candidate = await this.nextCandidate();
       if (!candidate) break;
 
