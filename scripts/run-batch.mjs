@@ -72,6 +72,26 @@ if (!args["skip-upload"]) {
   await access(reportPath, constants.R_OK).catch(() => {
     throw new Error(`上传报告不存在，上传可能完全失败：${reportPath}`);
   });
+  if (!args["skip-title-fix"]) {
+    // PPT 内部标题经常是“PowerPoint 演示文稿/淘宝店名”等占位文本，
+    // 同步/上架前统一改成源文件名。
+    await run(
+      process.execPath,
+      [
+        resolve("scripts/normalize-titles.mjs"),
+        "--report",
+        reportPath,
+        "--plan",
+        planPath,
+        "--batch",
+        batch.id,
+        "--api",
+        api,
+      ],
+      { TEMPLIO_ADMIN_PASSWORD: password },
+      { allowFailure: true },
+    );
+  }
 }
 
 if (!args["skip-sync"]) {

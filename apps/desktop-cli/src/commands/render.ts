@@ -143,6 +143,16 @@ export async function runRender(options: RenderCommandOptions): Promise<number> 
         warnings,
         at: new Date().toISOString(),
       });
+      // 同步更新内存账本：同一批次里内容相同的模板后续直接跳过，
+      // 否则会重复渲染并覆盖同名物料包。
+      ledger.set(sourceHash, {
+        sourceHash,
+        sourcePath: file.path,
+        status: "rendered",
+        packageDir: written.packageDir,
+        warnings,
+        at: new Date().toISOString(),
+      });
 
       succeeded += 1;
       done += 1;
