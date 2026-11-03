@@ -1,10 +1,15 @@
 :host {
-  display: block;
+  display: flex;
   width: 100%;
+  flex: 1;
 }
 
 .tcard {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   border-radius: 26rpx;
   background: rgba(255, 255, 255, 0.66);
@@ -140,6 +145,9 @@
 }
 
 .tcard-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 16rpx 18rpx 20rpx;
 }
 
@@ -180,6 +188,7 @@
 
 .tcard-title {
   display: -webkit-box;
+  min-height: 76rpx;
   margin-top: 12rpx;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -191,9 +200,10 @@
 }
 
 .tcard-meta {
-  margin-top: 8rpx;
   display: flex;
   justify-content: space-between;
+  margin-top: auto;
+  padding-top: 8rpx;
   font-size: 19rpx;
   color: #8e8e93;
 }

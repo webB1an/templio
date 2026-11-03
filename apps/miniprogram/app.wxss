@@ -336,6 +336,7 @@ page {
 }
 
 .grid-item {
+  display: flex;
   width: 48.6%;
   margin-bottom: 24rpx;
 }
