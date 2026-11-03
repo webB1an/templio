@@ -32,10 +32,10 @@
   height: 100%;
 }
 
-/* 没有预览图、只能用带模糊衬底的封面时，裁掉两侧衬底 */
+/* 新旧封面都按容器裁切，不再额外放大 */
 .tcard-img-cover {
-  left: -6%;
-  width: 112%;
+  left: 0;
+  width: 100%;
 }
 
 .tcard-fallback {

@@ -48,11 +48,11 @@ export const PACKAGE_VERSION = 1 as const;
 
 /**
  * 资源受限版图片规格（无 CDN / 2C2G 服务器）
- * 见 docs/03-资源受限部署修订.md §3
+ * 封面/缩略图按 16:9 生成，匹配 PPT 首屏比例；Word 竖版仍做模糊衬底。
  */
 export const IMAGE_SPEC = {
-  thumb: { width: 360, height: 480, quality: 78, maxBytes: 30 * 1024 },
-  cover: { width: 800, height: 1067, quality: 82, maxBytes: 120 * 1024 },
+  thumb: { width: 360, height: 203, quality: 78, maxBytes: 30 * 1024 },
+  cover: { width: 800, height: 450, quality: 82, maxBytes: 120 * 1024 },
   preview: { width: 800, quality: 80, maxBytes: 80 * 1024 },
 } as const;
 

@@ -74,10 +74,10 @@
   z-index: 0;
 }
 
-/* 只有封面（带模糊衬底）时才横向放大裁边 */
+/* 新旧封面都按容器裁切 */
 .hero-img-cover {
-  left: -6%;
-  width: 112%;
+  left: 0;
+  width: 100%;
 }
 
 .hero-format {

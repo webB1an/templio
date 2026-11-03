@@ -2,6 +2,7 @@ import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { parseManifest } from "@templio/shared";
 import { pathExists } from "../lib/fsx.js";
+import { stripOoxmlAuthorMetadata } from "../lib/metadata.js";
 
 export interface UploadCommandOptions {
   distDir: string;
@@ -161,8 +162,20 @@ async function uploadPackage(
   const manifest = parseManifest(JSON.parse(await readFile(join(packageDir, "manifest.json"), "utf8")));
   const text = JSON.parse(await readFile(join(packageDir, manifest.textFile), "utf8")) as unknown;
 
+  // 源文件可能带着原作者的 creator/lastModifiedBy、店铺名等文档属性。
+  // 上传前清理一份临时副本，不修改本地物料包和原始源文件。
+  let source: { buffer: Buffer; filename: string } | null = null;
+  if (withSource) {
+    const sourcePath = join(packageDir, manifest.sourceFile);
+    source = {
+      buffer: await stripOoxmlAuthorMetadata(await readFile(sourcePath)),
+      filename: sourcePath.split(/[\\/]/).pop() || "source",
+    };
+  }
+
   const form = new FormData();
-  form.append("manifest", JSON.stringify(manifest));
+  const uploadManifest = source ? { ...manifest, sourceBytes: source.buffer.length } : manifest;
+  form.append("manifest", JSON.stringify(uploadManifest));
   form.append("text", JSON.stringify(text));
 
   const appendImage = async (relativePath: string, field: string, filename: string) => {
@@ -176,11 +189,12 @@ async function uploadPackage(
     await appendImage(manifest.images.previews[index]!, "previews", `preview-${index + 1}.webp`);
   }
 
-  if (withSource) {
-    const sourcePath = join(packageDir, manifest.sourceFile);
-    const buffer = await readFile(sourcePath);
-    const filename = sourcePath.split(/[\\/]/).pop() || "source";
-    form.append("source", new Blob([new Uint8Array(buffer)], { type: "application/octet-stream" }), filename);
+  if (source) {
+    form.append(
+      "source",
+      new Blob([new Uint8Array(source.buffer)], { type: "application/octet-stream" }),
+      source.filename,
+    );
   }
 
   const response = await fetch(`${api}/api/admin/import/package`, {

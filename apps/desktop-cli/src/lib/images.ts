@@ -4,8 +4,9 @@ import { IMAGE_SPEC } from "@templio/shared";
 type SharpInstance = ReturnType<typeof sharp>;
 
 /**
- * 3:4 卡片：模糊放大的整页做背景 + 完整页面居中做前景。
- * 这样 16:9 的 PPT 不会因为裁成 3:4 被切掉内容。
+ * 16:9 封面/缩略图：
+ * - 16:9 页面直接铺满画布，不产生上下模糊留白；
+ * - 4:3 / 竖版 Word 页面仍用模糊背景 + 完整页面居中，避免裁掉内容。
  */
 async function composeCard(
   slidePng: Buffer,
@@ -14,6 +15,19 @@ async function composeCard(
   quality: number,
   maxBytes: number,
 ): Promise<Buffer> {
+  const metadata = await sharp(slidePng).metadata();
+  const sourceWidth = metadata.width || 16;
+  const sourceHeight = metadata.height || 9;
+  const aspect = sourceWidth / sourceHeight;
+
+  if (aspect >= 1.45) {
+    const fullBleed = sharp(slidePng).resize(width, height, {
+      fit: "cover",
+      position: "centre",
+    });
+    return encodeWebpUnderBudget(fullBleed, quality, maxBytes);
+  }
+
   const blurred = await sharp(slidePng)
     .resize(width, height, { fit: "cover", position: "center" })
     .blur(Math.max(8, Math.round(width / 24)))
@@ -21,7 +35,11 @@ async function composeCard(
     .toBuffer();
 
   const foreground = await sharp(slidePng)
-    .resize({ width: Math.round(width * 0.92) })
+    .resize({
+      width: Math.round(width * 0.92),
+      height: Math.round(height * 0.92),
+      fit: "inside",
+    })
     .toBuffer();
 
   const composed = await sharp(blurred)
@@ -45,7 +63,7 @@ async function encodeWebpUnderBudget(
   return last ?? (await image.clone().webp({ quality: 45 }).toBuffer());
 }
 
-/** 列表缩略图（360×480） */
+/** 列表缩略图（360×203，16:9） */
 export async function makeThumb(slidePng: Buffer): Promise<Buffer> {
   return composeCard(
     slidePng,
@@ -56,7 +74,7 @@ export async function makeThumb(slidePng: Buffer): Promise<Buffer> {
   );
 }
 
-/** 详情页封面（800×1067） */
+/** 详情页封面（800×450，16:9） */
 export async function makeCover(slidePng: Buffer): Promise<Buffer> {
   return composeCard(
     slidePng,
