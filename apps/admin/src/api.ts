@@ -94,9 +94,16 @@ export const api = {
   },
 
   setAiAutoEnabled(enabled: boolean) {
-    return request<{ enabled: boolean }>("/admin/settings/ai-auto", {
+    return request<AiAutoStatus>("/admin/settings/ai-auto", {
       method: "PATCH",
       body: { enabled }
+    });
+  },
+
+  updateAiAuto(body: { enabled?: boolean; minConfidence?: number }) {
+    return request<AiAutoStatus>("/admin/settings/ai-auto", {
+      method: "PATCH",
+      body
     });
   },
 

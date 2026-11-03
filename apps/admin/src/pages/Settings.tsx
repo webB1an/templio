@@ -1,5 +1,17 @@
-import { useEffect, useState } from "react";
-import { Alert, Card, Descriptions, Space, Switch, Tag, Typography, message } from "antd";
+import { useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  Button,
+  Card,
+  Descriptions,
+  Divider,
+  InputNumber,
+  Space,
+  Switch,
+  Tag,
+  Typography,
+  message
+} from "antd";
 import { api } from "../api";
 import type { AiAutoStatus } from "../types";
 import { formatTime } from "../utils";
@@ -8,10 +20,18 @@ export default function Settings() {
   const [status, setStatus] = useState<AiAutoStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [confidenceInput, setConfidenceInput] = useState<number | null>(null);
+  const [savingConfidence, setSavingConfidence] = useState(false);
+  const confidenceInitialized = useRef(false);
 
   const load = async () => {
     try {
-      setStatus(await api.aiAutoStatus());
+      const next = await api.aiAutoStatus();
+      setStatus(next);
+      if (!confidenceInitialized.current) {
+        setConfidenceInput(Math.round(next.minConfidence * 100));
+        confidenceInitialized.current = true;
+      }
     } catch (error) {
       message.error((error as Error).message);
     } finally {
@@ -28,13 +48,32 @@ export default function Settings() {
   const toggle = async (enabled: boolean) => {
     setSaving(true);
     try {
-      await api.setAiAutoEnabled(enabled);
+      await api.updateAiAuto({ enabled });
       message.success(enabled ? "已开启 DeepSeek 平价时段自动处理" : "已关闭 DeepSeek 平价时段自动处理");
       await load();
     } catch (error) {
       message.error((error as Error).message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveConfidence = async () => {
+    if (confidenceInput === null || !Number.isFinite(confidenceInput)) {
+      message.warning("请输入 50–100 之间的置信度");
+      return;
+    }
+    const percent = Math.min(100, Math.max(50, Math.round(confidenceInput)));
+    setSavingConfidence(true);
+    try {
+      await api.updateAiAuto({ minConfidence: percent / 100 });
+      message.success(`自动应用置信度已改为 ${percent}%`);
+      setConfidenceInput(percent);
+      await load();
+    } catch (error) {
+      message.error((error as Error).message);
+    } finally {
+      setSavingConfidence(false);
     }
   };
 
@@ -101,6 +140,30 @@ export default function Settings() {
             {status?.lastProcessedAt ? formatTime(status.lastProcessedAt) : "-"}
           </Descriptions.Item>
         </Descriptions>
+
+        <Divider style={{ margin: "20px 0 16px" }} />
+
+        <Space wrap align="center">
+          <Typography.Text strong>自动应用置信度</Typography.Text>
+          <InputNumber
+            min={50}
+            max={100}
+            step={1}
+            value={confidenceInput}
+            onChange={(value) => setConfidenceInput(typeof value === "number" ? value : null)}
+            addonAfter="%"
+            style={{ width: 130 }}
+          />
+          <Button type="primary" loading={savingConfidence} onClick={() => void saveConfidence()}>
+            保存阈值
+          </Button>
+          <Typography.Text type="secondary">当前生效：{status ? `${Math.round(status.minConfidence * 100)}%` : "-"}</Typography.Text>
+        </Space>
+
+        <Typography.Paragraph type="secondary" style={{ marginTop: 12, marginBottom: 0 }}>
+          阈值越低，自动应用 AI 标题/分类的模板越多；低于阈值的 AI 结果仍会保存分析，但保留人工复核，不会自动应用。
+          修改后自动任务会在下一次模板处理时生效。
+        </Typography.Paragraph>
 
         {status?.lastError ? (
           <Alert

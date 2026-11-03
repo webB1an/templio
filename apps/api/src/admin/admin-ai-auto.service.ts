@@ -20,7 +20,12 @@ import { DeepSeekService } from "./deepseek.service";
 export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AdminAiAutoService.name);
   private readonly defaultEnabled = (process.env.AI_AUTO_ENABLED || "true").trim() !== "false";
-  private readonly minConfidence = clamp(Number.parseFloat(process.env.AI_AUTO_MIN_CONFIDENCE || "0.85"), 0, 1, 0.85);
+  private readonly defaultMinConfidence = clamp(
+    Number.parseFloat(process.env.AI_AUTO_MIN_CONFIDENCE || "0.85"),
+    0.5,
+    1,
+    0.85,
+  );
   private readonly delayMs = Math.max(1000, Number.parseInt(process.env.AI_AUTO_DELAY_MS || "2500", 10) || 2500);
   private readonly holidays = new Set(
     (process.env.AI_AUTO_HOLIDAYS || "")
@@ -47,7 +52,7 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
       return;
     }
     this.logger.log(
-      `AI 自动标注已调度：平价时段执行，默认开关 ${this.defaultEnabled ? "开" : "关"}，置信度阈值 ${this.minConfidence}，间隔 ${this.delayMs}ms`,
+      `AI 自动标注已调度：平价时段执行，默认开关 ${this.defaultEnabled ? "开" : "关"}，默认置信度阈值 ${this.defaultMinConfidence}，间隔 ${this.delayMs}ms`,
     );
     this.initialTimer = setTimeout(() => void this.tick(), 5_000);
     this.timer = setInterval(() => void this.tick(), 60_000);
@@ -90,6 +95,24 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
     return { enabled };
   }
 
+  /** 管理端置信度阈值；数据库优先，没配置时用 env 默认值 */
+  async getMinConfidence(): Promise<number> {
+    const row = await this.prisma.setting.findUnique({ where: { key: "ai_auto_min_confidence" } });
+    if (row && typeof row.value === "number") return clamp(row.value, 0.5, 1, this.defaultMinConfidence);
+    return this.defaultMinConfidence;
+  }
+
+  async setMinConfidence(value: number): Promise<{ minConfidence: number }> {
+    const minConfidence = clamp(value, 0.5, 1, this.defaultMinConfidence);
+    await this.prisma.setting.upsert({
+      where: { key: "ai_auto_min_confidence" },
+      update: { value: minConfidence },
+      create: { key: "ai_auto_min_confidence", value: minConfidence },
+    });
+    this.logger.log(`管理端将 AI 自动应用置信度阈值改为 ${minConfidence}`);
+    return { minConfidence };
+  }
+
   async getStatus(): Promise<{
     enabled: boolean;
     running: boolean;
@@ -105,6 +128,7 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
     const statusWhere: Prisma.TemplateWhereInput = {
       status: { in: ["published", "imported", "pending_review"] },
     };
+    const minConfidence = await this.getMinConfidence();
     const [enabled, pendingCount, readyApplyCount] = await Promise.all([
       this.isAutoEnabled(),
       this.prisma.template.count({ where: { ...statusWhere, aiAnalysis: { is: null } } }),
@@ -112,7 +136,7 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
         where: {
           needsReview: true,
           safe: true,
-          confidence: { gte: this.minConfidence },
+          confidence: { gte: minConfidence },
           template: { status: { in: ["published", "imported", "pending_review", "ai_processing"] } },
         },
       }),
@@ -121,7 +145,7 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
       enabled,
       running: this.running,
       offpeak: this.isOffPeak(new Date()),
-      minConfidence: this.minConfidence,
+      minConfidence,
       delayMs: this.delayMs,
       pendingCount,
       readyApplyCount,
@@ -136,13 +160,14 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
     while (this.isOffPeak(new Date())) {
       // 管理端关闭开关后，当前请求处理完就停止，不再继续整夜跑
       if (!(await this.isAutoEnabled())) break;
-      const candidate = await this.nextCandidate();
+      const minConfidence = await this.getMinConfidence();
+      const candidate = await this.nextCandidate(minConfidence);
       if (!candidate) break;
 
       if (candidate.kind === "apply") {
         await this.applyExisting(candidate.id);
       } else {
-        await this.annotateOne(candidate.id);
+        await this.annotateOne(candidate.id, minConfidence);
       }
       processed += 1;
 
@@ -154,13 +179,13 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
     if (processed > 0) this.logger.log(`AI 自动标注本轮结束，共处理 ${processed} 个模板`);
   }
 
-  private async nextCandidate(): Promise<{ kind: "annotate" | "apply"; id: string } | null> {
+  private async nextCandidate(minConfidence: number): Promise<{ kind: "annotate" | "apply"; id: string } | null> {
     // 优先应用已存在的高置信度结果，不重复消耗 DeepSeek tokens
     const ready = await this.prisma.aiAnalysis.findFirst({
       where: {
         needsReview: true,
         safe: true,
-        confidence: { gte: this.minConfidence },
+        confidence: { gte: minConfidence },
         template: { status: { in: ["published", "imported", "pending_review", "ai_processing"] } },
       },
       orderBy: [{ confidence: "desc" }, { createdAt: "asc" }],
@@ -179,11 +204,11 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
     return template ? { kind: "annotate", id: template.id } : null;
   }
 
-  private async annotateOne(templateId: string): Promise<void> {
+  private async annotateOne(templateId: string, minConfidence: number): Promise<void> {
     try {
       const result = await this.ai.annotate(templateId);
       const confidence = result.analysis.confidence ?? 0;
-      if (!result.analysis.safe || confidence < this.minConfidence) {
+      if (!result.analysis.safe || confidence < minConfidence) {
         this.logger.log(
           `AI 自动标注跳过 ${templateId}：confidence=${confidence.toFixed(2)} safe=${result.analysis.safe}`,
         );
