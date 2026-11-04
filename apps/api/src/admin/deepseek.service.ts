@@ -3,6 +3,7 @@ import { Injectable, Logger } from "@nestjs/common";
 export interface AiSuggestion {
   title: string;
   categoryKey: string;
+  newCategoryName: string | null;
   tags: string[];
   summary: string;
   confidence: number;
@@ -22,6 +23,11 @@ interface SuggestInput {
 const SYSTEM_PROMPT = [
   "你是「模板宝」的模板库内容运营助手，负责给 PPT/Word 模板生成上架信息。",
   "根据模板抽取出的文字（标题、大纲、前几页内容）判断它最适合的分类，生成简洁中文标题、标签和简介。",
+  "分类规则：",
+  "1. 优先使用已有分类；只要已有分类能合理覆盖模板主题或用途，就必须选择已有分类，不要新建。",
+  "2. 只有已有分类都明显不合适时，才提出一个新分类；一次最多提出一个新分类。",
+  "3. 新分类名称 2-8 个汉字，聚焦模板主题或用途，例如「国潮国风」「卡通教育」「党政党建」「图表素材」。",
+  "4. 新分类不能使用「其他」「综合」「未分类」「模板」「PPT」「演示文稿」等泛称，不能与已有分类重复或近义。",
   "只输出一个 JSON 对象，不要输出 Markdown。",
   "要求：标题不超过 20 个汉字；标签 2-4 个；简介不超过 60 个汉字；标题和简介客观描述模板用途，不要夸大。",
 ].join("\n");
@@ -49,12 +55,13 @@ export class DeepSeekService {
     const text = input.text || {};
     const categories = input.categories.map((item) => `${item.key}=${item.name}`).join("，");
     const userPrompt = [
-      `可选分类（只能选一个 key）：${categories}`,
+      `现有分类（优先选择，只能选一个 key）：${categories}`,
       `文件名兜底标题：${input.titleGuess || "(无)"}`,
       `文档标题：${text.title || "(无)"}`,
       `大纲：${(text.outline || []).slice(0, 20).join(" / ") || "(无)"}`,
       `前几页文字：${(text.firstPagesText || []).join("\n").slice(0, 6000) || "(无)"}`,
-      '请输出 JSON：{"title":"标题","categoryKey":"分类 key","tags":["标签1","标签2"],"summary":"简介","confidence":0.9,"safe":true}',
+      "分类要求：有合适的现有分类时，categoryKey 填该分类 key，newCategoryName 留空；确实没有合适的现有分类时，categoryKey 留空，newCategoryName 填一个新分类名。",
+      '请输出 JSON：{"title":"标题","categoryKey":"已有分类 key 或空字符串","newCategoryName":"新分类名或空字符串","tags":["标签1","标签2"],"summary":"简介","confidence":0.9,"safe":true}',
     ].join("\n\n");
 
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -116,6 +123,8 @@ function parseSuggestion(content: string): AiSuggestion {
 
   const title = typeof parsed.title === "string" ? parsed.title.trim().slice(0, 200) : "";
   const categoryKey = typeof parsed.categoryKey === "string" ? parsed.categoryKey.trim() : "";
+  const newCategoryName =
+    typeof parsed.newCategoryName === "string" ? parsed.newCategoryName.trim().slice(0, 20) : "";
   const tags = Array.isArray(parsed.tags)
     ? parsed.tags.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean).slice(0, 4)
     : [];
@@ -130,6 +139,7 @@ function parseSuggestion(content: string): AiSuggestion {
   return {
     title,
     categoryKey,
+    newCategoryName: newCategoryName || null,
     tags,
     summary,
     confidence,

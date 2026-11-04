@@ -39,6 +39,7 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
   private processedTotal = 0;
   private lastProcessedAt: string | null = null;
   private lastError: string | null = null;
+  private readonly failedReclassifyIds = new Set<string>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -121,6 +122,7 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
     delayMs: number;
     pendingCount: number;
     readyApplyCount: number;
+    reclassifyCount: number;
     processedTotal: number;
     lastProcessedAt: string | null;
     lastError: string | null;
@@ -129,7 +131,7 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
       status: { in: ["published", "imported", "pending_review"] },
     };
     const minConfidence = await this.getMinConfidence();
-    const [enabled, pendingCount, readyApplyCount] = await Promise.all([
+    const [enabled, pendingCount, readyApplyCount, reclassifyCount] = await Promise.all([
       this.isAutoEnabled(),
       this.prisma.template.count({ where: { ...statusWhere, aiAnalysis: { is: null } } }),
       this.prisma.aiAnalysis.count({
@@ -137,6 +139,12 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
           needsReview: true,
           safe: true,
           confidence: { gte: minConfidence },
+          template: { status: { in: ["published", "imported", "pending_review", "ai_processing"] } },
+        },
+      }),
+      this.prisma.aiAnalysis.count({
+        where: {
+          OR: [{ promptVersion: null }, { promptVersion: { not: "v2" } }],
           template: { status: { in: ["published", "imported", "pending_review", "ai_processing"] } },
         },
       }),
@@ -149,6 +157,7 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
       delayMs: this.delayMs,
       pendingCount,
       readyApplyCount,
+      reclassifyCount,
       processedTotal: this.processedTotal,
       lastProcessedAt: this.lastProcessedAt,
       lastError: this.lastError,
@@ -180,6 +189,19 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async nextCandidate(minConfidence: number): Promise<{ kind: "annotate" | "apply"; id: string } | null> {
+    // 先重跑旧版本 AI 分析，让历史模板也能对照最新分类体系并自动新建分类
+    const stale = await this.prisma.aiAnalysis.findMany({
+      where: {
+        OR: [{ promptVersion: null }, { promptVersion: { not: "v2" } }],
+        template: { status: { in: ["published", "imported", "pending_review", "ai_processing"] } },
+      },
+      orderBy: { createdAt: "asc" },
+      take: 100,
+      select: { templateId: true },
+    });
+    const staleCandidate = stale.find((item) => !this.failedReclassifyIds.has(item.templateId));
+    if (staleCandidate) return { kind: "annotate", id: staleCandidate.templateId };
+
     // 优先应用已存在的高置信度结果，不重复消耗 DeepSeek tokens
     const ready = await this.prisma.aiAnalysis.findFirst({
       where: {
@@ -224,6 +246,7 @@ export class AdminAiAutoService implements OnModuleInit, OnModuleDestroy {
         `AI 自动标注完成 ${templateId}：${result.analysis.title || ""} / ${result.analysis.categoryKey || "未分类"} / ${confidence.toFixed(2)}`,
       );
     } catch (error) {
+      this.failedReclassifyIds.add(templateId);
       this.lastError = (error as Error).message;
       this.logger.warn(`AI 自动标注失败 ${templateId}：${this.lastError}`);
     }

@@ -1,7 +1,23 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { createHash } from "node:crypto";
+import { Category, Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { DeepSeekService } from "./deepseek.service";
+
+const PROMPT_VERSION = "v2";
+const MAX_AUTO_CATEGORIES = 80;
+const GENERIC_CATEGORY_NAMES = new Set([
+  "其他",
+  "综合",
+  "未分类",
+  "模板",
+  "PPT",
+  "演示文稿",
+  "幻灯片",
+  "文档",
+  "素材",
+  "汇报",
+]);
 
 interface AnalysisDto {
   id: string;
@@ -50,13 +66,20 @@ export class AdminAiService {
     }
 
     const suggestion = result.suggestion;
-    const matchedCategory = categories.find((item) => item.slug === suggestion.categoryKey) || null;
+    let matchedCategory = categories.find((item) => item.slug === suggestion.categoryKey) || null;
+
+    // AI 判断现有分类都不合适时，允许自动新建分类
+    if (!matchedCategory && suggestion.safe && (suggestion.confidence ?? 0) >= 0.7 && suggestion.newCategoryName) {
+      matchedCategory = await this.resolveOrCreateCategory(suggestion.newCategoryName, categories);
+    }
+    suggestion.categoryKey = matchedCategory?.slug || "";
+    const finalCategoryKey = matchedCategory?.slug || null;
 
     const analysis = await this.prisma.aiAnalysis.upsert({
       where: { templateId: id },
       update: {
         title: suggestion.title,
-        categoryKey: suggestion.categoryKey,
+        categoryKey: finalCategoryKey,
         tags: suggestion.tags as unknown as Prisma.InputJsonValue,
         summary: suggestion.summary,
         confidence: suggestion.confidence,
@@ -64,14 +87,14 @@ export class AdminAiService {
         needsReview: true,
         raw: result.raw as unknown as Prisma.InputJsonValue,
         model: result.model,
-        promptVersion: "v1",
+        promptVersion: PROMPT_VERSION,
         inputTokens: result.inputTokens,
         outputTokens: result.outputTokens,
       },
       create: {
         templateId: id,
         title: suggestion.title,
-        categoryKey: suggestion.categoryKey,
+        categoryKey: finalCategoryKey,
         tags: suggestion.tags as unknown as Prisma.InputJsonValue,
         summary: suggestion.summary,
         confidence: suggestion.confidence,
@@ -79,7 +102,7 @@ export class AdminAiService {
         needsReview: true,
         raw: result.raw as unknown as Prisma.InputJsonValue,
         model: result.model,
-        promptVersion: "v1",
+        promptVersion: PROMPT_VERSION,
         inputTokens: result.inputTokens,
         outputTokens: result.outputTokens,
       },
@@ -96,6 +119,39 @@ export class AdminAiService {
       matchedCategory: matchedCategory ? { key: matchedCategory.slug, name: matchedCategory.name } : null,
       status,
     };
+  }
+
+  private async resolveOrCreateCategory(rawName: string, categories: Category[]): Promise<Category | null> {
+    const name = cleanCategoryName(rawName);
+    if (!name || name.length < 2 || GENERIC_CATEGORY_NAMES.has(name)) return null;
+
+    const normalized = normalizeCategoryName(name);
+    const exact = categories.find((item) => normalizeCategoryName(item.name) === normalized);
+    if (exact) return exact;
+
+    // 新名称和现有分类存在包含关系时，优先归入现有分类，避免近义分类膨胀
+    const contained = categories.find((item) => {
+      const existing = normalizeCategoryName(item.name);
+      return existing.length >= 2 && normalized.length >= 2 && (existing.includes(normalized) || normalized.includes(existing));
+    });
+    if (contained) return contained;
+
+    if (categories.length >= MAX_AUTO_CATEGORIES) return null;
+
+    const slug = `auto-${createHash("sha1").update(name).digest("hex").slice(0, 10)}`;
+    const maxSort = categories.reduce((max, item) => Math.max(max, item.sort), 0);
+    try {
+      const created = await this.prisma.category.create({
+        data: { name, slug, sort: maxSort + 10 },
+      });
+      categories.push(created);
+      return created;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return this.prisma.category.findUnique({ where: { slug } });
+      }
+      throw error;
+    }
   }
 
   async apply(id: string): Promise<{
@@ -300,4 +356,18 @@ export class AdminAiService {
       model: row.model,
     };
   }
+}
+
+function cleanCategoryName(raw: string): string {
+  return String(raw || "")
+    .replace(/[“”"'‘’《》<>【】\[\]]/g, "")
+    .replace(/\s+/g, "")
+    .replace(/(PPT模板|ppt模板|PPT|pptx|演示文稿|幻灯片|模板)$/gi, "")
+    .replace(/[，,。.;；:：!！?？\-—_\|/\\]/g, "")
+    .trim()
+    .slice(0, 12);
+}
+
+function normalizeCategoryName(name: string): string {
+  return cleanCategoryName(name).toLowerCase();
 }

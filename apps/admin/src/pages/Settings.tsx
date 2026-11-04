@@ -127,6 +127,9 @@ export default function Settings() {
           <Descriptions.Item label="可直接应用结果">
             {status?.readyApplyCount ?? "-"} 个
           </Descriptions.Item>
+          <Descriptions.Item label="待重新分类">
+            {status?.reclassifyCount ?? "-"} 个
+          </Descriptions.Item>
           <Descriptions.Item label="置信度阈值">
             {status ? `${Math.round((status.minConfidence || 0) * 100)}%` : "-"}
           </Descriptions.Item>

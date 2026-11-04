@@ -49,6 +49,7 @@ export interface AiAutoStatus {
   delayMs: number;
   pendingCount: number;
   readyApplyCount: number;
+  reclassifyCount: number;
   processedTotal: number;
   lastProcessedAt: string | null;
   lastError: string | null;
