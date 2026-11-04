@@ -370,9 +370,11 @@ page {
 }
 
 .menu-arrow .chevron,
-.category-arrow .chevron {
-  width: 20rpx;
-  height: 20rpx;
+.category-arrow .chevron,
+.all-category-arrow {
+  width: 14rpx;
+  height: 14rpx;
+  border-width: 3rpx;
 }
 
 /* ---------------- 模板网格 ---------------- */

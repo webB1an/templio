@@ -157,7 +157,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34rpx;
-  height: 34rpx;
+  width: 28rpx;
+  height: 28rpx;
   color: var(--ink-3);
 }

@@ -13,10 +13,6 @@
 
   <view class="section-head category-section-head">
     <text class="section-title">热门分类</text>
-    <view class="section-more" bindtap="openAllCategories">
-      <text>全部分类</text>
-      <view class="chevron chevron-right"></view>
-    </view>
   </view>
 
   <view class="category-grid">
