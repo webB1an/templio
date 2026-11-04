@@ -3,6 +3,7 @@ const { getNavMetrics } = require("../../utils/layout");
 const { fetchTemplates, fetchFacets } = require("../../utils/api");
 
 const PAGE_SIZE = 10;
+const HOME_CATEGORY_LIMIT = 6;
 
 Page({
   data: {
@@ -78,9 +79,15 @@ Page({
       .then((data) => {
         const categories = data && data.categories;
         if (Array.isArray(categories) && categories.length) {
+          // 首页只展示最热门的几个分类，完整分类在「分类」tab 中查看
+          const sorted = categories
+            .slice()
+            .sort((left, right) => (right.count || 0) - (left.count || 0));
+          const hot = sorted.filter((item) => (item.count || 0) > 0).slice(0, HOME_CATEGORY_LIMIT);
+          const shown = hot.length ? hot : sorted.slice(0, HOME_CATEGORY_LIMIT);
           this.setData({
             categories: [{ key: "all", name: "全部" }].concat(
-              categories.map((item) => ({ key: item.key, name: item.name }))
+              shown.map((item) => ({ key: item.key, name: item.name }))
             )
           });
         }

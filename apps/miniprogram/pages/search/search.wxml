@@ -1,6 +1,6 @@
 <view class="nav" style="padding-top: {{navTop}}px;">
   <view class="nav-inner" style="margin-right: {{menuRight}}px;">
-    <view class="nav-back" bindtap="onCancel">‹</view>
+    <view class="nav-back" bindtap="onCancel"><view class="chevron chevron-left"></view></view>
     <view class="search-field">
       <image class="search-icon" src="/assets/icons/search.png" mode="aspectFit" />
       <input
@@ -63,7 +63,10 @@
     <block wx:if="{{recommend.length}}">
       <view class="section-head">
         <text class="section-title">推荐模板</text>
-        <text class="section-more" bindtap="goHome">去首页 ›</text>
+        <view class="section-more" bindtap="goHome">
+          <text>去首页</text>
+          <view class="chevron chevron-right"></view>
+        </view>
       </view>
       <view class="grid">
         <view class="grid-item" wx:for="{{recommend}}" wx:key="id">

@@ -1,0 +1,35 @@
+<view class="nav" style="padding-top: {{navTop}}px;">
+  <view class="nav-inner" style="margin-right: {{menuRight}}px;">
+    <view class="nav-back" bindtap="goBack"><view class="chevron chevron-left"></view></view>
+    <text class="brand">全部分类</text>
+    <text class="brand-sub">{{totalCategories}} 个</text>
+  </view>
+</view>
+
+<view class="page" style="padding-top: {{contentTop}}px;">
+  <view class="all-head">
+    <text class="all-head-title">全部分类</text>
+    <text class="all-head-sub">按模板数量排序，共 {{totalCategories}} 个分类</text>
+  </view>
+
+  <view class="category-grid all-grid">
+    <view
+      wx:for="{{categories}}"
+      wx:key="key"
+      class="category-card"
+      data-key="{{item.key}}"
+      data-name="{{item.name}}"
+      bindtap="openCategory"
+      hover-class="category-hover"
+    >
+      <view class="category-top">
+        <view class="category-icon">{{item.initial}}</view>
+        <view class="category-arrow"><view class="chevron chevron-right"></view></view>
+      </view>
+      <text class="category-name">{{item.name}}</text>
+      <text class="category-count">{{item.count}} 个模板</text>
+    </view>
+  </view>
+
+  <view class="footer-tip all-footer">分类会随 AI 自动分类和新模板上架持续增加</view>
+</view>

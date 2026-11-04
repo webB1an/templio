@@ -1,0 +1,27 @@
+@import "../category/category.wxss";
+
+.all-head {
+  padding: 8rpx 4rpx 8rpx;
+}
+
+.all-head-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+  letter-spacing: -0.4rpx;
+}
+
+.all-head-sub {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: var(--ink-3);
+}
+
+.all-grid {
+  margin-top: 28rpx;
+}
+
+.all-footer {
+  padding-bottom: 40rpx;
+}

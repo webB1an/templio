@@ -1,6 +1,6 @@
 <view class="nav" style="padding-top: {{navTop}}px;">
   <view class="nav-inner" style="margin-right: {{menuRight}}px;">
-    <view class="nav-back" bindtap="goBack">‹</view>
+    <view class="nav-back" bindtap="goBack"><view class="chevron chevron-left"></view></view>
     <text class="nav-title">{{title}}</text>
     <view class="nav-placeholder"></view>
   </view>

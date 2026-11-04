@@ -8,7 +8,7 @@
 
 <view wx:else class="detail-page">
   <view class="detail-nav" style="padding-top: {{navTop}}px;">
-    <view class="nav-back detail-back" bindtap="goBack">‹</view>
+    <view class="nav-back detail-back" bindtap="goBack"><view class="chevron chevron-left"></view></view>
   </view>
 
   <view class="detail-hero tone-{{item.tone}}" bindtap="previewImage">

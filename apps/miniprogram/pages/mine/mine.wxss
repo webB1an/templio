@@ -154,6 +154,10 @@
 }
 
 .menu-arrow {
-  font-size: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34rpx;
+  height: 34rpx;
   color: var(--ink-3);
 }

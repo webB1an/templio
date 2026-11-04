@@ -11,6 +11,14 @@
     <text class="hero-sub">从主题出发，快速找到需要的模板</text>
   </view>
 
+  <view class="section-head category-section-head">
+    <text class="section-title">热门分类</text>
+    <view class="section-more" bindtap="openAllCategories">
+      <text>全部分类</text>
+      <view class="chevron chevron-right"></view>
+    </view>
+  </view>
+
   <view class="category-grid">
     <view
       wx:for="{{categories}}"
@@ -23,11 +31,19 @@
     >
       <view class="category-top">
         <view class="category-icon">{{item.initial}}</view>
-        <text class="category-arrow">›</text>
+        <view class="category-arrow"><view class="chevron chevron-right"></view></view>
       </view>
       <text class="category-name">{{item.name}}</text>
       <text class="category-count">{{item.count}} 个模板</text>
     </view>
+  </view>
+
+  <view class="all-category-entry" bindtap="openAllCategories">
+    <view class="all-category-copy">
+      <text class="all-category-title">全部分类</text>
+      <text class="all-category-sub">共 {{totalCategories}} 个分类，查看完整分类</text>
+    </view>
+    <view class="chevron chevron-right all-category-arrow"></view>
   </view>
 
   <view class="footer-tip">分类与数量会随模板上架自动更新</view>

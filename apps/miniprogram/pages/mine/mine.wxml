@@ -48,7 +48,7 @@
       </view>
       <text class="menu-label">{{item.label}}</text>
       <text class="menu-tip">{{item.tip}}</text>
-      <text class="menu-arrow">›</text>
+      <view class="menu-arrow"><view class="chevron chevron-right"></view></view>
     </view>
   </view>
 

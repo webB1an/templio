@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/search/search",
     "pages/category/category",
+    "pages/categories/categories",
     "pages/list/list",
     "pages/detail/detail",
     "pages/mine/mine",

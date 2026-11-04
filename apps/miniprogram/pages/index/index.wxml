@@ -34,7 +34,10 @@
 
   <view class="section-head">
     <text class="section-title">最近更新</text>
-    <text class="section-more" bindtap="goList">查看全部 ›</text>
+    <view class="section-more" bindtap="goList">
+      <text>查看全部</text>
+      <view class="chevron chevron-right"></view>
+    </view>
   </view>
 
   <view class="grid">

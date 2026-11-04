@@ -311,7 +311,7 @@ page {
 
 .section-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   margin: 44rpx 4rpx 20rpx;
 }
@@ -323,8 +323,56 @@ page {
 }
 
 .section-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 23rpx;
   color: var(--ink-3);
+}
+
+.section-more .chevron {
+  width: 14rpx;
+  height: 14rpx;
+  margin-left: 8rpx;
+  border-width: 3rpx;
+}
+
+/* 统一的线性箭头：比文字符号更稳定，容器 flex 居中 */
+.chevron {
+  width: 22rpx;
+  height: 22rpx;
+  flex: none;
+  box-sizing: border-box;
+  border-top: 4rpx solid currentColor;
+  border-right: 4rpx solid currentColor;
+  transform-origin: center;
+}
+
+.chevron-left {
+  transform: rotate(-135deg);
+}
+
+.chevron-right {
+  transform: rotate(45deg);
+}
+
+.chevron-up {
+  transform: rotate(-45deg);
+}
+
+.chevron-down {
+  transform: rotate(135deg);
+}
+
+.nav-back .chevron {
+  width: 22rpx;
+  height: 22rpx;
+}
+
+.menu-arrow .chevron,
+.category-arrow .chevron {
+  width: 20rpx;
+  height: 20rpx;
 }
 
 /* ---------------- 模板网格 ---------------- */
